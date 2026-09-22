@@ -1,4 +1,5 @@
 import 'package:dio/dio.dart';
+import 'package:uuid/uuid.dart';
 import 'api_client.dart';
 
 class WalletProvider {
@@ -24,13 +25,17 @@ class WalletProvider {
     required String senderName,
     String? note,
   }) {
-    return _api.post('/wallet/topup-requests', data: {
-      'amount': amount,
-      'method': method,
-      'reference_number': referenceNumber,
-      'sender_name': senderName,
-      if (note != null && note.isNotEmpty) 'note': note,
-    });
+    return _api.post(
+      '/wallet/topup-requests',
+      data: {
+        'amount': amount,
+        'method': method,
+        'reference_number': referenceNumber,
+        'sender_name': senderName,
+        if (note != null && note.isNotEmpty) 'note': note,
+      },
+      headers: {'Idempotency-Key': const Uuid().v4()},
+    );
   }
 
   Future<Response> getTopupRequests({int limit = 20, int offset = 0}) {

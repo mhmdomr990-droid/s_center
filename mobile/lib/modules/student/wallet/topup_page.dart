@@ -50,7 +50,7 @@ class TopupPage extends StatelessWidget {
                 const SizedBox(height: 8),
                 Row(
                   children: [
-                    Expanded(child: _buildMethodChip(ctrl, 'sham_cash', 'Sham Cash', Icons.account_balance_wallet)),
+                    Expanded(child: _buildMethodChip(ctrl, 'SHAM_CASH', 'Sham Cash', Icons.account_balance_wallet)),
                     const SizedBox(width: 12),
                     Expanded(child: _buildMethodChip(ctrl, 'TRANSFER_OFFICE', 'تحويل مكتب', Icons.store)),
                   ],

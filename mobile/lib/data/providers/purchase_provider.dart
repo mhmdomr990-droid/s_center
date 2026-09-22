@@ -1,4 +1,5 @@
 import 'package:dio/dio.dart';
+import 'package:uuid/uuid.dart';
 import 'api_client.dart';
 
 class PurchaseProvider {
@@ -7,7 +8,10 @@ class PurchaseProvider {
   PurchaseProvider(this._api);
 
   Future<Response> purchaseCourse(int courseId) {
-    return _api.post('/courses/$courseId/purchase');
+    return _api.post(
+      '/courses/$courseId/purchase',
+      headers: {'Idempotency-Key': const Uuid().v4()},
+    );
   }
 
   Future<Response> getMyCourses() {
