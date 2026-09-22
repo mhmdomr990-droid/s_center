@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../../../data/providers/api_client.dart';
+import '../../../data/providers/api_exception.dart';
 import '../../../data/providers/catalog_provider.dart';
 import '../../../data/providers/purchase_provider.dart';
 import '../../../data/models/specialization_model.dart';
@@ -48,7 +49,8 @@ class CoursesController extends GetxController {
         courses.value = courseData.map<CourseModel>((e) => CourseModel.fromJson(e)).toList();
       }
     } catch (e) {
-      Get.snackbar('خطأ', 'فشل تحميل الكتالوج', backgroundColor: Color(0xFFE53935), colorText: Color(0xFFFFFFFF));
+      Get.snackbar('خطأ', apiErrorMessage(e, fallback: 'فشل تحميل الكتالوج'),
+          backgroundColor: Color(0xFFE53935), colorText: Color(0xFFFFFFFF));
     } finally {
       isLoading.value = false;
     }
@@ -92,7 +94,8 @@ class CoursesController extends GetxController {
         lectures.value = lectureData.map<LectureModel>((e) => LectureModel.fromJson(e)).toList();
       }
     } catch (e) {
-      Get.snackbar('خطأ', 'فشل تحميل تفاصيل الدورة', backgroundColor: Color(0xFFE53935), colorText: Color(0xFFFFFFFF));
+      Get.snackbar('خطأ', apiErrorMessage(e, fallback: 'فشل تحميل تفاصيل الدورة'),
+          backgroundColor: Color(0xFFE53935), colorText: Color(0xFFFFFFFF));
     } finally {
       isLoading.value = false;
     }
@@ -106,10 +109,8 @@ class CoursesController extends GetxController {
       Get.snackbar('نجاح', 'تم شراء الدورة بنجاح', backgroundColor: Color(0xFF43A047), colorText: Color(0xFFFFFFFF));
       loadCourseDetail(courseId);
     } catch (e) {
-      String msg = 'فشل الشراء';
-      if (e.toString().contains('Insufficient')) msg = 'الرصيد غير كافٍ';
-      if (e.toString().contains('already')) msg = 'لقد اشتريت هذه الدورة سابقاً';
-      Get.snackbar('خطأ', msg, backgroundColor: Color(0xFFE53935), colorText: Color(0xFFFFFFFF));
+      Get.snackbar('خطأ', apiErrorMessage(e, fallback: 'فشل الشراء'),
+          backgroundColor: Color(0xFFE53935), colorText: Color(0xFFFFFFFF));
     } finally {
       isPurchasing.value = false;
     }

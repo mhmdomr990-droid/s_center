@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../../data/providers/api_client.dart';
+import '../../data/providers/api_exception.dart';
 import '../../data/providers/auth_provider.dart';
 import '../../data/services/storage_service.dart';
 import '../../data/services/device_service.dart';
@@ -73,13 +74,7 @@ class AuthController extends GetxController {
         Get.offAll(() => const StudentShell());
       }
     } catch (e) {
-      String msg = 'حدث خطأ';
-      if (e.toString().contains('401') || e.toString().contains('Invalid')) {
-        msg = 'اسم المستخدم أو كلمة المرور غير صحيحة';
-      } else if (e.toString().contains('403')) {
-        msg = 'الحساب مرتبط بجهاز آخر';
-      }
-      Get.snackbar('خطأ', msg, backgroundColor: Colors.red, colorText: Colors.white);
+      Get.snackbar('خطأ', apiErrorMessage(e), backgroundColor: Colors.red, colorText: Colors.white);
     } finally {
       isLoading.value = false;
     }
@@ -123,11 +118,8 @@ class AuthController extends GetxController {
 
       Get.offAll(() => const StudentShell());
     } catch (e) {
-      String msg = 'حدث خطأ أثناء التسجيل';
-      if (e.toString().contains('409') || e.toString().contains('already')) {
-        msg = 'اسم المستخدم مستخدم بالفعل';
-      }
-      Get.snackbar('خطأ', msg, backgroundColor: Colors.red, colorText: Colors.white);
+      Get.snackbar('خطأ', apiErrorMessage(e, fallback: 'حدث خطأ أثناء التسجيل'),
+          backgroundColor: Colors.red, colorText: Colors.white);
     } finally {
       isLoading.value = false;
     }

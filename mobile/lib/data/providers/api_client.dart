@@ -2,7 +2,10 @@ import 'package:dio/dio.dart';
 import '../services/storage_service.dart';
 
 class ApiClient {
-  static const String baseUrl = 'http://172.20.20.111:3000/api';
+  static const String baseUrl = String.fromEnvironment(
+    'API_BASE',
+    defaultValue: 'http://192.168.1.11:3000/api',
+  );
   static const Duration timeout = Duration(seconds: 30);
 
   late final Dio _dio;

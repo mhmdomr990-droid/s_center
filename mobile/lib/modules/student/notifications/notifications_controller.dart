@@ -24,7 +24,14 @@ class NotificationsController extends GetxController {
     try {
       final response = await _notificationProvider.getNotifications(limit: 50);
       final data = response.data['data'];
-      if (data is List) {
+      if (data is Map) {
+        final items = data['items'];
+        if (items is List) {
+          notifications.value = items.map<NotificationModel>((e) => NotificationModel.fromJson(e)).toList();
+        }
+        unreadCount.value = (data['unread_count'] as num?)?.toInt() ??
+            notifications.where((n) => !n.isRead).length;
+      } else if (data is List) {
         notifications.value = data.map<NotificationModel>((e) => NotificationModel.fromJson(e)).toList();
         unreadCount.value = notifications.where((n) => !n.isRead).length;
       }

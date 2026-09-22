@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../../../data/providers/api_client.dart';
+import '../../../data/providers/api_exception.dart';
 import '../../../data/providers/wallet_provider.dart';
 
 class TopupController extends GetxController {
@@ -48,9 +49,8 @@ class TopupController extends GetxController {
       Get.back();
       Get.snackbar('نجاح', 'تم إرسال طلب الشحن بنجاح', backgroundColor: Color(0xFF43A047), colorText: Color(0xFFFFFFFF));
     } catch (e) {
-      String msg = 'فشل إرسال الطلب';
-      if (e.toString().contains('already submitted')) msg = 'هذا التحويل مُرسل بالفعل';
-      Get.snackbar('خطأ', msg, backgroundColor: Color(0xFFE53935), colorText: Color(0xFFFFFFFF));
+      Get.snackbar('خطأ', apiErrorMessage(e, fallback: 'فشل إرسال الطلب'),
+          backgroundColor: Color(0xFFE53935), colorText: Color(0xFFFFFFFF));
     } finally {
       isLoading.value = false;
     }
