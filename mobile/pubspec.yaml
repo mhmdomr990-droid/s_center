@@ -1,0 +1,35 @@
+name: s_center
+description: "Student Center - Educational Platform App"
+publish_to: 'none'
+version: 1.0.0+1
+
+environment:
+  sdk: ^3.13.1
+
+dependencies:
+  flutter:
+    sdk: flutter
+  flutter_localizations:
+    sdk: flutter
+  cupertino_icons: ^1.0.8
+  get: ^4.6.6
+  dio: ^5.4.0
+  flutter_secure_storage: ^9.0.0
+  uuid: ^4.0.0
+  video_player: ^2.8.0
+  url_launcher: ^6.2.0
+  cached_network_image: ^3.3.0
+  fl_chart: ^0.66.0
+  shimmer: ^3.0.0
+  intl: ^0.20.3
+  google_fonts: ^6.1.0
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^6.0.0
+
+flutter:
+  uses-material-design: true
+  assets:
+    - assets/images/
