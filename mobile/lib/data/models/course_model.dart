@@ -12,6 +12,7 @@ class CourseModel {
   final bool isPublished;
   final int sortOrder;
   final int? purchasesCount;
+  final bool isPurchased;
 
   CourseModel({
     required this.id,
@@ -27,6 +28,7 @@ class CourseModel {
     required this.isPublished,
     required this.sortOrder,
     this.purchasesCount,
+    this.isPurchased = false,
   });
 
   factory CourseModel.fromJson(Map<String, dynamic> json) {
@@ -44,6 +46,7 @@ class CourseModel {
       isPublished: json['is_published'] ?? true,
       sortOrder: json['sort_order'] ?? 0,
       purchasesCount: json['purchases_count'],
+      isPurchased: json['purchased'] ?? false,
     );
   }
 }

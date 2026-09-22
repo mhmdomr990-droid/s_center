@@ -13,6 +13,50 @@ import 'courses_controller.dart';
 class CourseDetailPage extends StatelessWidget {
   const CourseDetailPage({super.key});
 
+  void _confirmPurchase(BuildContext context, CoursesController ctrl, CourseModel course) {
+    Get.dialog(
+      AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: Row(
+          children: [
+            const Icon(Icons.warning_amber_rounded, color: AppColors.error),
+            const SizedBox(width: 8),
+            const Text('تأكيد الشراء'),
+          ],
+        ),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text('هل تريد فعلاً شراء "${course.name}" مقابل ${course.price} SYP؟'),
+            const SizedBox(height: 12),
+            const Text(
+              'لا يمكن التراجع عن العملية بعد التأكيد.',
+              style: TextStyle(color: AppColors.error, fontWeight: FontWeight.w600),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Get.back(),
+            child: const Text('إلغاء'),
+          ),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppColors.primary,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+            ),
+            onPressed: () {
+              Get.back();
+              ctrl.purchaseCourse(course.id);
+            },
+            child: const Text('تأكيد الشراء', style: TextStyle(color: Colors.white)),
+          ),
+        ],
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final args = Get.arguments as Map<String, dynamic>;
@@ -87,12 +131,22 @@ class CourseDetailPage extends StatelessWidget {
                   Text(course.description!, style: AppTextStyles.bodyMedium.copyWith(color: AppColors.textSecondary)),
                   const SizedBox(height: 20),
                 ],
-                Obx(() => CustomButton(
-                  text: ctrl.isPurchasing.value ? 'جاري الشراء...' : 'شراء الدورة - ${course.price} SYP',
-                  isLoading: ctrl.isPurchasing.value,
-                  onPressed: () => ctrl.purchaseCourse(courseId),
-                  icon: Icons.shopping_cart_outlined,
-                )),
+                Obx(() {
+                  if (ctrl.isPurchased(courseId) || course.isPurchased) {
+                    return CustomButton(
+                      text: '✔ لقد اشتريت هذه الدورة',
+                      backgroundColor: const Color(0xFF43A047),
+                      onPressed: null,
+                      icon: Icons.check_circle_outline,
+                    );
+                  }
+                  return CustomButton(
+                    text: ctrl.isPurchasing.value ? 'جاري الشراء...' : 'شراء الدورة - ${course.price} SYP',
+                    isLoading: ctrl.isPurchasing.value,
+                    onPressed: () => _confirmPurchase(context, ctrl, course),
+                    icon: Icons.shopping_cart_outlined,
+                  );
+                }),
                 const SizedBox(height: 24),
                 Obx(() {
                   if (ctrl.isLoadingDetail.value && ctrl.lectures.isEmpty && ctrl.detailError.value == null) {

@@ -30,8 +30,8 @@ class CourseCard extends StatelessWidget {
     return GestureDetector(
       onTap: onTap,
       child: Container(
-        margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
-        padding: const EdgeInsets.all(16),
+        margin: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+        padding: const EdgeInsets.all(8),
         decoration: BoxDecoration(
           color: AppColors.surface,
           borderRadius: BorderRadius.circular(16),
@@ -43,53 +43,83 @@ class CourseCard extends StatelessWidget {
             ),
           ],
         ),
-        child: Row(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisSize: MainAxisSize.min,
           children: [
-            Container(
-              width: 50,
-              height: 50,
-              decoration: BoxDecoration(
-                color: AppColors.primary.withValues(alpha: 0.1),
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: const Icon(Icons.school, color: AppColors.primary, size: 26),
-            ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(name, style: AppTextStyles.titleMedium, maxLines: 1, overflow: TextOverflow.ellipsis),
-                  const SizedBox(height: 4),
-                  Row(
+            Row(
+              children: [
+                Container(
+                  width: 50,
+                  height: 50,
+                  decoration: BoxDecoration(
+                    color: AppColors.primary.withValues(alpha: 0.1),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: const Icon(Icons.school, color: AppColors.primary, size: 26),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
+                      Text(name, style: AppTextStyles.titleMedium, maxLines: 2, overflow: TextOverflow.ellipsis),
                       if (teacherName != null) ...[
-                        Icon(Icons.person_outline, size: 14, color: AppColors.textSecondary),
-                        const SizedBox(width: 4),
-                        Text(teacherName!, style: AppTextStyles.caption, maxLines: 1, overflow: TextOverflow.ellipsis),
-                        const SizedBox(width: 8),
+                        const SizedBox(height: 4),
+                        Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            const Icon(Icons.person_outline, size: 14, color: AppColors.textSecondary),
+                            const SizedBox(width: 4),
+                            Flexible(
+                              child: Text(teacherName!,
+                                  style: AppTextStyles.caption,
+                                  softWrap: true),
+                            ),
+                          ],
+                        ),
                       ],
-                      Icon(Icons.book_outlined, size: 14, color: AppColors.textSecondary),
-                      const SizedBox(width: 4),
-                      Text('$specialization - السنة $year', style: AppTextStyles.caption),
                     ],
                   ),
+                ),
+                const SizedBox(width: 8),
+                Flexible(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.end,
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text('$price SYP',
+                          style: GoogleFonts.cairo(
+                              fontWeight: FontWeight.bold, color: AppColors.primary, fontSize: 14),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis),
+                      if (lecturesCount != null)
+                        Text('$lecturesCount محاضرة',
+                            style: AppTextStyles.caption,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis),
+                    ],
+                  ),
+                ),
+                if (trailing != null) ...[
+                  const SizedBox(width: 8),
+                  trailing!,
                 ],
-              ),
-            ),
-            const SizedBox(width: 8),
-            Column(
-              crossAxisAlignment: CrossAxisAlignment.end,
-              children: [
-                Text('$price SYP', style: GoogleFonts.cairo(fontWeight: FontWeight.bold, color: AppColors.primary, fontSize: 14)),
-                if (lecturesCount != null)
-                  Text('$lecturesCount محاضرة', style: AppTextStyles.caption),
               ],
             ),
-            if (trailing != null) ...[
-              const SizedBox(width: 8),
-              trailing!,
-            ],
+            const SizedBox(height: 6),
+            Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const Icon(Icons.book_outlined, size: 14, color: AppColors.textSecondary),
+                const SizedBox(width: 4),
+                Expanded(
+                  child: Text('$specialization - السنة $year',
+                      style: AppTextStyles.caption,
+                      softWrap: true),
+                ),
+              ],
+            ),
           ],
         ),
       ),

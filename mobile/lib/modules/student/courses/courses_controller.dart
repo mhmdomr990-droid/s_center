@@ -16,6 +16,8 @@ class CoursesController extends GetxController {
       : _catalogProvider = CatalogProvider(Get.find<ApiClient>()),
         _purchaseProvider = PurchaseProvider(Get.find<ApiClient>());
 
+  static const List<int> availableYears = [1, 2, 3, 4, 5];
+
   final isLoading = true.obs;
   final isLoadingDetail = false.obs;
   final isPurchasing = false.obs;
@@ -26,6 +28,22 @@ class CoursesController extends GetxController {
   final selectedSpecializationId = Rxn<int>();
   final selectedYear = Rxn<int>();
   final currentCourse = Rxn<CourseModel>();
+  final purchasedIds = <int>{}.obs;
+
+  Map<int, String> _specNames = {};
+
+  bool isPurchased(int courseId) => purchasedIds.contains(courseId);
+
+  String get filterTitle {
+    final specName = selectedSpecializationId.value == null
+        ? 'كل الاختصاصات'
+        : (specializations
+                .firstWhereOrNull((s) => s.id == selectedSpecializationId.value)
+                ?.name ??
+            'اختصاص');
+    final yearLabel = selectedYear.value == null ? 'كل السنوات' : 'السنة ${selectedYear.value}';
+    return '$specName — $yearLabel';
+  }
 
   @override
   void onInit() {
@@ -33,23 +51,39 @@ class CoursesController extends GetxController {
     loadCatalog();
   }
 
+  List<CourseModel> _parseCourses(dynamic courseData) {
+    if (courseData is! List) return [];
+    return courseData.map<CourseModel>((e) {
+      final json = Map<String, dynamic>.from(e as Map);
+      if ((json['specialization_name'] == null || json['specialization_name'] == '') &&
+          _specNames.containsKey(json['specialization_id'])) {
+        json['specialization_name'] = _specNames[json['specialization_id']];
+      }
+      final course = CourseModel.fromJson(json);
+      if (course.isPurchased) purchasedIds.add(course.id);
+      return course;
+    }).toList();
+  }
+
   Future<void> loadCatalog() async {
     isLoading.value = true;
     try {
       final results = await Future.wait([
         _catalogProvider.getSpecializations(),
-        _catalogProvider.getCourses(),
+        _catalogProvider.getCourses(
+          specializationId: selectedSpecializationId.value,
+          year: selectedYear.value,
+        ),
       ]);
 
       final specData = results[0].data['data'];
       if (specData is List) {
-        specializations.value = specData.map<SpecializationModel>((e) => SpecializationModel.fromJson(e)).toList();
+        specializations.value =
+            specData.map<SpecializationModel>((e) => SpecializationModel.fromJson(e)).toList();
+        _specNames = {for (final s in specializations) s.id: s.name};
       }
 
-      final courseData = results[1].data['data'];
-      if (courseData is List) {
-        courses.value = courseData.map<CourseModel>((e) => CourseModel.fromJson(e)).toList();
-      }
+      courses.value = _parseCourses(results[1].data['data']);
     } catch (e) {
       Get.snackbar('خطأ', apiErrorMessage(e, fallback: 'فشل تحميل الكتالوج'),
           backgroundColor: Color(0xFFE53935), colorText: Color(0xFFFFFFFF));
@@ -58,31 +92,40 @@ class CoursesController extends GetxController {
     }
   }
 
-  Future<void> filterBySpecialization(int? specId) async {
-    selectedSpecializationId.value = specId;
+  Future<void> applyFilters() async {
     isLoading.value = true;
     try {
       final response = await _catalogProvider.getCourses(
-        specializationId: specId,
+        specializationId: selectedSpecializationId.value,
         year: selectedYear.value,
       );
-      final courseData = response.data['data'];
-      if (courseData is List) {
-        courses.value = courseData.map<CourseModel>((e) => CourseModel.fromJson(e)).toList();
-      }
+      courses.value = _parseCourses(response.data['data']);
     } catch (e) {
-      // ignore
+      Get.snackbar('خطأ', apiErrorMessage(e, fallback: 'فشل تطبيق الفلتر'),
+          backgroundColor: Color(0xFFE53935), colorText: Color(0xFFFFFFFF));
     } finally {
       isLoading.value = false;
     }
   }
 
+  void selectSpecialization(int? specId) {
+    if (selectedSpecializationId.value == specId) return;
+    selectedSpecializationId.value = specId;
+    applyFilters();
+  }
+
+  void selectYear(int? year) {
+    if (selectedYear.value == year) return;
+    selectedYear.value = year;
+    applyFilters();
+  }
+
   Future<void> loadCourseDetail(int courseId, {CourseModel? course}) async {
-    // Show passed/instant data immediately — no refetch of all courses.
     if (course != null) {
       currentCourse.value = course;
     } else {
-      currentCourse.value = courses.firstWhereOrNull((c) => c.id == courseId) ?? currentCourse.value;
+      currentCourse.value =
+          courses.firstWhereOrNull((c) => c.id == courseId) ?? currentCourse.value;
     }
     lectures.clear();
     detailError.value = null;
@@ -95,17 +138,21 @@ class CoursesController extends GetxController {
       }
     } catch (e) {
       detailError.value = apiErrorMessage(e, fallback: 'فشل تحميل المحاضرات');
-      Get.snackbar('خطأ', detailError.value!, backgroundColor: Color(0xFFE53935), colorText: Color(0xFFFFFFFF));
+      Get.snackbar('خطأ', detailError.value!,
+          backgroundColor: Color(0xFFE53935), colorText: Color(0xFFFFFFFF));
     } finally {
       isLoadingDetail.value = false;
     }
   }
 
   Future<void> purchaseCourse(int courseId) async {
+    if (isPurchasing.value || isPurchased(courseId)) return;
     isPurchasing.value = true;
     try {
       await _purchaseProvider.purchaseCourse(courseId);
-      Get.snackbar('نجاح', 'تم شراء الدورة بنجاح', backgroundColor: Color(0xFF43A047), colorText: Color(0xFFFFFFFF));
+      purchasedIds.add(courseId);
+      Get.snackbar('نجاح', 'تم شراء الدورة بنجاح',
+          backgroundColor: Color(0xFF43A047), colorText: Color(0xFFFFFFFF));
       loadCourseDetail(courseId, course: currentCourse.value);
     } catch (e) {
       Get.snackbar('خطأ', apiErrorMessage(e, fallback: 'فشل الشراء'),

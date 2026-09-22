@@ -47,51 +47,77 @@ class HomePage extends StatelessWidget {
                       child: Text('دوراتي المشتراة', style: AppTextStyles.titleLarge),
                     ),
                     const SizedBox(height: 8),
-                    SizedBox(
-                      height: 100,
-                      child: ListView.builder(
-                        scrollDirection: Axis.horizontal,
-                        padding: const EdgeInsets.symmetric(horizontal: 12),
-                        itemCount: ctrl.myCourses.length,
-                        itemBuilder: (context, index) {
-                          final course = ctrl.myCourses[index];
-                          return GestureDetector(
-                            onTap: () => Get.toNamed(AppRoutes.courseDetail, arguments: {'courseId': course.courseId}),
-                            child: Container(
-                              width: 160,
-                              margin: const EdgeInsets.symmetric(horizontal: 4),
-                              padding: const EdgeInsets.all(14),
-                              decoration: BoxDecoration(
-                                color: AppColors.surface,
-                                borderRadius: BorderRadius.circular(14),
-                                boxShadow: [
-                                  BoxShadow(
-                                    color: Colors.black.withValues(alpha: 0.06),
-                                    blurRadius: 8,
-                                    offset: const Offset(0, 3),
-                                  ),
-                                ],
-                              ),
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Container(
-                                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                                    decoration: BoxDecoration(
-                                      color: AppColors.primary.withValues(alpha: 0.1),
-                                      borderRadius: BorderRadius.circular(6),
+                    SingleChildScrollView(
+                      scrollDirection: Axis.horizontal,
+                      padding: const EdgeInsets.symmetric(horizontal: 12),
+                      child: IntrinsicHeight(
+                        child: Row(
+                          crossAxisAlignment: CrossAxisAlignment.stretch,
+                          children: ctrl.myCourses.map((course) {
+                            return GestureDetector(
+                              onTap: () => Get.toNamed(AppRoutes.courseDetail,
+                                  arguments: {'courseId': course.courseId}),
+                              child: Container(
+                                width: 180,
+                                margin: const EdgeInsets.symmetric(horizontal: 4),
+                                padding: const EdgeInsets.all(12),
+                                decoration: BoxDecoration(
+                                  color: AppColors.surface,
+                                  borderRadius: BorderRadius.circular(14),
+                                  boxShadow: [
+                                    BoxShadow(
+                                      color: Colors.black.withValues(alpha: 0.06),
+                                      blurRadius: 8,
+                                      offset: const Offset(0, 3),
                                     ),
-                                    child: Text('مشتراة', style: TextStyle(fontSize: 10, color: AppColors.primary, fontWeight: FontWeight.w600)),
-                                  ),
-                                  const SizedBox(height: 8),
-                                  Text(course.courseName, style: AppTextStyles.bodyMedium.copyWith(fontWeight: FontWeight.w600), maxLines: 1, overflow: TextOverflow.ellipsis),
-                                  const SizedBox(height: 4),
-                                  Text('${course.pricePaid} SYP', style: GoogleFonts.cairo(fontSize: 12, color: AppColors.primary, fontWeight: FontWeight.w600)),
-                                ],
+                                  ],
+                                ),
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    Container(
+                                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                                      decoration: BoxDecoration(
+                                        color: AppColors.primary.withValues(alpha: 0.1),
+                                        borderRadius: BorderRadius.circular(6),
+                                      ),
+                                      child: Text('مشتراة',
+                                          style: TextStyle(
+                                              fontSize: 10,
+                                              color: AppColors.primary,
+                                              fontWeight: FontWeight.w600)),
+                                    ),
+                                    const SizedBox(height: 6),
+                                    Text(course.courseName,
+                                        style: AppTextStyles.bodyMedium
+                                            .copyWith(fontWeight: FontWeight.w600),
+                                        softWrap: true),
+                                    if (course.specializationName != null || course.year != null) ...[
+                                      const SizedBox(height: 3),
+                                      Text(
+                                        [
+                                          if (course.specializationName != null &&
+                                              course.specializationName!.isNotEmpty)
+                                            course.specializationName!,
+                                          if (course.year != null) 'السنة ${course.year}',
+                                        ].join(' • '),
+                                        style: AppTextStyles.caption.copyWith(fontSize: 11),
+                                        softWrap: true,
+                                      ),
+                                    ],
+                                    const SizedBox(height: 8),
+                                    Text('${course.pricePaid} SYP',
+                                        style: GoogleFonts.cairo(
+                                            fontSize: 12,
+                                            color: AppColors.primary,
+                                            fontWeight: FontWeight.w600)),
+                                  ],
+                                ),
                               ),
-                            ),
-                          );
-                        },
+                            );
+                          }).toList(),
+                        ),
                       ),
                     ),
                   ],
@@ -107,7 +133,8 @@ class HomePage extends StatelessWidget {
                     price: course.price,
                     specialization: course.specializationName,
                     year: course.year,
-                    onTap: () => Get.toNamed(AppRoutes.courseDetail, arguments: {'courseId': course.id}),
+                    onTap: () => Get.toNamed(AppRoutes.courseDetail,
+                        arguments: {'courseId': course.id, 'course': course}),
                   )),
                   const SizedBox(height: 16),
                 ],
