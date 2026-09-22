@@ -55,7 +55,7 @@ class CoursesPage extends StatelessWidget {
                             price: course.price,
                             specialization: course.specializationName,
                             year: course.year,
-                            onTap: () => Get.toNamed(AppRoutes.courseDetail, arguments: {'courseId': course.id}),
+                            onTap: () => Get.toNamed(AppRoutes.courseDetail, arguments: {'courseId': course.id, 'course': course}),
                           );
                         },
                       );

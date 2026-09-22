@@ -7,6 +7,7 @@ import '../../../app/routes/app_routes.dart';
 import '../../../widgets/custom_button.dart';
 import '../../../widgets/lecture_tile.dart';
 import '../../../widgets/loading_shimmer.dart';
+import '../../../data/models/course_model.dart';
 import 'courses_controller.dart';
 
 class CourseDetailPage extends StatelessWidget {
@@ -16,11 +17,14 @@ class CourseDetailPage extends StatelessWidget {
   Widget build(BuildContext context) {
     final args = Get.arguments as Map<String, dynamic>;
     final courseId = args['courseId'] as int;
+    final initialCourse = args['course'] as CourseModel?;
 
     return GetBuilder<CoursesController>(
       init: CoursesController(),
       initState: (_) {
-        Get.find<CoursesController>().loadCourseDetail(courseId);
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          Get.find<CoursesController>().loadCourseDetail(courseId, course: initialCourse);
+        });
       },
       builder: (ctrl) {
         return Scaffold(
@@ -31,10 +35,10 @@ class CourseDetailPage extends StatelessWidget {
             foregroundColor: Colors.white,
           ),
           body: Obx(() {
-            if (ctrl.isLoading.value) return const LoadingListShimmer();
+            final course = initialCourse ?? ctrl.currentCourse.value;
 
-            final course = ctrl.currentCourse.value;
             if (course == null) {
+              if (ctrl.isLoadingDetail.value) return const LoadingListShimmer();
               return const Center(child: Text('الدورة غير موجودة'));
             }
 
@@ -90,9 +94,31 @@ class CourseDetailPage extends StatelessWidget {
                   icon: Icons.shopping_cart_outlined,
                 )),
                 const SizedBox(height: 24),
-                Text('المحاضرات (${ctrl.lectures.length})', style: AppTextStyles.titleLarge),
+                Obx(() {
+                  if (ctrl.isLoadingDetail.value && ctrl.lectures.isEmpty && ctrl.detailError.value == null) {
+                    return const Padding(
+                      padding: EdgeInsets.symmetric(vertical: 24),
+                      child: Center(child: CircularProgressIndicator(color: AppColors.primary)),
+                    );
+                  }
+                  return Text('المحاضرات (${ctrl.lectures.length})', style: AppTextStyles.titleLarge);
+                }),
                 const SizedBox(height: 8),
-                if (ctrl.lectures.isEmpty)
+                if (ctrl.detailError.value != null && ctrl.lectures.isEmpty)
+                  Padding(
+                    padding: const EdgeInsets.all(16),
+                    child: Column(
+                      children: [
+                        Text(ctrl.detailError.value!, style: const TextStyle(color: AppColors.error)),
+                        const SizedBox(height: 8),
+                        TextButton(
+                          onPressed: () => ctrl.loadCourseDetail(courseId, course: initialCourse),
+                          child: const Text('إعادة المحاولة'),
+                        ),
+                      ],
+                    ),
+                  )
+                else if (ctrl.lectures.isEmpty && !ctrl.isLoadingDetail.value)
                   const Padding(
                     padding: EdgeInsets.all(16),
                     child: Text('لا توجد محاضرات بعد', style: TextStyle(color: AppColors.textSecondary)),

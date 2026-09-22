@@ -17,7 +17,9 @@ class CoursesController extends GetxController {
         _purchaseProvider = PurchaseProvider(Get.find<ApiClient>());
 
   final isLoading = true.obs;
+  final isLoadingDetail = false.obs;
   final isPurchasing = false.obs;
+  final detailError = Rxn<String>();
   final specializations = <SpecializationModel>[].obs;
   final courses = <CourseModel>[].obs;
   final lectures = <LectureModel>[].obs;
@@ -75,29 +77,27 @@ class CoursesController extends GetxController {
     }
   }
 
-  Future<void> loadCourseDetail(int courseId) async {
-    isLoading.value = true;
+  Future<void> loadCourseDetail(int courseId, {CourseModel? course}) async {
+    // Show passed/instant data immediately — no refetch of all courses.
+    if (course != null) {
+      currentCourse.value = course;
+    } else {
+      currentCourse.value = courses.firstWhereOrNull((c) => c.id == courseId) ?? currentCourse.value;
+    }
+    lectures.clear();
+    detailError.value = null;
+    isLoadingDetail.value = true;
     try {
-      final results = await Future.wait([
-        _catalogProvider.getCourses(),
-        _catalogProvider.getCourseLectures(courseId),
-      ]);
-
-      final courseData = results[0].data['data'];
-      if (courseData is List) {
-        final found = courseData.firstWhereOrNull((e) => (e['id'] ?? 0) == courseId);
-        if (found != null) currentCourse.value = CourseModel.fromJson(found);
-      }
-
-      final lectureData = results[1].data['data'];
+      final response = await _catalogProvider.getCourseLectures(courseId);
+      final lectureData = response.data['data'];
       if (lectureData is List) {
         lectures.value = lectureData.map<LectureModel>((e) => LectureModel.fromJson(e)).toList();
       }
     } catch (e) {
-      Get.snackbar('خطأ', apiErrorMessage(e, fallback: 'فشل تحميل تفاصيل الدورة'),
-          backgroundColor: Color(0xFFE53935), colorText: Color(0xFFFFFFFF));
+      detailError.value = apiErrorMessage(e, fallback: 'فشل تحميل المحاضرات');
+      Get.snackbar('خطأ', detailError.value!, backgroundColor: Color(0xFFE53935), colorText: Color(0xFFFFFFFF));
     } finally {
-      isLoading.value = false;
+      isLoadingDetail.value = false;
     }
   }
 
@@ -105,9 +105,8 @@ class CoursesController extends GetxController {
     isPurchasing.value = true;
     try {
       await _purchaseProvider.purchaseCourse(courseId);
-      Get.back();
       Get.snackbar('نجاح', 'تم شراء الدورة بنجاح', backgroundColor: Color(0xFF43A047), colorText: Color(0xFFFFFFFF));
-      loadCourseDetail(courseId);
+      loadCourseDetail(courseId, course: currentCourse.value);
     } catch (e) {
       Get.snackbar('خطأ', apiErrorMessage(e, fallback: 'فشل الشراء'),
           backgroundColor: Color(0xFFE53935), colorText: Color(0xFFFFFFFF));
