@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../app/theme/app_colors.dart';
 import '../app/theme/app_shadows.dart';
 import '../app/theme/app_text_styles.dart';
+import 'status_pill.dart';
 
 class LectureTile extends StatelessWidget {
   final int index;
@@ -52,7 +53,8 @@ class LectureTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final (typeIcon, typeColor) = _typeStyle;
-    return GestureDetector(
+    return RepaintBoundary(
+      child: GestureDetector(
       onTap: onTap,
       child: Container(
         margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 5),
@@ -102,39 +104,16 @@ class LectureTile extends StatelessWidget {
               ),
             ),
             if (isNew)
-              Container(
-                margin: const EdgeInsets.only(left: 6),
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                decoration: BoxDecoration(
-                  gradient: AppColors.primaryGradient,
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: const Text('جديد',
-                    style: TextStyle(
-                        fontSize: 10,
-                        color: Colors.white,
-                        fontWeight: FontWeight.w700)),
-              ),
+              const StatusPill(label: 'جديد', color: AppColors.primary, filled: true),
             if (!isPublished)
-              Container(
-                margin: const EdgeInsets.only(left: 6),
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                decoration: BoxDecoration(
-                  color: AppColors.warning.withValues(alpha: 0.12),
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: const Text('غير منشورة',
-                    style: TextStyle(
-                        fontSize: 10,
-                        color: AppColors.warning,
-                        fontWeight: FontWeight.w600)),
-              ),
+              const StatusPill(label: 'غير منشورة', color: AppColors.warning),
             const Icon(Icons.chevron_left_rounded,
                 size: 22, color: AppColors.textHint),
-            if (trailing != null) trailing!,
+            ?trailing,
           ],
         ),
       ),
+    ),
     );
   }
 }

@@ -10,6 +10,7 @@ import '../../../widgets/course_card.dart';
 import '../../../widgets/gradient_app_bar.dart';
 import '../../../widgets/loading_shimmer.dart';
 import '../../../widgets/section_header.dart';
+import '../../../utils/format.dart';
 import '../../../modules/student/notifications/notifications_controller.dart';
 import 'home_controller.dart';
 
@@ -60,23 +61,29 @@ class HomePage extends StatelessWidget {
                       Positioned(
                         top: 6,
                         left: 6,
-                        child: Container(
-                          padding: const EdgeInsets.symmetric(
-                              horizontal: 5, vertical: 1),
-                          constraints: const BoxConstraints(
-                              minWidth: 16, minHeight: 16),
-                          decoration: BoxDecoration(
-                            color: AppColors.error,
-                            borderRadius: BorderRadius.circular(10),
-                            border: Border.all(color: Colors.white, width: 1.5),
-                          ),
-                          child: Text(
-                            count > 99 ? '99+' : '$count',
-                            style: const TextStyle(
-                                color: Colors.white,
-                                fontSize: 9,
-                                fontWeight: FontWeight.bold),
-                            textAlign: TextAlign.center,
+                        child: AnimatedOpacity(
+                          opacity: count > 0 ? 1 : 0,
+                          duration: const Duration(milliseconds: 250),
+                          curve: Curves.easeOut,
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 5, vertical: 1),
+                            constraints: const BoxConstraints(
+                                minWidth: 16, minHeight: 16),
+                            decoration: BoxDecoration(
+                              color: AppColors.error,
+                              borderRadius: BorderRadius.circular(10),
+                              border:
+                                  Border.all(color: Colors.white, width: 1.5),
+                            ),
+                            child: Text(
+                              count > 99 ? '99+' : '$count',
+                              style: const TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 9,
+                                  fontWeight: FontWeight.bold),
+                              textAlign: TextAlign.center,
+                            ),
                           ),
                         ),
                       ),
@@ -87,8 +94,10 @@ class HomePage extends StatelessWidget {
             ],
           ),
           body: Obx(() {
-            if (ctrl.isLoading.value) {
-              return const LoadingListShimmer();
+            if (ctrl.isLoading.value &&
+                ctrl.latestCourses.isEmpty &&
+                ctrl.myCourses.isEmpty) {
+              return const CourseCardSkeleton();
             }
 
             return RefreshIndicator(
@@ -118,7 +127,8 @@ class HomePage extends StatelessWidget {
                         child: Row(
                           crossAxisAlignment: CrossAxisAlignment.stretch,
                           children: ctrl.myCourses.map((course) {
-                            return GestureDetector(
+                            return RepaintBoundary(
+                              child: GestureDetector(
                               onTap: () => Get.toNamed(AppRoutes.courseDetail,
                                   arguments: {'courseId': course.courseId}),
                               child: Container(
@@ -177,7 +187,7 @@ class HomePage extends StatelessWidget {
                                           CrossAxisAlignment.baseline,
                                       textBaseline: TextBaseline.alphabetic,
                                       children: [
-                                        Text(course.pricePaid,
+                                        Text(formatAmount(course.pricePaid),
                                             style: GoogleFonts.cairo(
                                                 fontSize: 14,
                                                 color: AppColors.primary,
@@ -192,7 +202,8 @@ class HomePage extends StatelessWidget {
                                   ],
                                 ),
                               ),
-                            );
+                            ),
+                          );
                           }).toList(),
                         ),
                       ),

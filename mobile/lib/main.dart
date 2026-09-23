@@ -9,6 +9,7 @@ import 'data/providers/api_client.dart';
 import 'data/services/storage_service.dart';
 import 'data/services/device_service.dart';
 import 'modules/auth/auth_controller.dart';
+import 'widgets/app_scroll_behavior.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -38,6 +39,7 @@ class SCenterApp extends StatelessWidget {
       title: 'Student Center',
       debugShowCheckedModeBanner: false,
       theme: AppTheme.lightTheme,
+      scrollBehavior: AppScrollBehavior(),
       locale: const Locale('ar'),
       supportedLocales: const [Locale('ar')],
       localizationsDelegates: const [

@@ -51,11 +51,13 @@ class NotificationsPage extends StatelessWidget {
             ],
           ),
           body: Obx(() {
-            if (ctrl.isLoading.value) return const LoadingListShimmer();
+            if (ctrl.isLoading.value && ctrl.notifications.isEmpty) {
+              return const NotificationRowSkeleton();
+            }
 
             if (ctrl.notifications.isEmpty) {
               return const EmptyState(
-                icon: Icons.notifications_none,
+                icon: Icons.notifications_none_rounded,
                 title: 'لا توجد إشعارات',
                 subtitle: 'ستظهر الإشعارات الجديدة هنا',
               );
@@ -68,9 +70,10 @@ class NotificationsPage extends StatelessWidget {
                 padding: const EdgeInsets.only(top: 8),
                 itemCount: ctrl.notifications.length,
                 itemBuilder: (context, index) {
-                          final notif = ctrl.notifications[index];
-                          final (notifIcon, notifColor) = _notifStyle(notif);
-                  return GestureDetector(
+                  final notif = ctrl.notifications[index];
+                  final (notifIcon, notifColor) = _notifStyle(notif);
+                  return RepaintBoundary(
+                    child: GestureDetector(
                     onTap: () {
                       if (!notif.isRead) ctrl.markAsRead(notif.id);
                     },
@@ -132,6 +135,7 @@ class NotificationsPage extends StatelessWidget {
                           ),
                         ],
                       ),
+                    ),
                     ),
                   );
                 },

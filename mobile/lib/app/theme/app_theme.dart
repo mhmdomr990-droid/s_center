@@ -12,6 +12,7 @@ class AppTheme {
       primaryColor: AppColors.primary,
       scaffoldBackgroundColor: AppColors.background,
       fontFamily: GoogleFonts.cairo().fontFamily,
+      iconTheme: const IconThemeData(size: 24, color: AppColors.textPrimary),
       colorScheme: const ColorScheme.light(
         primary: AppColors.primary,
         onPrimary: Colors.white,

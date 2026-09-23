@@ -11,6 +11,8 @@ import '../../../widgets/loading_shimmer.dart';
 import '../../../widgets/custom_button.dart';
 import '../../../widgets/section_header.dart';
 import '../../../widgets/empty_state.dart';
+import '../../../widgets/status_pill.dart';
+import '../../../utils/format.dart';
 import '../../../data/models/topup_request_model.dart';
 import 'wallet_controller.dart';
 
@@ -26,7 +28,11 @@ class WalletPage extends StatelessWidget {
           backgroundColor: AppColors.background,
           appBar: const GradientAppBar(title: 'المحفظة'),
           body: Obx(() {
-            if (ctrl.isLoading.value) return const LoadingListShimmer();
+            if (ctrl.isLoading.value &&
+                ctrl.transactions.isEmpty &&
+                ctrl.topupRequests.isEmpty) {
+              return const LoadingListShimmer();
+            }
 
             return RefreshIndicator(
               onRefresh: ctrl.loadWallet,
@@ -43,9 +49,9 @@ class WalletPage extends StatelessWidget {
                     padding: const EdgeInsets.symmetric(horizontal: 16),
                     child: Row(
                       children: [
-                        Expanded(child: StatCard(title: 'إجمالي الشحنات', value: '${ctrl.totalTopups.value} SYP', icon: Icons.add_circle_outline)),
+                        Expanded(child: StatCard(title: 'إجمالي الشحنات', value: '${formatAmount(ctrl.totalTopups.value)} SYP', icon: Icons.add_circle_outline_rounded)),
                         const SizedBox(width: 12),
-                        Expanded(child: StatCard(title: 'إجمالي المشتريات', value: '${ctrl.totalPurchases.value} SYP', icon: Icons.shopping_cart_outlined)),
+                        Expanded(child: StatCard(title: 'إجمالي المشتريات', value: '${formatAmount(ctrl.totalPurchases.value)} SYP', icon: Icons.shopping_cart_outlined)),
                       ],
                     ),
                   ),
@@ -83,18 +89,15 @@ class WalletPage extends StatelessWidget {
                   if (ctrl.transactions.isEmpty)
                     Padding(
                       padding: const EdgeInsets.all(32),
-                      child: Center(
-                        child: Column(
-                          children: [
-                            Icon(Icons.receipt_long, size: 48, color: AppColors.textHint),
-                            const SizedBox(height: 8),
-                            Text('لا توجد حركات بعد', style: AppTextStyles.bodyMedium.copyWith(color: AppColors.textSecondary)),
-                          ],
-                        ),
+                      child: EmptyState(
+                        icon: Icons.receipt_long_rounded,
+                        title: 'لا توجد حركات بعد',
+                        subtitle: 'ستظهر حركات المحفظة هنا',
                       ),
                     )
                   else
-                    ...ctrl.transactions.map((tx) => Container(
+                    ...ctrl.transactions.map((tx) => RepaintBoundary(
+                      child: Container(
                       margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
                       padding: const EdgeInsets.all(14),
                       decoration: BoxDecoration(
@@ -132,7 +135,7 @@ class WalletPage extends StatelessWidget {
                             ),
                           ),
                           Text(
-                            '${tx.isTopup ? '+' : '-'}${tx.amount}',
+                            '${tx.isTopup ? '+' : '-'}${formatAmount(tx.amount)}',
                             style: GoogleFonts.cairo(
                               fontWeight: FontWeight.bold,
                               fontSize: 15,
@@ -141,6 +144,7 @@ class WalletPage extends StatelessWidget {
                           ),
                         ],
                       ),
+                    ),
                     )),
                   if (ctrl.hasMoreTransactions)
                     Padding(
@@ -169,7 +173,8 @@ class WalletPage extends StatelessWidget {
       _ => ('معلّق المراجعة', AppColors.warning),
     };
 
-    return Container(
+    return RepaintBoundary(
+      child: Container(
       margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
@@ -204,23 +209,14 @@ class WalletPage extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text('${req.amount} SYP', style: AppTextStyles.bodyMedium.copyWith(fontWeight: FontWeight.w700)),
+                    Text('${formatAmount(req.amount)} SYP', style: AppTextStyles.bodyMedium.copyWith(fontWeight: FontWeight.w700)),
                     const SizedBox(height: 2),
                     Text('مرجع: ${req.referenceNumber} • ${req.senderName}',
                         style: AppTextStyles.caption, maxLines: 1, overflow: TextOverflow.ellipsis),
                   ],
                 ),
               ),
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                decoration: BoxDecoration(
-                  color: statusColor.withValues(alpha: 0.12),
-                  borderRadius: BorderRadius.circular(20),
-                ),
-                child: Text(statusLabel,
-                    style: GoogleFonts.cairo(
-                        fontSize: 11, fontWeight: FontWeight.w700, color: statusColor)),
-              ),
+              StatusPill(label: statusLabel, color: statusColor),
             ],
           ),
           if (req.rejectReason != null && req.rejectReason!.isNotEmpty) ...[
@@ -242,6 +238,7 @@ class WalletPage extends StatelessWidget {
           ],
         ],
       ),
+    ),
     );
   }
 }

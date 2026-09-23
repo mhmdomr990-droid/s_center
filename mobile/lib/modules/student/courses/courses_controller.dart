@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:get/get.dart';
 import '../../../data/providers/api_client.dart';
 import '../../../data/providers/api_exception.dart';
@@ -151,6 +151,7 @@ class CoursesController extends GetxController {
     try {
       await _purchaseProvider.purchaseCourse(courseId);
       purchasedIds.add(courseId);
+      HapticFeedback.lightImpact();
       Get.snackbar('نجاح', 'تم شراء الدورة بنجاح',
           backgroundColor: Color(0xFF43A047), colorText: Color(0xFFFFFFFF));
       loadCourseDetail(courseId, course: currentCourse.value);

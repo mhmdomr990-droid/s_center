@@ -19,7 +19,8 @@ class StatCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
+    return RepaintBoundary(
+      child: Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: AppColors.surface,
@@ -47,6 +48,7 @@ class StatCard extends StatelessWidget {
           Text(value, style: AppTextStyles.headlineMedium.copyWith(color: valueColor)),
         ],
       ),
+    ),
     );
   }
 }

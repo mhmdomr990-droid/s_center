@@ -10,6 +10,7 @@ import '../../../widgets/gradient_app_bar.dart';
 import '../../../widgets/lecture_tile.dart';
 import '../../../widgets/loading_shimmer.dart';
 import '../../../widgets/section_header.dart';
+import '../../../utils/format.dart';
 import '../../../data/models/course_model.dart';
 import 'courses_controller.dart';
 
@@ -31,7 +32,7 @@ class CourseDetailPage extends StatelessWidget {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text('هل تريد فعلاً شراء "${course.name}" مقابل ${course.price} SYP؟'),
+            Text('هل تريد فعلاً شراء "${course.name}" مقابل ${formatAmount(course.price)} SYP؟'),
             const SizedBox(height: 12),
             const Text(
               'لا يمكن التراجع عن العملية بعد التأكيد.',
@@ -111,7 +112,7 @@ class CourseDetailPage extends StatelessWidget {
                 return CustomButton(
                   text: ctrl.isPurchasing.value
                       ? 'جاري الشراء...'
-                      : 'شراء الدورة${course != null ? ' - ${course.price} SYP' : ''}',
+                      : 'شراء الدورة${course != null ? ' - ${formatAmount(course.price)} SYP' : ''}',
                   isLoading: ctrl.isPurchasing.value,
                   onPressed: () {
                     if (course == null) return;
@@ -205,7 +206,7 @@ class CourseDetailPage extends StatelessWidget {
                             const SizedBox(height: 8),
                             Row(
                               children: [
-                                const Icon(Icons.person,
+                                const Icon(Icons.person_rounded,
                                     color: Colors.white70, size: 18),
                                 const SizedBox(width: 6),
                                 Text(course.teacherName!,
@@ -215,20 +216,26 @@ class CourseDetailPage extends StatelessWidget {
                             ),
                           ],
                           const SizedBox(height: 12),
-                          Row(
-                            crossAxisAlignment: CrossAxisAlignment.baseline,
-                            textBaseline: TextBaseline.alphabetic,
-                            children: [
-                              Text(course.price,
-                                  style: GoogleFonts.cairo(
-                                      fontSize: 28,
-                                      fontWeight: FontWeight.bold,
-                                      color: Colors.white)),
-                              const SizedBox(width: 6),
-                              const Text('SYP',
-                                  style: TextStyle(
-                                      color: Colors.white70, fontSize: 14)),
-                            ],
+                          Hero(
+                            tag: 'course-price-$courseId',
+                            child: Material(
+                              type: MaterialType.transparency,
+                              child: Row(
+                                crossAxisAlignment: CrossAxisAlignment.baseline,
+                                textBaseline: TextBaseline.alphabetic,
+                                children: [
+                                  Text(formatAmount(course.price),
+                                      style: GoogleFonts.cairo(
+                                          fontSize: 28,
+                                          fontWeight: FontWeight.bold,
+                                          color: Colors.white)),
+                                  const SizedBox(width: 6),
+                                  const Text('SYP',
+                                      style: TextStyle(
+                                          color: Colors.white70, fontSize: 14)),
+                                ],
+                              ),
+                            ),
                           ),
                         ],
                       ),

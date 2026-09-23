@@ -1,8 +1,8 @@
 import 'package:get/get.dart';
-import 'package:intl/intl.dart';
 import '../../../data/providers/api_client.dart';
 import '../../../data/providers/notification_provider.dart';
 import '../../../data/models/notification_model.dart';
+import '../../../utils/format.dart';
 
 class NotificationsController extends GetxController {
   final NotificationProvider _notificationProvider;
@@ -84,8 +84,5 @@ class NotificationsController extends GetxController {
     } catch (_) {}
   }
 
-  String formatDate(DateTime? date) {
-    if (date == null) return '';
-    return DateFormat('yyyy/MM/dd - HH:mm', 'ar').format(date);
-  }
+  String formatDate(DateTime? date) => formatArabicDate(date);
 }

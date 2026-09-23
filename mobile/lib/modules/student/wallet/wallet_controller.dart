@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:intl/intl.dart';
 import '../../../data/providers/api_client.dart';
 import '../../../data/providers/api_exception.dart';
 import '../../../data/providers/wallet_provider.dart';
 import '../../../data/models/transaction_model.dart';
 import '../../../data/models/topup_request_model.dart';
+import '../../../utils/format.dart';
 
 class WalletController extends GetxController {
   final WalletProvider _walletProvider;
@@ -108,8 +108,5 @@ class WalletController extends GetxController {
     totalPurchases.value = purchaseSum.toStringAsFixed(2);
   }
 
-  String formatDate(DateTime? date) {
-    if (date == null) return '';
-    return DateFormat('yyyy/MM/dd - HH:mm', 'ar').format(date);
-  }
+  String formatDate(DateTime? date) => formatArabicDate(date);
 }

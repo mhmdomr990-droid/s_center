@@ -20,7 +20,9 @@ class CoursesPage extends StatelessWidget {
           backgroundColor: AppColors.background,
           appBar: const GradientAppBar(title: 'الدورات'),
           body: Obx(() {
-            if (ctrl.isLoading.value) return const LoadingListShimmer();
+            if (ctrl.isLoading.value && ctrl.courses.isEmpty) {
+              return const CourseCardSkeleton();
+            }
 
             return RefreshIndicator(
               onRefresh: ctrl.loadCatalog,

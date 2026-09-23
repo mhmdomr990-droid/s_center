@@ -38,7 +38,7 @@ class SectionHeader extends StatelessWidget {
           Expanded(
             child: Text(title, style: AppTextStyles.titleLarge),
           ),
-          if (trailing != null) trailing!,
+          ?trailing,
           if (actionLabel != null)
             GestureDetector(
               onTap: onAction,

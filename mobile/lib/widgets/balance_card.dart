@@ -3,6 +3,7 @@ import 'package:google_fonts/google_fonts.dart';
 import '../app/theme/app_colors.dart';
 import '../app/theme/app_shadows.dart';
 import '../app/theme/app_text_styles.dart';
+import '../utils/format.dart';
 
 class BalanceCard extends StatelessWidget {
   final String balance;
@@ -63,7 +64,7 @@ class BalanceCard extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.baseline,
                 textBaseline: TextBaseline.alphabetic,
                 children: [
-                  Text(balance, style: AppTextStyles.balanceLarge),
+                  Text(formatAmount(balance), style: AppTextStyles.balanceLarge),
                   const SizedBox(width: 8),
                   Text('SYP', style: AppTextStyles.balanceLabel),
                 ],
