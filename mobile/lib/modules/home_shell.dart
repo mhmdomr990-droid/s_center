@@ -20,19 +20,17 @@ class StudentShell extends StatelessWidget {
     final currentIndex = 0.obs;
     Get.put(NotificationsController(), permanent: false);
 
-    final pages = [
-      const HomePage(),
-      const CoursesPage(),
-      const NotificationsPage(),
-      const WalletPage(),
-      const ProfilePage(),
-    ];
-
     return Obx(() {
-      final themeMode = Get.find<ThemeController>().themeMode.value;
+      final _ = Get.find<ThemeController>().themeMode.value;
+      final pages = [
+        HomePage(),
+        CoursesPage(),
+        NotificationsPage(),
+        WalletPage(),
+        ProfilePage(),
+      ];
       return Scaffold(
         body: IndexedStack(
-          key: ValueKey('student-$themeMode'),
           index: currentIndex.value,
           children: pages,
         ),
@@ -155,17 +153,15 @@ class TeacherShell extends StatelessWidget {
   Widget build(BuildContext context) {
     final currentIndex = 0.obs;
 
-    final pages = [
-      const TeacherHomePage(),
-      const TeacherCoursesPage(),
-      const EarningsPage(),
-    ];
-
     return Obx(() {
-      final themeMode = Get.find<ThemeController>().themeMode.value;
+      final _ = Get.find<ThemeController>().themeMode.value;
+      final pages = [
+        TeacherHomePage(),
+        TeacherCoursesPage(),
+        EarningsPage(),
+      ];
       return Scaffold(
         body: IndexedStack(
-          key: ValueKey('teacher-$themeMode'),
           index: currentIndex.value,
           children: pages,
         ),
