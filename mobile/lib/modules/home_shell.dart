@@ -40,7 +40,7 @@ class StudentShell extends StatelessWidget {
           decoration: BoxDecoration(
             color: AppColors.bottomNavBg,
             boxShadow: [
-              BoxShadow(color: Colors.black.withValues(alpha: 0.08), blurRadius: 12, offset: const Offset(0, -4)),
+              BoxShadow(color: Colors.black.withValues(alpha: 0.10), blurRadius: 14, offset: const Offset(0, -4)),
             ],
           ),
           child: SafeArea(
@@ -173,7 +173,7 @@ class TeacherShell extends StatelessWidget {
           decoration: BoxDecoration(
             color: AppColors.bottomNavBg,
             boxShadow: [
-              BoxShadow(color: Colors.black.withValues(alpha: 0.08), blurRadius: 12, offset: const Offset(0, -4)),
+              BoxShadow(color: Colors.black.withValues(alpha: 0.10), blurRadius: 14, offset: const Offset(0, -4)),
             ],
           ),
           child: SafeArea(

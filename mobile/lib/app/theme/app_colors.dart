@@ -22,7 +22,7 @@ class AppColors {
   static Color divider = const Color(0xFFE0E0E0);
   static Color shimmerBase = const Color(0xFFE0E0E0);
   static Color shimmerHighlight = const Color(0xFFF5F5F5);
-  static Color bottomNavBg = const Color(0xFFFFFFFF);
+  static Color bottomNavBg = const Color(0xFFEFF7F1);
   static Color bottomNavSelected = const Color(0xFF2E7D32);
   static Color bottomNavUnselected = const Color(0xFFBDBDBD);
 
@@ -39,7 +39,7 @@ class AppColors {
       divider = const Color(0xFF2C322E);
       shimmerBase = const Color(0xFF2A2E2C);
       shimmerHighlight = const Color(0xFF3A3F3C);
-      bottomNavBg = const Color(0xFF1C211E);
+      bottomNavBg = const Color(0xFF1A2A1F);
       bottomNavSelected = const Color(0xFF66BB6A);
       bottomNavUnselected = const Color(0xFF6E766F);
       primaryGradient = const LinearGradient(
@@ -64,7 +64,7 @@ class AppColors {
       divider = const Color(0xFFE0E0E0);
       shimmerBase = const Color(0xFFE0E0E0);
       shimmerHighlight = const Color(0xFFF5F5F5);
-      bottomNavBg = const Color(0xFFFFFFFF);
+      bottomNavBg = const Color(0xFFEFF7F1);
       bottomNavSelected = const Color(0xFF2E7D32);
       bottomNavUnselected = const Color(0xFFBDBDBD);
       primaryGradient = const LinearGradient(
