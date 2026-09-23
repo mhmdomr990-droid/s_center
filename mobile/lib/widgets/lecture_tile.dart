@@ -60,8 +60,9 @@ class LectureTile extends StatelessWidget {
         margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 5),
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
         decoration: BoxDecoration(
-          color: AppColors.surface,
+          color: AppColors.courseCard,
           borderRadius: BorderRadius.circular(14),
+          border: Border.all(color: AppColors.cardBorder),
           boxShadow: AppShadows.soft,
         ),
         child: Row(

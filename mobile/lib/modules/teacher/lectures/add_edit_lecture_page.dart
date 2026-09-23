@@ -105,10 +105,10 @@ class AddEditLecturePage extends StatelessWidget {
           duration: const Duration(milliseconds: 200),
           padding: const EdgeInsets.symmetric(vertical: 12),
           decoration: BoxDecoration(
-            color: isSelected ? AppColors.primary.withValues(alpha: 0.1) : AppColors.surface,
+            color: isSelected ? AppColors.primary.withValues(alpha: 0.1) : AppColors.courseCard,
             borderRadius: BorderRadius.circular(10),
             border: Border.all(
-              color: isSelected ? AppColors.primary : AppColors.divider,
+              color: isSelected ? AppColors.primary : AppColors.cardBorder,
               width: isSelected ? 2 : 1,
             ),
           ),

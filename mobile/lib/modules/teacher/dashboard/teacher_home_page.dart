@@ -72,9 +72,9 @@ class TeacherHomePage extends StatelessWidget {
                             margin: const EdgeInsets.symmetric(horizontal: 4),
                             padding: const EdgeInsets.symmetric(vertical: 10),
                             decoration: BoxDecoration(
-                              color: isSelected ? AppColors.primary : AppColors.surface,
+                              color: isSelected ? AppColors.primary : AppColors.courseCard,
                               borderRadius: BorderRadius.circular(10),
-                              border: Border.all(color: isSelected ? AppColors.primary : AppColors.divider),
+                              border: Border.all(color: isSelected ? AppColors.primary : AppColors.cardBorder),
                             ),
                             child: Center(
                               child: Text('$days يوم', style: TextStyle(
@@ -103,8 +103,9 @@ class TeacherHomePage extends StatelessWidget {
                         margin: const EdgeInsets.only(bottom: 8),
                         padding: const EdgeInsets.all(14),
                         decoration: BoxDecoration(
-                          color: AppColors.surface,
+                          color: AppColors.courseCard,
                           borderRadius: BorderRadius.circular(12),
+                          border: Border.all(color: AppColors.cardBorder),
                           boxShadow: [
                             BoxShadow(color: Colors.black.withValues(alpha: 0.05), blurRadius: 8, offset: const Offset(0, 3)),
                           ],

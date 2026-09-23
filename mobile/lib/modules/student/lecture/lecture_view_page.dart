@@ -63,7 +63,7 @@ class LectureViewPage extends StatelessWidget {
                 width: double.infinity,
                 padding: const EdgeInsets.all(20),
                 decoration: BoxDecoration(
-                  color: AppColors.surface,
+                  color: AppColors.courseCard,
                   borderRadius: BorderRadius.circular(16),
                   boxShadow: [
                     BoxShadow(color: Colors.black.withValues(alpha: 0.06), blurRadius: 10, offset: const Offset(0, 4)),
@@ -130,9 +130,9 @@ class LectureViewPage extends StatelessWidget {
                     width: double.infinity,
                     padding: const EdgeInsets.all(32),
                     decoration: BoxDecoration(
-                      color: AppColors.surface,
+                      color: AppColors.courseCard,
                       borderRadius: BorderRadius.circular(16),
-                      border: Border.all(color: AppColors.divider),
+                      border: Border.all(color: AppColors.cardBorder),
                     ),
                     child: Column(
                       children: [
@@ -148,9 +148,9 @@ class LectureViewPage extends StatelessWidget {
                   width: double.infinity,
                   padding: const EdgeInsets.all(20),
                   decoration: BoxDecoration(
-                    color: AppColors.surface,
+                    color: AppColors.courseCard,
                     borderRadius: BorderRadius.circular(16),
-                    border: Border.all(color: AppColors.divider),
+                    border: Border.all(color: AppColors.cardBorder),
                   ),
                   child: Text(lecture.content!, style: AppTextStyles.bodyLarge.copyWith(height: 1.8)),
                 )
@@ -159,8 +159,9 @@ class LectureViewPage extends StatelessWidget {
                   width: double.infinity,
                   padding: const EdgeInsets.all(32),
                   decoration: BoxDecoration(
-                    color: AppColors.surface,
+                    color: AppColors.courseCard,
                     borderRadius: BorderRadius.circular(16),
+                    border: Border.all(color: AppColors.cardBorder),
                   ),
                   child: Column(
                     children: [

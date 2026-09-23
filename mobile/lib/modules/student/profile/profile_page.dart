@@ -129,7 +129,7 @@ class ProfilePage extends StatelessWidget {
                       padding: const EdgeInsets.symmetric(
                           horizontal: 16, vertical: 4),
                       decoration: BoxDecoration(
-                        color: AppColors.surface,
+                        color: AppColors.courseCard,
                         borderRadius: BorderRadius.circular(16),
                         border: Border.all(color: AppColors.cardBorder),
                         boxShadow: AppShadows.soft,
@@ -164,7 +164,7 @@ class ProfilePage extends StatelessWidget {
                     child: Container(
                       padding: const EdgeInsets.all(16),
                       decoration: BoxDecoration(
-                        color: AppColors.surface,
+                        color: AppColors.courseCard,
                         borderRadius: BorderRadius.circular(16),
                         border: Border.all(color: AppColors.cardBorder),
                         boxShadow: AppShadows.soft,
@@ -247,7 +247,7 @@ class ProfilePage extends StatelessWidget {
                     child: Container(
                       padding: const EdgeInsets.all(16),
                       decoration: BoxDecoration(
-                        color: AppColors.surface,
+                        color: AppColors.courseCard,
                         borderRadius: BorderRadius.circular(16),
                         border: Border.all(color: AppColors.cardBorder),
                         boxShadow: AppShadows.soft,

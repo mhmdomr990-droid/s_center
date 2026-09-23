@@ -42,8 +42,9 @@ class TeacherCoursesPage extends StatelessWidget {
                       margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
                       padding: const EdgeInsets.all(16),
                       decoration: BoxDecoration(
-                        color: AppColors.surface,
+                        color: AppColors.courseCard,
                         borderRadius: BorderRadius.circular(14),
+                        border: Border.all(color: AppColors.cardBorder),
                         boxShadow: [
                           BoxShadow(color: Colors.black.withValues(alpha: 0.05), blurRadius: 8, offset: const Offset(0, 3)),
                         ],

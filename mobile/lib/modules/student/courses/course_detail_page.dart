@@ -87,7 +87,7 @@ class CourseDetailPage extends StatelessWidget {
             child: Container(
               padding: const EdgeInsets.fromLTRB(16, 10, 16, 12),
               decoration: BoxDecoration(
-                color: AppColors.surface,
+                color: AppColors.courseCard,
                 borderRadius: const BorderRadius.vertical(top: Radius.circular(18)),
                 boxShadow: [
                   BoxShadow(

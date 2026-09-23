@@ -66,9 +66,9 @@ class EarningsPage extends StatelessWidget {
                       margin: const EdgeInsets.only(bottom: 8),
                       padding: const EdgeInsets.all(14),
                       decoration: BoxDecoration(
-                        color: AppColors.surface,
+                        color: AppColors.courseCard,
                         borderRadius: BorderRadius.circular(12),
-                        border: Border.all(color: AppColors.divider.withValues(alpha: 0.5)),
+                        border: Border.all(color: AppColors.cardBorder),
                       ),
                       child: Row(
                         children: [
