@@ -3,6 +3,7 @@ import 'package:get/get.dart';
 import '../../../app/theme/app_colors.dart';
 import '../../../widgets/custom_button.dart';
 import '../../../widgets/custom_text_field.dart';
+import '../../../widgets/gradient_app_bar.dart';
 import '../courses/teacher_courses_controller.dart';
 
 class AddEditLecturePage extends StatelessWidget {
@@ -20,7 +21,7 @@ class AddEditLecturePage extends StatelessWidget {
 
     return Scaffold(
       backgroundColor: AppColors.background,
-      appBar: AppBar(title: const Text('إضافة محاضرة')),
+      appBar: const GradientAppBar(title: 'إضافة محاضرة'),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16),
         child: Column(

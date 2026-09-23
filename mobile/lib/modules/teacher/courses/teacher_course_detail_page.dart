@@ -5,6 +5,7 @@ import '../../../app/theme/app_text_styles.dart';
 import '../../../app/routes/app_routes.dart';
 import '../../../widgets/lecture_tile.dart';
 import '../../../widgets/loading_shimmer.dart';
+import '../../../widgets/gradient_app_bar.dart';
 import 'teacher_courses_controller.dart';
 
 class TeacherCourseDetailPage extends StatelessWidget {
@@ -22,8 +23,8 @@ class TeacherCourseDetailPage extends StatelessWidget {
       builder: (ctrl) {
         return Scaffold(
           backgroundColor: AppColors.background,
-          appBar: AppBar(
-            title: const Text('تفاصيل الدورة'),
+          appBar: GradientAppBar(
+            title: 'تفاصيل الدورة',
             actions: [
               IconButton(
                 icon: const Icon(Icons.add),

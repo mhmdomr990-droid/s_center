@@ -4,6 +4,7 @@ import '../../../app/theme/app_colors.dart';
 import '../../../app/routes/app_routes.dart';
 import '../../../widgets/loading_shimmer.dart';
 import '../../../widgets/empty_state.dart';
+import '../../../widgets/gradient_app_bar.dart';
 import 'teacher_courses_controller.dart';
 
 class TeacherCoursesPage extends StatelessWidget {
@@ -19,7 +20,7 @@ class TeacherCoursesPage extends StatelessWidget {
       builder: (ctrl) {
         return Scaffold(
           backgroundColor: AppColors.background,
-          appBar: AppBar(title: const Text('دوراتي')),
+          appBar: const GradientAppBar(title: 'دوراتي'),
           body: Obx(() {
             if (ctrl.isLoading.value) return const LoadingListShimmer();
 

@@ -5,6 +5,7 @@ import '../../../app/theme/app_colors.dart';
 import '../../../app/theme/app_text_styles.dart';
 import '../../../app/routes/app_routes.dart';
 import '../../../widgets/loading_shimmer.dart';
+import '../../../widgets/gradient_app_bar.dart';
 import 'teacher_home_controller.dart';
 
 class TeacherHomePage extends StatelessWidget {
@@ -17,7 +18,7 @@ class TeacherHomePage extends StatelessWidget {
       builder: (ctrl) {
         return Scaffold(
           backgroundColor: AppColors.background,
-          appBar: AppBar(title: const Text('لوحة التحكم')),
+          appBar: const GradientAppBar(title: 'لوحة التحكم'),
           body: Obx(() {
             if (ctrl.isLoading.value) return const LoadingListShimmer();
 

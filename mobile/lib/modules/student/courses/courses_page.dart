@@ -29,49 +29,56 @@ class CoursesPage extends StatelessWidget {
               color: AppColors.primary,
               child: Column(
                 children: [
-                  const SizedBox(height: 12),
-                  SizedBox(
-                    height: 42,
-                    child: Obx(() => ListView(
-                      scrollDirection: Axis.horizontal,
-                      padding: const EdgeInsets.symmetric(horizontal: 12),
+                  Container(
+                    color: AppColors.sectionStrip,
+                    padding: const EdgeInsets.symmetric(vertical: 10),
+                    child: Column(
                       children: [
-                        _buildFilterChip(
-                          ctrl,
-                          'الكل',
-                          ctrl.selectedSpecializationId.value == null,
-                          () => ctrl.selectSpecialization(null),
+                        SizedBox(
+                          height: 42,
+                          child: Obx(() => ListView(
+                            scrollDirection: Axis.horizontal,
+                            padding: const EdgeInsets.symmetric(horizontal: 12),
+                            children: [
+                              _buildFilterChip(
+                                ctrl,
+                                'الكل',
+                                ctrl.selectedSpecializationId.value == null,
+                                () => ctrl.selectSpecialization(null),
+                              ),
+                              ...ctrl.specializations.map((spec) => _buildFilterChip(
+                                    ctrl,
+                                    spec.name,
+                                    ctrl.selectedSpecializationId.value == spec.id,
+                                    () => ctrl.selectSpecialization(spec.id),
+                                  )),
+                            ],
+                          )),
                         ),
-                        ...ctrl.specializations.map((spec) => _buildFilterChip(
-                              ctrl,
-                              spec.name,
-                              ctrl.selectedSpecializationId.value == spec.id,
-                              () => ctrl.selectSpecialization(spec.id),
-                            )),
-                      ],
-                    )),
-                  ),
-                  const SizedBox(height: 8),
-                  SizedBox(
-                    height: 38,
-                    child: Obx(() => ListView(
-                      scrollDirection: Axis.horizontal,
-                      padding: const EdgeInsets.symmetric(horizontal: 12),
-                      children: [
-                        _buildYearChip(
-                          ctrl,
-                          'كل السنوات',
-                          ctrl.selectedYear.value == null,
-                          () => ctrl.selectYear(null),
+                        const SizedBox(height: 8),
+                        SizedBox(
+                          height: 38,
+                          child: Obx(() => ListView(
+                            scrollDirection: Axis.horizontal,
+                            padding: const EdgeInsets.symmetric(horizontal: 12),
+                            children: [
+                              _buildYearChip(
+                                ctrl,
+                                'كل السنوات',
+                                ctrl.selectedYear.value == null,
+                                () => ctrl.selectYear(null),
+                              ),
+                              ...CoursesController.availableYears.map((year) => _buildYearChip(
+                                    ctrl,
+                                    'السنة $year',
+                                    ctrl.selectedYear.value == year,
+                                    () => ctrl.selectYear(year),
+                                  )),
+                            ],
+                          )),
                         ),
-                        ...CoursesController.availableYears.map((year) => _buildYearChip(
-                              ctrl,
-                              'السنة $year',
-                              ctrl.selectedYear.value == year,
-                              () => ctrl.selectYear(year),
-                            )),
                       ],
-                    )),
+                    ),
                   ),
                   const SizedBox(height: 8),
                   Padding(

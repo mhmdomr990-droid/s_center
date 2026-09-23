@@ -5,6 +5,7 @@ import '../../../app/theme/app_colors.dart';
 import '../../../app/theme/app_text_styles.dart';
 import '../../../widgets/loading_shimmer.dart';
 import '../../../widgets/empty_state.dart';
+import '../../../widgets/gradient_app_bar.dart';
 import 'earnings_controller.dart';
 
 class EarningsPage extends StatelessWidget {
@@ -17,7 +18,7 @@ class EarningsPage extends StatelessWidget {
       builder: (ctrl) {
         return Scaffold(
           backgroundColor: AppColors.background,
-          appBar: AppBar(title: const Text('الأرباح')),
+          appBar: const GradientAppBar(title: 'الأرباح'),
           body: Obx(() {
             if (ctrl.isLoading.value) return const LoadingListShimmer();
 
