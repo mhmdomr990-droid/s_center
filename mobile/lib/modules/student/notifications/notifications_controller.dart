@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:get/get.dart';
 import '../../../data/providers/api_client.dart';
 import '../../../data/providers/notification_provider.dart';
@@ -13,10 +15,37 @@ class NotificationsController extends GetxController {
   final notifications = <NotificationModel>[].obs;
   final unreadCount = 0.obs;
 
+  Timer? _pollTimer;
+
   @override
   void onInit() {
     super.onInit();
     loadNotifications();
+    _pollTimer = Timer.periodic(
+      const Duration(seconds: 30),
+      (_) => refreshUnreadCount(),
+    );
+  }
+
+  @override
+  void onClose() {
+    _pollTimer?.cancel();
+    super.onClose();
+  }
+
+  Future<void> refreshUnreadCount() async {
+    try {
+      final response = await _notificationProvider.getNotifications(limit: 1);
+      final data = response.data['data'];
+      if (data is Map) {
+        final count = (data['unread_count'] as num?)?.toInt();
+        if (count != null) {
+          unreadCount.value = count;
+        }
+      }
+    } catch (_) {
+      // ignore
+    }
   }
 
   Future<void> onTabOpened() async {

@@ -5,7 +5,7 @@ import '../models/user_model.dart';
 class StorageService {
   static const _tokenKey = 'auth_token';
   static const _userKey = 'user_data';
-  static const _themeKey = 'theme_mode';
+  static const _themeKey = 'theme_mode_v2';
 
   final FlutterSecureStorage _storage = const FlutterSecureStorage();
 

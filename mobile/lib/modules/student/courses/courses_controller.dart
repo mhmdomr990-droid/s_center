@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/services.dart';
 import 'package:get/get.dart';
 import '../../../data/providers/api_client.dart';
@@ -7,6 +9,7 @@ import '../../../data/providers/purchase_provider.dart';
 import '../../../data/models/specialization_model.dart';
 import '../../../data/models/course_model.dart';
 import '../../../data/models/lecture_model.dart';
+import '../notifications/notifications_controller.dart';
 
 class CoursesController extends GetxController {
   final CatalogProvider _catalogProvider;
@@ -154,6 +157,9 @@ class CoursesController extends GetxController {
       HapticFeedback.lightImpact();
       Get.snackbar('نجاح', 'تم شراء الدورة بنجاح',
           backgroundColor: Color(0xFF43A047), colorText: Color(0xFFFFFFFF));
+      if (Get.isRegistered<NotificationsController>()) {
+        unawaited(Get.find<NotificationsController>().refreshUnreadCount());
+      }
       loadCourseDetail(courseId, course: currentCourse.value);
     } catch (e) {
       Get.snackbar('خطأ', apiErrorMessage(e, fallback: 'فشل الشراء'),
