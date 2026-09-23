@@ -131,6 +131,7 @@ class ProfilePage extends StatelessWidget {
                       decoration: BoxDecoration(
                         color: AppColors.surface,
                         borderRadius: BorderRadius.circular(16),
+                        border: Border.all(color: AppColors.cardBorder),
                         boxShadow: AppShadows.soft,
                       ),
                       child: Obx(() {
@@ -165,6 +166,7 @@ class ProfilePage extends StatelessWidget {
                       decoration: BoxDecoration(
                         color: AppColors.surface,
                         borderRadius: BorderRadius.circular(16),
+                        border: Border.all(color: AppColors.cardBorder),
                         boxShadow: AppShadows.soft,
                       ),
                       child: Column(
@@ -247,6 +249,7 @@ class ProfilePage extends StatelessWidget {
                       decoration: BoxDecoration(
                         color: AppColors.surface,
                         borderRadius: BorderRadius.circular(16),
+                        border: Border.all(color: AppColors.cardBorder),
                         boxShadow: AppShadows.soft,
                       ),
                       child: Column(

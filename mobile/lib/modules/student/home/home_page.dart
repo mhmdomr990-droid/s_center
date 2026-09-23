@@ -139,6 +139,7 @@ class HomePage extends StatelessWidget {
                                 decoration: BoxDecoration(
                                   color: AppColors.courseCard,
                                   borderRadius: BorderRadius.circular(14),
+                                  border: Border.all(color: AppColors.cardBorder),
                                   boxShadow: AppShadows.soft,
                                 ),
                                 child: Column(

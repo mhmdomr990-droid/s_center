@@ -103,7 +103,7 @@ class WalletPage extends StatelessWidget {
                       decoration: BoxDecoration(
                         color: AppColors.courseCard,
                         borderRadius: BorderRadius.circular(12),
-                        border: Border.all(color: AppColors.divider.withValues(alpha: 0.5)),
+                        border: Border.all(color: AppColors.cardBorder),
                       ),
                       child: Row(
                         children: [

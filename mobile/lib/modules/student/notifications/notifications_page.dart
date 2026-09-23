@@ -84,7 +84,7 @@ class NotificationsPage extends StatelessWidget {
                         color: notif.isRead ? AppColors.courseCard : AppColors.primary.withValues(alpha: 0.06),
                         borderRadius: BorderRadius.circular(12),
                         border: Border.all(
-                          color: notif.isRead ? AppColors.divider.withValues(alpha: 0.5) : AppColors.primary.withValues(alpha: 0.3),
+                          color: notif.isRead ? AppColors.cardBorder : AppColors.primary.withValues(alpha: 0.3),
                         ),
                       ),
                       child: Row(
