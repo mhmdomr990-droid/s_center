@@ -137,7 +137,7 @@ class HomePage extends StatelessWidget {
                                     const EdgeInsets.symmetric(horizontal: 4),
                                 padding: const EdgeInsets.all(12),
                                 decoration: BoxDecoration(
-                                  color: AppColors.surface,
+                                  color: AppColors.courseCard,
                                   borderRadius: BorderRadius.circular(14),
                                   boxShadow: AppShadows.soft,
                                 ),

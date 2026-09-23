@@ -15,6 +15,7 @@ class AppColors {
   static Color sectionStrip = const Color(0xFFF7F9F8);
   static Color surface = const Color(0xFFFFFFFF);
   static Color card = const Color(0xFFFFFFFF);
+  static Color courseCard = const Color(0xFFEFF7F1);
   static Color textPrimary = const Color(0xFF212121);
   static Color textSecondary = const Color(0xFF757575);
   static Color textHint = const Color(0xFFBDBDBD);
@@ -31,6 +32,7 @@ class AppColors {
       sectionStrip = const Color(0xFF1A1E1C);
       surface = const Color(0xFF1C211E);
       card = const Color(0xFF1C211E);
+      courseCard = const Color(0xFF1A2A1F);
       textPrimary = const Color(0xFFECEFE9);
       textSecondary = const Color(0xFFA5AEA6);
       textHint = const Color(0xFF6E766F);
@@ -55,6 +57,7 @@ class AppColors {
       sectionStrip = const Color(0xFFF7F9F8);
       surface = const Color(0xFFFFFFFF);
       card = const Color(0xFFFFFFFF);
+      courseCard = const Color(0xFFEFF7F1);
       textPrimary = const Color(0xFF212121);
       textSecondary = const Color(0xFF757575);
       textHint = const Color(0xFFBDBDBD);

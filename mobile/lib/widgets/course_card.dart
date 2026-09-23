@@ -39,7 +39,7 @@ class CourseCard extends StatelessWidget {
       child: Container(
         margin: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
         decoration: BoxDecoration(
-          color: AppColors.surface,
+          color: AppColors.courseCard,
           borderRadius: BorderRadius.circular(16),
           boxShadow: AppShadows.card,
         ),
