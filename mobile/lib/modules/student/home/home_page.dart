@@ -49,7 +49,12 @@ class HomePage extends StatelessWidget {
                     IconButton(
                       icon: const Icon(Icons.notifications_none_rounded,
                           color: Colors.white, size: 26),
-                      onPressed: () => Get.toNamed(AppRoutes.notifications),
+                      onPressed: () {
+                        if (Get.isRegistered<NotificationsController>()) {
+                          Get.find<NotificationsController>().onTabOpened();
+                        }
+                        Get.toNamed(AppRoutes.notifications);
+                      },
                     ),
                     if (count > 0)
                       Positioned(

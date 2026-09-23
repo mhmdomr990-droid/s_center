@@ -19,6 +19,13 @@ class NotificationsController extends GetxController {
     loadNotifications();
   }
 
+  Future<void> onTabOpened() async {
+    await loadNotifications();
+    if (unreadCount.value > 0) {
+      await markAllAsRead();
+    }
+  }
+
   Future<void> loadNotifications() async {
     isLoading.value = true;
     try {

@@ -25,11 +25,25 @@ class TransactionModel {
       type: json['type'] ?? '',
       amount: (json['amount'] ?? '0.00').toString(),
       balanceAfter: (json['balance_after'] ?? '0.00').toString(),
-      description: json['description'],
+      description: _trDescription(json['description']),
       referenceType: json['reference_type'],
       referenceId: json['reference_id'],
       createdAt: json['created_at'] != null ? DateTime.tryParse(json['created_at']) : null,
     );
+  }
+
+  static String? _trDescription(String? description) {
+    if (description == null || description.isEmpty) return description;
+    if (description.startsWith('Purchased course: ')) {
+      return 'شراء دورة: ${description.substring('Purchased course: '.length)}';
+    }
+    if (description.startsWith('Top-up request approved: ')) {
+      return 'تمت الموافقة على شحن الرصيد: ${description.substring('Top-up request approved: '.length)}';
+    }
+    if (description.startsWith('Top-up request rejected')) {
+      return 'تم رفض طلب الشحن';
+    }
+    return description;
   }
 
   bool get isTopup => type == 'TOPUP';

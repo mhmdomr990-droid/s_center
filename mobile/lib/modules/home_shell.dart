@@ -47,7 +47,18 @@ class StudentShell extends StatelessWidget {
               children: [
                 _buildNavItem(currentIndex, 0, Icons.home_rounded, 'الرئيسية'),
                 _buildNavItem(currentIndex, 1, Icons.school_rounded, 'الدورات'),
-                _buildNavItem(currentIndex, 2, Icons.notifications_rounded, 'الإشعارات', badgeCount: _unreadCount()),
+                _buildNavItem(
+                  currentIndex,
+                  2,
+                  Icons.notifications_rounded,
+                  'الإشعارات',
+                  badgeCount: _unreadCount(),
+                  onTap: () {
+                    if (Get.isRegistered<NotificationsController>()) {
+                      Get.find<NotificationsController>().onTabOpened();
+                    }
+                  },
+                ),
                 _buildNavItem(currentIndex, 3, Icons.account_balance_wallet_rounded, 'المحفظة'),
                 _buildNavItem(currentIndex, 4, Icons.person_rounded, 'حسابي'),
               ],
@@ -65,10 +76,14 @@ class StudentShell extends StatelessWidget {
     return 0;
   }
 
-  Widget _buildNavItem(RxInt currentIndex, int index, IconData icon, String label, {int badgeCount = 0}) {
+  Widget _buildNavItem(RxInt currentIndex, int index, IconData icon, String label,
+      {int badgeCount = 0, VoidCallback? onTap}) {
     final isSelected = currentIndex.value == index;
     return GestureDetector(
-      onTap: () => currentIndex.value = index,
+      onTap: () {
+        currentIndex.value = index;
+        onTap?.call();
+      },
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 200),
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
