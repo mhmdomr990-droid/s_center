@@ -81,7 +81,7 @@ class NotificationsPage extends StatelessWidget {
                       margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
                       padding: const EdgeInsets.all(14),
                       decoration: BoxDecoration(
-                        color: notif.isRead ? AppColors.surface : AppColors.primary.withValues(alpha: 0.04),
+                        color: notif.isRead ? AppColors.courseCard : AppColors.primary.withValues(alpha: 0.06),
                         borderRadius: BorderRadius.circular(12),
                         border: Border.all(
                           color: notif.isRead ? AppColors.divider.withValues(alpha: 0.5) : AppColors.primary.withValues(alpha: 0.3),

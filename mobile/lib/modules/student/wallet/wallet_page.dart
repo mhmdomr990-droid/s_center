@@ -101,7 +101,7 @@ class WalletPage extends StatelessWidget {
                       margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
                       padding: const EdgeInsets.all(14),
                       decoration: BoxDecoration(
-                        color: AppColors.surface,
+                        color: AppColors.courseCard,
                         borderRadius: BorderRadius.circular(12),
                         border: Border.all(color: AppColors.divider.withValues(alpha: 0.5)),
                       ),
@@ -178,7 +178,7 @@ class WalletPage extends StatelessWidget {
       margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
-        color: AppColors.surface,
+        color: AppColors.courseCard,
         borderRadius: BorderRadius.circular(12),
         border: Border.all(color: statusColor.withValues(alpha: 0.35)),
       ),
