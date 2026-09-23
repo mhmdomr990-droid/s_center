@@ -33,7 +33,7 @@ class GradientAppBar extends StatelessWidget implements PreferredSizeWidget {
       leading: leading,
       actions: actions,
       flexibleSpace: Container(
-        decoration: const BoxDecoration(gradient: AppColors.primaryGradient),
+        decoration: BoxDecoration(gradient: AppColors.primaryGradient),
         child: Stack(
           clipBehavior: Clip.none,
           children: [

@@ -193,7 +193,7 @@ class HomePage extends StatelessWidget {
                                                 color: AppColors.primary,
                                                 fontWeight: FontWeight.bold)),
                                         const SizedBox(width: 4),
-                                        const Text('SYP',
+                                        Text('SYP',
                                             style: TextStyle(
                                                 fontSize: 10,
                                                 color: AppColors.textSecondary)),

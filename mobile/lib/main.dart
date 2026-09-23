@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:get/get.dart';
 import 'app/theme/app_theme.dart';
+import 'app/theme/theme_controller.dart';
 import 'app/routes/app_pages.dart';
 import 'app/routes/app_routes.dart';
 import 'data/providers/api_client.dart';
@@ -13,18 +13,18 @@ import 'widgets/app_scroll_behavior.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  SystemChrome.setSystemUIOverlayStyle(const SystemUiOverlayStyle(
-    statusBarColor: Color(0xFF2E7D32),
-    statusBarIconBrightness: Brightness.light,
-  ));
 
   final storageService = StorageService();
   final deviceService = DeviceService();
   final apiClient = ApiClient(storageService);
 
+  final themeController = ThemeController(storageService);
+  await themeController.loadSaved();
+
   Get.put(storageService);
   Get.put(deviceService);
   Get.put(apiClient);
+  Get.put(themeController);
   Get.put(AuthController());
 
   runApp(const SCenterApp());
@@ -39,6 +39,8 @@ class SCenterApp extends StatelessWidget {
       title: 'Student Center',
       debugShowCheckedModeBanner: false,
       theme: AppTheme.lightTheme,
+      darkTheme: AppTheme.darkTheme,
+      themeMode: Get.find<ThemeController>().themeMode.value,
       scrollBehavior: AppScrollBehavior(),
       locale: const Locale('ar'),
       supportedLocales: const [Locale('ar')],

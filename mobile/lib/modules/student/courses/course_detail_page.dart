@@ -290,7 +290,7 @@ class CourseDetailPage extends StatelessWidget {
                     ),
                   )
                 else if (ctrl.lectures.isEmpty && !ctrl.isLoadingDetail.value)
-                  const Padding(
+                  Padding(
                     padding: EdgeInsets.all(16),
                     child: Text('لا توجد محاضرات بعد',
                         style: TextStyle(color: AppColors.textSecondary)),

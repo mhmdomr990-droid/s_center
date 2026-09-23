@@ -5,8 +5,17 @@ import '../models/user_model.dart';
 class StorageService {
   static const _tokenKey = 'auth_token';
   static const _userKey = 'user_data';
+  static const _themeKey = 'theme_mode';
 
   final FlutterSecureStorage _storage = const FlutterSecureStorage();
+
+  Future<void> saveThemeMode(String mode) async {
+    await _storage.write(key: _themeKey, value: mode);
+  }
+
+  Future<String?> getThemeMode() async {
+    return await _storage.read(key: _themeKey);
+  }
 
   Future<void> saveToken(String token) async {
     await _storage.write(key: _tokenKey, value: token);

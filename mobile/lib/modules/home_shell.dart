@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../app/theme/app_colors.dart';
+import '../app/theme/theme_controller.dart';
 import '../modules/student/home/home_page.dart';
 import '../modules/student/courses/courses_page.dart';
 import '../modules/student/notifications/notifications_page.dart';
@@ -27,46 +28,50 @@ class StudentShell extends StatelessWidget {
       const ProfilePage(),
     ];
 
-    return Obx(() => Scaffold(
-      body: IndexedStack(
-        index: currentIndex.value,
-        children: pages,
-      ),
-      bottomNavigationBar: Container(
-        decoration: BoxDecoration(
-          color: Colors.white,
-          boxShadow: [
-            BoxShadow(color: Colors.black.withValues(alpha: 0.08), blurRadius: 12, offset: const Offset(0, -4)),
-          ],
+    return Obx(() {
+      final themeMode = Get.find<ThemeController>().themeMode.value;
+      return Scaffold(
+        body: IndexedStack(
+          key: ValueKey('student-$themeMode'),
+          index: currentIndex.value,
+          children: pages,
         ),
-        child: SafeArea(
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceAround,
-              children: [
-                _buildNavItem(currentIndex, 0, Icons.home_rounded, 'الرئيسية'),
-                _buildNavItem(currentIndex, 1, Icons.school_rounded, 'الدورات'),
-                _buildNavItem(
-                  currentIndex,
-                  2,
-                  Icons.notifications_rounded,
-                  'الإشعارات',
-                  badgeCount: _unreadCount(),
-                  onTap: () {
-                    if (Get.isRegistered<NotificationsController>()) {
-                      Get.find<NotificationsController>().onTabOpened();
-                    }
-                  },
-                ),
-                _buildNavItem(currentIndex, 3, Icons.account_balance_wallet_rounded, 'المحفظة'),
-                _buildNavItem(currentIndex, 4, Icons.person_rounded, 'حسابي'),
-              ],
+        bottomNavigationBar: Container(
+          decoration: BoxDecoration(
+            color: AppColors.bottomNavBg,
+            boxShadow: [
+              BoxShadow(color: Colors.black.withValues(alpha: 0.08), blurRadius: 12, offset: const Offset(0, -4)),
+            ],
+          ),
+          child: SafeArea(
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceAround,
+                children: [
+                  _buildNavItem(currentIndex, 0, Icons.home_rounded, 'الرئيسية'),
+                  _buildNavItem(currentIndex, 1, Icons.school_rounded, 'الدورات'),
+                  _buildNavItem(
+                    currentIndex,
+                    2,
+                    Icons.notifications_rounded,
+                    'الإشعارات',
+                    badgeCount: _unreadCount(),
+                    onTap: () {
+                      if (Get.isRegistered<NotificationsController>()) {
+                        Get.find<NotificationsController>().onTabOpened();
+                      }
+                    },
+                  ),
+                  _buildNavItem(currentIndex, 3, Icons.account_balance_wallet_rounded, 'المحفظة'),
+                  _buildNavItem(currentIndex, 4, Icons.person_rounded, 'حسابي'),
+                ],
+              ),
             ),
           ),
         ),
-      ),
-    ));
+      );
+    });
   }
 
   int _unreadCount() {
@@ -97,7 +102,7 @@ class StudentShell extends StatelessWidget {
             Stack(
               clipBehavior: Clip.none,
               children: [
-                Icon(icon, color: isSelected ? AppColors.primary : AppColors.textHint, size: 26),
+                Icon(icon, color: isSelected ? AppColors.bottomNavSelected : AppColors.bottomNavUnselected, size: 26),
                 if (badgeCount > 0)
                   Positioned(
                     top: -4,
@@ -132,7 +137,7 @@ class StudentShell extends StatelessWidget {
             ),
             const SizedBox(height: 2),
             Text(label, style: TextStyle(
-              color: isSelected ? AppColors.primary : AppColors.textHint,
+              color: isSelected ? AppColors.bottomNavSelected : AppColors.bottomNavUnselected,
               fontSize: 11,
               fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
             )),
@@ -156,33 +161,37 @@ class TeacherShell extends StatelessWidget {
       const EarningsPage(),
     ];
 
-    return Obx(() => Scaffold(
-      body: IndexedStack(
-        index: currentIndex.value,
-        children: pages,
-      ),
-      bottomNavigationBar: Container(
-        decoration: BoxDecoration(
-          color: Colors.white,
-          boxShadow: [
-            BoxShadow(color: Colors.black.withValues(alpha: 0.08), blurRadius: 12, offset: const Offset(0, -4)),
-          ],
+    return Obx(() {
+      final themeMode = Get.find<ThemeController>().themeMode.value;
+      return Scaffold(
+        body: IndexedStack(
+          key: ValueKey('teacher-$themeMode'),
+          index: currentIndex.value,
+          children: pages,
         ),
-        child: SafeArea(
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceAround,
-              children: [
-                _buildNavItem(currentIndex, 0, Icons.dashboard_rounded, 'لوحة التحكم'),
-                _buildNavItem(currentIndex, 1, Icons.school_rounded, 'الدورات'),
-                _buildNavItem(currentIndex, 2, Icons.account_balance_rounded, 'الأرباح'),
-              ],
+        bottomNavigationBar: Container(
+          decoration: BoxDecoration(
+            color: AppColors.bottomNavBg,
+            boxShadow: [
+              BoxShadow(color: Colors.black.withValues(alpha: 0.08), blurRadius: 12, offset: const Offset(0, -4)),
+            ],
+          ),
+          child: SafeArea(
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceAround,
+                children: [
+                  _buildNavItem(currentIndex, 0, Icons.dashboard_rounded, 'لوحة التحكم'),
+                  _buildNavItem(currentIndex, 1, Icons.school_rounded, 'الدورات'),
+                  _buildNavItem(currentIndex, 2, Icons.account_balance_rounded, 'الأرباح'),
+                ],
+              ),
             ),
           ),
         ),
-      ),
-    ));
+      );
+    });
   }
 
   Widget _buildNavItem(RxInt currentIndex, int index, IconData icon, String label) {
@@ -199,10 +208,10 @@ class TeacherShell extends StatelessWidget {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(icon, color: isSelected ? AppColors.primary : AppColors.textHint, size: 26),
+            Icon(icon, color: isSelected ? AppColors.bottomNavSelected : AppColors.bottomNavUnselected, size: 26),
             const SizedBox(height: 2),
             Text(label, style: TextStyle(
-              color: isSelected ? AppColors.primary : AppColors.textHint,
+              color: isSelected ? AppColors.bottomNavSelected : AppColors.bottomNavUnselected,
               fontSize: 11,
               fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
             )),

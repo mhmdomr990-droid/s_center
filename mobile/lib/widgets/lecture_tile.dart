@@ -107,7 +107,7 @@ class LectureTile extends StatelessWidget {
               const StatusPill(label: 'جديد', color: AppColors.primary, filled: true),
             if (!isPublished)
               const StatusPill(label: 'غير منشورة', color: AppColors.warning),
-            const Icon(Icons.chevron_left_rounded,
+            Icon(Icons.chevron_left_rounded,
                 size: 22, color: AppColors.textHint),
             ?trailing,
           ],

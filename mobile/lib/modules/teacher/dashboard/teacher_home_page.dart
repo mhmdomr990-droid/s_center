@@ -72,7 +72,7 @@ class TeacherHomePage extends StatelessWidget {
                             margin: const EdgeInsets.symmetric(horizontal: 4),
                             padding: const EdgeInsets.symmetric(vertical: 10),
                             decoration: BoxDecoration(
-                              color: isSelected ? AppColors.primary : Colors.white,
+                              color: isSelected ? AppColors.primary : AppColors.surface,
                               borderRadius: BorderRadius.circular(10),
                               border: Border.all(color: isSelected ? AppColors.primary : AppColors.divider),
                             ),

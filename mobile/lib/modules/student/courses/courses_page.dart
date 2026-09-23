@@ -88,7 +88,7 @@ class CoursesPage extends StatelessWidget {
                         Expanded(
                           child: Obx(() => Text(
                                 ctrl.filterTitle,
-                                style: const TextStyle(
+                                style: TextStyle(
                                   fontSize: 13,
                                   fontWeight: FontWeight.w600,
                                   color: AppColors.textSecondary,
@@ -99,7 +99,7 @@ class CoursesPage extends StatelessWidget {
                         ),
                         Obx(() => Text(
                               '${ctrl.courses.length} دورة',
-                              style: const TextStyle(fontSize: 12, color: AppColors.textHint),
+                              style: TextStyle(fontSize: 12, color: AppColors.textHint),
                             )),
                       ],
                     ),
@@ -152,7 +152,7 @@ class CoursesPage extends StatelessWidget {
         margin: const EdgeInsets.symmetric(horizontal: 4),
         padding: const EdgeInsets.symmetric(horizontal: 16),
         decoration: BoxDecoration(
-          color: isSelected ? AppColors.primary : Colors.white,
+          color: isSelected ? AppColors.primary : AppColors.surface,
           borderRadius: BorderRadius.circular(20),
           border: Border.all(color: isSelected ? AppColors.primary : AppColors.divider),
         ),
@@ -176,7 +176,7 @@ class CoursesPage extends StatelessWidget {
         margin: const EdgeInsets.symmetric(horizontal: 4),
         padding: const EdgeInsets.symmetric(horizontal: 14),
         decoration: BoxDecoration(
-          color: isSelected ? AppColors.primaryLight : Colors.white,
+          color: isSelected ? AppColors.primaryLight : AppColors.surface,
           borderRadius: BorderRadius.circular(20),
           border: Border.all(
               color: isSelected ? AppColors.primaryLight : AppColors.divider),

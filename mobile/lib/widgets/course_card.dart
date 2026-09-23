@@ -89,7 +89,7 @@ class CourseCard extends StatelessWidget {
                               Row(
                                 mainAxisSize: MainAxisSize.min,
                                 children: [
-                                  const Icon(Icons.person_outline_rounded,
+                                  Icon(Icons.person_outline_rounded,
                                       size: 14,
                                       color: AppColors.textSecondary),
                                   const SizedBox(width: 4),
@@ -123,7 +123,7 @@ class CourseCard extends StatelessWidget {
                                     overflow: TextOverflow.ellipsis),
                               ),
                             ),
-                            const Text('SYP',
+                            Text('SYP',
                                 style: TextStyle(
                                     fontSize: 10,
                                     color: AppColors.textSecondary,
