@@ -152,7 +152,7 @@ class CoursesPage extends StatelessWidget {
         margin: const EdgeInsets.symmetric(horizontal: 4),
         padding: const EdgeInsets.symmetric(horizontal: 16),
         decoration: BoxDecoration(
-          color: isSelected ? AppColors.primary : AppColors.courseCard,
+          color: isSelected ? AppColors.primary : AppColors.surface,
           borderRadius: BorderRadius.circular(20),
           border: Border.all(color: isSelected ? AppColors.primary : AppColors.cardBorder),
         ),
@@ -176,7 +176,7 @@ class CoursesPage extends StatelessWidget {
         margin: const EdgeInsets.symmetric(horizontal: 4),
         padding: const EdgeInsets.symmetric(horizontal: 14),
         decoration: BoxDecoration(
-          color: isSelected ? AppColors.primaryLight : AppColors.courseCard,
+          color: isSelected ? AppColors.primaryLight : AppColors.surface,
           borderRadius: BorderRadius.circular(20),
           border: Border.all(
               color: isSelected ? AppColors.primaryLight : AppColors.cardBorder),
