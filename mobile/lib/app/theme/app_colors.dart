@@ -11,19 +11,19 @@ class AppColors {
   static const Color success = Color(0xFF43A047);
   static const Color warning = Color(0xFFFFA000);
 
-  static Color background = const Color(0xFFE7F0FA);
-  static Color sectionStrip = const Color(0xFFF1F7FD);
-  static Color surface = const Color(0xFFFFFFFF);
-  static Color card = const Color(0xFFD6E8FA);
-  static Color courseCard = const Color(0xFFD6E8FA);
-  static Color cardBorder = const Color(0xFFB3D2F0);
+  static Color background = const Color(0xFFDCE9F8);
+  static Color sectionStrip = const Color(0xFFEDF4FC);
+  static Color surface = const Color(0xFFF5F9FD);
+  static Color card = const Color(0xFFC8DDF5);
+  static Color courseCard = const Color(0xFFC8DDF5);
+  static Color cardBorder = const Color(0xFFA8C9EC);
   static Color textPrimary = const Color(0xFF212121);
   static Color textSecondary = const Color(0xFF757575);
   static Color textHint = const Color(0xFFBDBDBD);
-  static Color divider = const Color(0xFFE0E0E0);
-  static Color shimmerBase = const Color(0xFFD2E2F4);
-  static Color shimmerHighlight = const Color(0xFFEDF4FC);
-  static Color bottomNavBg = const Color(0xFFD6E8FA);
+  static Color divider = const Color(0xFFD3E2F1);
+  static Color shimmerBase = const Color(0xFFC5D9F0);
+  static Color shimmerHighlight = const Color(0xFFE9F2FC);
+  static Color bottomNavBg = const Color(0xFFC8DDF5);
   static Color bottomNavSelected = const Color(0xFF1976D2);
   static Color bottomNavUnselected = const Color(0xFFBDBDBD);
 
@@ -55,19 +55,19 @@ class AppColors {
         colors: [Color(0xFF0D2747), Color(0xFF14538A), Color(0xFF1E88E5)],
       );
     } else {
-      background = const Color(0xFFE7F0FA);
-      sectionStrip = const Color(0xFFF1F7FD);
-      surface = const Color(0xFFFFFFFF);
-      card = const Color(0xFFD6E8FA);
-      courseCard = const Color(0xFFD6E8FA);
-      cardBorder = const Color(0xFFB3D2F0);
+      background = const Color(0xFFDCE9F8);
+      sectionStrip = const Color(0xFFEDF4FC);
+      surface = const Color(0xFFF5F9FD);
+      card = const Color(0xFFC8DDF5);
+      courseCard = const Color(0xFFC8DDF5);
+      cardBorder = const Color(0xFFA8C9EC);
       textPrimary = const Color(0xFF212121);
       textSecondary = const Color(0xFF757575);
       textHint = const Color(0xFFBDBDBD);
-      divider = const Color(0xFFE0E0E0);
-      shimmerBase = const Color(0xFFD2E2F4);
-      shimmerHighlight = const Color(0xFFEDF4FC);
-      bottomNavBg = const Color(0xFFD6E8FA);
+      divider = const Color(0xFFD3E2F1);
+      shimmerBase = const Color(0xFFC5D9F0);
+      shimmerHighlight = const Color(0xFFE9F2FC);
+      bottomNavBg = const Color(0xFFC8DDF5);
       bottomNavSelected = const Color(0xFF1976D2);
       bottomNavUnselected = const Color(0xFFBDBDBD);
       primaryGradient = const LinearGradient(

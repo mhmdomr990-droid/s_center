@@ -78,7 +78,7 @@ class CourseCardSkeleton extends StatelessWidget {
                     width: 50,
                     height: 50,
                     decoration: BoxDecoration(
-                      color: Colors.white,
+                      color: AppColors.shimmerHighlight,
                       borderRadius: BorderRadius.circular(12),
                     ),
                   ),
@@ -91,13 +91,13 @@ class CourseCardSkeleton extends StatelessWidget {
                         Container(
                             height: 14,
                             width: double.infinity,
-                            color: Colors.white),
+                            color: AppColors.shimmerHighlight),
                         const SizedBox(height: 8),
                         Container(
-                            height: 10, width: 120, color: Colors.white),
+                            height: 10, width: 120, color: AppColors.shimmerHighlight),
                         const SizedBox(height: 6),
                         Container(
-                            height: 10, width: 90, color: Colors.white),
+                            height: 10, width: 90, color: AppColors.shimmerHighlight),
                       ],
                     ),
                   ),
@@ -106,10 +106,10 @@ class CourseCardSkeleton extends StatelessWidget {
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
                       Container(
-                          height: 16, width: 56, color: Colors.white),
+                          height: 16, width: 56, color: AppColors.shimmerHighlight),
                       const SizedBox(height: 6),
                       Container(
-                          height: 10, width: 28, color: Colors.white),
+                          height: 10, width: 28, color: AppColors.shimmerHighlight),
                     ],
                   ),
                 ],
@@ -150,7 +150,7 @@ class NotificationRowSkeleton extends StatelessWidget {
                     width: 38,
                     height: 38,
                     decoration: BoxDecoration(
-                      color: Colors.white,
+                      color: AppColors.shimmerHighlight,
                       borderRadius: BorderRadius.circular(10),
                     ),
                   ),
@@ -161,15 +161,15 @@ class NotificationRowSkeleton extends StatelessWidget {
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
                         Container(
-                            height: 13, width: double.infinity, color: Colors.white),
+                            height: 13, width: double.infinity, color: AppColors.shimmerHighlight),
                         const SizedBox(height: 8),
                         Container(
                             height: 10,
                             width: double.infinity,
-                            color: Colors.white),
+                            color: AppColors.shimmerHighlight),
                         const SizedBox(height: 6),
                         Container(
-                            height: 10, width: 90, color: Colors.white),
+                            height: 10, width: 90, color: AppColors.shimmerHighlight),
                       ],
                     ),
                   ),
