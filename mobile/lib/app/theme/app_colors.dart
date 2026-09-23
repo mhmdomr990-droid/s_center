@@ -67,12 +67,12 @@ class AppColors {
       primaryGradient = const LinearGradient(
         begin: Alignment.topLeft,
         end: Alignment.bottomRight,
-        colors: [primaryDark, primary, primaryLight],
+        colors: [Color(0xFF1B5E20), Color(0xFF2E7D32), Color(0xFF43A047)],
       );
       cardGradient = const LinearGradient(
         begin: Alignment.topRight,
         end: Alignment.bottomLeft,
-        colors: [Color(0xFF2E7D32), Color(0xFF43A047), Color(0xFF66BB6A)],
+        colors: [Color(0xFF14532D), Color(0xFF1B7338), Color(0xFF2E9E4F)],
       );
     }
   }
@@ -80,13 +80,13 @@ class AppColors {
   static LinearGradient primaryGradient = const LinearGradient(
     begin: Alignment.topLeft,
     end: Alignment.bottomRight,
-    colors: [primaryDark, primary, primaryLight],
+    colors: [Color(0xFF1B5E20), Color(0xFF2E7D32), Color(0xFF43A047)],
   );
 
   static LinearGradient cardGradient = const LinearGradient(
     begin: Alignment.topRight,
     end: Alignment.bottomLeft,
-    colors: [Color(0xFF2E7D32), Color(0xFF43A047), Color(0xFF66BB6A)],
+    colors: [Color(0xFF14532D), Color(0xFF1B7338), Color(0xFF2E9E4F)],
   );
 
   static const List<Color> specPalette = [
