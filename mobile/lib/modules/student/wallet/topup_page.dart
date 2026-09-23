@@ -3,6 +3,7 @@ import 'package:get/get.dart';
 import '../../../app/theme/app_colors.dart';
 import '../../../widgets/custom_button.dart';
 import '../../../widgets/custom_text_field.dart';
+import '../../../widgets/gradient_app_bar.dart';
 import 'topup_controller.dart';
 
 class TopupPage extends StatelessWidget {
@@ -15,7 +16,7 @@ class TopupPage extends StatelessWidget {
       builder: (ctrl) {
         return Scaffold(
           backgroundColor: AppColors.background,
-          appBar: AppBar(title: const Text('شحن رصيد المحفظة')),
+          appBar: const GradientAppBar(title: 'شحن رصيد المحفظة'),
           body: SingleChildScrollView(
             padding: const EdgeInsets.all(16),
             child: Column(

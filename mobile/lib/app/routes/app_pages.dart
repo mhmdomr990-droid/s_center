@@ -1,5 +1,6 @@
 import 'package:get/get.dart';
 import 'app_routes.dart';
+import '../transitions/slide_fade_transition.dart';
 
 import '../../modules/auth/login_page.dart';
 import '../../modules/auth/register_page.dart';
@@ -25,7 +26,14 @@ import '../../modules/teacher/earnings/earnings_page.dart';
 import '../../modules/teacher/earnings/earnings_controller.dart';
 
 class AppPages {
-  static final pages = [
+  static final pages = _rawPages
+      .map((page) => page.copy(
+            customTransition: SlideFadeTransition(),
+            transitionDuration: const Duration(milliseconds: 280),
+          ))
+      .toList();
+
+  static final List<GetPage> _rawPages = [
     GetPage(name: AppRoutes.login, page: () => const LoginPage()),
     GetPage(name: AppRoutes.register, page: () => const RegisterPage()),
     GetPage(name: AppRoutes.studentHome, page: () => const HomePage(), binding: BindingsBuilder(() {

@@ -2,11 +2,14 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../../../app/theme/app_colors.dart';
+import '../../../app/theme/app_shadows.dart';
 import '../../../app/theme/app_text_styles.dart';
 import '../../../app/routes/app_routes.dart';
 import '../../../widgets/custom_button.dart';
+import '../../../widgets/gradient_app_bar.dart';
 import '../../../widgets/lecture_tile.dart';
 import '../../../widgets/loading_shimmer.dart';
+import '../../../widgets/section_header.dart';
 import '../../../data/models/course_model.dart';
 import 'courses_controller.dart';
 
@@ -57,6 +60,11 @@ class CourseDetailPage extends StatelessWidget {
     );
   }
 
+  bool _isNewLecture(DateTime? createdAt) {
+    if (createdAt == null) return false;
+    return DateTime.now().difference(createdAt).inDays < 7;
+  }
+
   @override
   Widget build(BuildContext context) {
     final args = Get.arguments as Map<String, dynamic>;
@@ -73,10 +81,46 @@ class CourseDetailPage extends StatelessWidget {
       builder: (ctrl) {
         return Scaffold(
           backgroundColor: AppColors.background,
-          appBar: AppBar(
-            title: const Text('تفاصيل الدورة'),
-            backgroundColor: AppColors.primary,
-            foregroundColor: Colors.white,
+          appBar: const GradientAppBar(title: 'تفاصيل الدورة'),
+          bottomNavigationBar: SafeArea(
+            child: Container(
+              padding: const EdgeInsets.fromLTRB(16, 10, 16, 12),
+              decoration: BoxDecoration(
+                color: AppColors.surface,
+                borderRadius: const BorderRadius.vertical(top: Radius.circular(18)),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withValues(alpha: 0.08),
+                    blurRadius: 14,
+                    offset: const Offset(0, -4),
+                  ),
+                ],
+              ),
+              child: Obx(() {
+                final course = initialCourse ?? ctrl.currentCourse.value;
+                final bought = ctrl.isPurchased(courseId) ||
+                    (course?.isPurchased ?? false);
+                if (bought) {
+                  return CustomButton(
+                    text: '✔ لقد اشتريت هذه الدورة',
+                    backgroundColor: const Color(0xFF43A047),
+                    onPressed: null,
+                    icon: Icons.check_circle_outline,
+                  );
+                }
+                return CustomButton(
+                  text: ctrl.isPurchasing.value
+                      ? 'جاري الشراء...'
+                      : 'شراء الدورة${course != null ? ' - ${course.price} SYP' : ''}',
+                  isLoading: ctrl.isPurchasing.value,
+                  onPressed: () {
+                    if (course == null) return;
+                    _confirmPurchase(context, ctrl, course);
+                  },
+                  icon: Icons.shopping_cart_outlined,
+                );
+              }),
+            ),
           ),
           body: Obx(() {
             final course = initialCourse ?? ctrl.currentCourse.value;
@@ -95,67 +139,131 @@ class CourseDetailPage extends StatelessWidget {
                   decoration: BoxDecoration(
                     gradient: AppColors.cardGradient,
                     borderRadius: BorderRadius.circular(20),
+                    boxShadow: AppShadows.colored,
                   ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
+                  clipBehavior: Clip.antiAlias,
+                  child: Stack(
+                    clipBehavior: Clip.none,
                     children: [
-                      Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                        decoration: BoxDecoration(
-                          color: Colors.white.withValues(alpha: 0.2),
-                          borderRadius: BorderRadius.circular(8),
+                      Positioned(
+                        right: -30,
+                        top: -40,
+                        child: Container(
+                          width: 130,
+                          height: 130,
+                          decoration: BoxDecoration(
+                            shape: BoxShape.circle,
+                            color: Colors.white.withValues(alpha: 0.08),
+                          ),
                         ),
-                        child: Text(course.specializationName, style: const TextStyle(color: Colors.white, fontSize: 12)),
                       ),
-                      const SizedBox(height: 12),
-                      Text(course.name, style: GoogleFonts.cairo(fontSize: 22, fontWeight: FontWeight.bold, color: Colors.white)),
-                      if (course.teacherName != null) ...[
-                        const SizedBox(height: 8),
-                        Row(
-                          children: [
-                            const Icon(Icons.person, color: Colors.white70, size: 18),
-                            const SizedBox(width: 6),
-                            Text(course.teacherName!, style: const TextStyle(color: Colors.white70, fontSize: 14)),
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Row(
+                            children: [
+                              Hero(
+                                tag: 'course-icon-$courseId',
+                                child: Container(
+                                  width: 46,
+                                  height: 46,
+                                  decoration: BoxDecoration(
+                                    color: Colors.white.withValues(alpha: 0.2),
+                                    borderRadius: BorderRadius.circular(12),
+                                  ),
+                                  child: const Icon(Icons.school,
+                                      color: Colors.white, size: 26),
+                                ),
+                              ),
+                              const SizedBox(width: 12),
+                              Container(
+                                padding: const EdgeInsets.symmetric(
+                                    horizontal: 10, vertical: 4),
+                                decoration: BoxDecoration(
+                                  color: Colors.white.withValues(alpha: 0.2),
+                                  borderRadius: BorderRadius.circular(8),
+                                ),
+                                child: Text(course.specializationName,
+                                    style: const TextStyle(
+                                        color: Colors.white, fontSize: 12)),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 14),
+                          Hero(
+                            tag: 'course-title-$courseId',
+                            child: Material(
+                              type: MaterialType.transparency,
+                              child: Text(course.name,
+                                  style: GoogleFonts.cairo(
+                                      fontSize: 22,
+                                      fontWeight: FontWeight.bold,
+                                      color: Colors.white)),
+                            ),
+                          ),
+                          if (course.teacherName != null) ...[
+                            const SizedBox(height: 8),
+                            Row(
+                              children: [
+                                const Icon(Icons.person,
+                                    color: Colors.white70, size: 18),
+                                const SizedBox(width: 6),
+                                Text(course.teacherName!,
+                                    style: const TextStyle(
+                                        color: Colors.white70, fontSize: 14)),
+                              ],
+                            ),
                           ],
-                        ),
-                      ],
-                      const SizedBox(height: 12),
-                      Text('${course.price} SYP', style: GoogleFonts.cairo(fontSize: 28, fontWeight: FontWeight.bold, color: Colors.white)),
+                          const SizedBox(height: 12),
+                          Row(
+                            crossAxisAlignment: CrossAxisAlignment.baseline,
+                            textBaseline: TextBaseline.alphabetic,
+                            children: [
+                              Text(course.price,
+                                  style: GoogleFonts.cairo(
+                                      fontSize: 28,
+                                      fontWeight: FontWeight.bold,
+                                      color: Colors.white)),
+                              const SizedBox(width: 6),
+                              const Text('SYP',
+                                  style: TextStyle(
+                                      color: Colors.white70, fontSize: 14)),
+                            ],
+                          ),
+                        ],
+                      ),
                     ],
                   ),
                 ),
                 const SizedBox(height: 20),
                 if (course.description != null && course.description!.isNotEmpty) ...[
-                  Text('الوصف', style: AppTextStyles.titleLarge),
+                  const SectionHeader(
+                    title: 'الوصف',
+                    icon: Icons.info_outline_rounded,
+                  ),
                   const SizedBox(height: 8),
-                  Text(course.description!, style: AppTextStyles.bodyMedium.copyWith(color: AppColors.textSecondary)),
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 16),
+                    child: Text(course.description!,
+                        style: AppTextStyles.bodyMedium
+                            .copyWith(color: AppColors.textSecondary, height: 1.6)),
+                  ),
                   const SizedBox(height: 20),
                 ],
                 Obx(() {
-                  if (ctrl.isPurchased(courseId) || course.isPurchased) {
-                    return CustomButton(
-                      text: '✔ لقد اشتريت هذه الدورة',
-                      backgroundColor: const Color(0xFF43A047),
-                      onPressed: null,
-                      icon: Icons.check_circle_outline,
-                    );
-                  }
-                  return CustomButton(
-                    text: ctrl.isPurchasing.value ? 'جاري الشراء...' : 'شراء الدورة - ${course.price} SYP',
-                    isLoading: ctrl.isPurchasing.value,
-                    onPressed: () => _confirmPurchase(context, ctrl, course),
-                    icon: Icons.shopping_cart_outlined,
-                  );
-                }),
-                const SizedBox(height: 24),
-                Obx(() {
-                  if (ctrl.isLoadingDetail.value && ctrl.lectures.isEmpty && ctrl.detailError.value == null) {
+                  if (ctrl.isLoadingDetail.value &&
+                      ctrl.lectures.isEmpty &&
+                      ctrl.detailError.value == null) {
                     return const Padding(
                       padding: EdgeInsets.symmetric(vertical: 24),
-                      child: Center(child: CircularProgressIndicator(color: AppColors.primary)),
+                      child: Center(
+                          child: CircularProgressIndicator(color: AppColors.primary)),
                     );
                   }
-                  return Text('المحاضرات (${ctrl.lectures.length})', style: AppTextStyles.titleLarge);
+                  return SectionHeader(
+                    title: 'المحاضرات (${ctrl.lectures.length})',
+                    icon: Icons.play_lesson_rounded,
+                  );
                 }),
                 const SizedBox(height: 8),
                 if (ctrl.detailError.value != null && ctrl.lectures.isEmpty)
@@ -163,10 +271,12 @@ class CourseDetailPage extends StatelessWidget {
                     padding: const EdgeInsets.all(16),
                     child: Column(
                       children: [
-                        Text(ctrl.detailError.value!, style: const TextStyle(color: AppColors.error)),
+                        Text(ctrl.detailError.value!,
+                            style: const TextStyle(color: AppColors.error)),
                         const SizedBox(height: 8),
                         TextButton(
-                          onPressed: () => ctrl.loadCourseDetail(courseId, course: initialCourse),
+                          onPressed: () =>
+                              ctrl.loadCourseDetail(courseId, course: initialCourse),
                           child: const Text('إعادة المحاولة'),
                         ),
                       ],
@@ -175,7 +285,8 @@ class CourseDetailPage extends StatelessWidget {
                 else if (ctrl.lectures.isEmpty && !ctrl.isLoadingDetail.value)
                   const Padding(
                     padding: EdgeInsets.all(16),
-                    child: Text('لا توجد محاضرات بعد', style: TextStyle(color: AppColors.textSecondary)),
+                    child: Text('لا توجد محاضرات بعد',
+                        style: TextStyle(color: AppColors.textSecondary)),
                   )
                 else
                   ...ctrl.lectures.asMap().entries.map((entry) {
@@ -184,6 +295,7 @@ class CourseDetailPage extends StatelessWidget {
                       index: entry.key + 1,
                       title: lecture.title,
                       type: lecture.type,
+                      isNew: _isNewLecture(lecture.createdAt),
                       onTap: () => Get.toNamed(AppRoutes.lectureView, arguments: {
                         'lecture': lecture,
                         'lectures': ctrl.lectures,
@@ -191,6 +303,7 @@ class CourseDetailPage extends StatelessWidget {
                       }),
                     );
                   }),
+                const SizedBox(height: 90),
               ],
             );
           }),

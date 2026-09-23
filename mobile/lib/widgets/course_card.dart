@@ -1,13 +1,16 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../app/theme/app_colors.dart';
+import '../app/theme/app_shadows.dart';
 import '../app/theme/app_text_styles.dart';
 
 class CourseCard extends StatelessWidget {
+  final int? courseId;
   final String name;
   final String? teacherName;
   final String price;
   final String specialization;
+  final int specializationId;
   final int year;
   final int? lecturesCount;
   final VoidCallback? onTap;
@@ -15,15 +18,19 @@ class CourseCard extends StatelessWidget {
 
   const CourseCard({
     super.key,
+    this.courseId,
     required this.name,
     this.teacherName,
     required this.price,
     this.specialization = '',
+    this.specializationId = 0,
     this.year = 0,
     this.lecturesCount,
     this.onTap,
     this.trailing,
   });
+
+  Color get _accent => AppColors.specializationColor(specializationId);
 
   @override
   Widget build(BuildContext context) {
@@ -35,13 +42,7 @@ class CourseCard extends StatelessWidget {
         decoration: BoxDecoration(
           color: AppColors.surface,
           borderRadius: BorderRadius.circular(16),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withValues(alpha: 0.06),
-              blurRadius: 10,
-              offset: const Offset(0, 4),
-            ),
-          ],
+          boxShadow: AppShadows.card,
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -49,27 +50,40 @@ class CourseCard extends StatelessWidget {
           children: [
             Row(
               children: [
-                Container(
-                  width: 50,
-                  height: 50,
-                  decoration: BoxDecoration(
-                    color: AppColors.primary.withValues(alpha: 0.1),
-                    borderRadius: BorderRadius.circular(12),
+                Hero(
+                  tag: 'course-icon-${courseId ?? name}',
+                  child: Container(
+                    width: 50,
+                    height: 50,
+                    decoration: BoxDecoration(
+                      color: _accent.withValues(alpha: 0.12),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: Icon(Icons.school, color: _accent, size: 26),
                   ),
-                  child: const Icon(Icons.school, color: AppColors.primary, size: 26),
                 ),
                 const SizedBox(width: 12),
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(name, style: AppTextStyles.titleMedium, maxLines: 2, overflow: TextOverflow.ellipsis),
+                      Hero(
+                        tag: 'course-title-${courseId ?? name}',
+                        child: Material(
+                          type: MaterialType.transparency,
+                          child: Text(name,
+                              style: AppTextStyles.titleMedium,
+                              maxLines: 2,
+                              overflow: TextOverflow.ellipsis),
+                        ),
+                      ),
                       if (teacherName != null) ...[
                         const SizedBox(height: 4),
                         Row(
                           mainAxisSize: MainAxisSize.min,
                           children: [
-                            const Icon(Icons.person_outline, size: 14, color: AppColors.textSecondary),
+                            const Icon(Icons.person_outline,
+                                size: 14, color: AppColors.textSecondary),
                             const SizedBox(width: 4),
                             Flexible(
                               child: Text(teacherName!,
@@ -88,11 +102,18 @@ class CourseCard extends StatelessWidget {
                     crossAxisAlignment: CrossAxisAlignment.end,
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      Text('$price SYP',
+                      Text(price,
                           style: GoogleFonts.cairo(
-                              fontWeight: FontWeight.bold, color: AppColors.primary, fontSize: 14),
+                              fontWeight: FontWeight.bold,
+                              color: AppColors.primary,
+                              fontSize: 16),
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis),
+                      const Text('SYP',
+                          style: TextStyle(
+                              fontSize: 10,
+                              color: AppColors.textSecondary,
+                              fontWeight: FontWeight.w600)),
                       if (lecturesCount != null)
                         Text('$lecturesCount محاضرة',
                             style: AppTextStyles.caption,
@@ -111,7 +132,7 @@ class CourseCard extends StatelessWidget {
             Row(
               mainAxisSize: MainAxisSize.min,
               children: [
-                const Icon(Icons.book_outlined, size: 14, color: AppColors.textSecondary),
+                Icon(Icons.book_outlined, size: 14, color: _accent),
                 const SizedBox(width: 4),
                 Expanded(
                   child: Text('$specialization - السنة $year',

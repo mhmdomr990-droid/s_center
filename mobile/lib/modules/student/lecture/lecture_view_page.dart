@@ -5,6 +5,7 @@ import 'package:url_launcher/url_launcher.dart';
 import '../../../app/theme/app_colors.dart';
 import '../../../app/theme/app_text_styles.dart';
 import '../../../data/models/lecture_model.dart';
+import '../../../widgets/gradient_app_bar.dart';
 
 class LectureController extends GetxController {
   final currentIndex = 0.obs;
@@ -54,11 +55,7 @@ class LectureViewPage extends StatelessWidget {
 
         return Scaffold(
           backgroundColor: AppColors.background,
-          appBar: AppBar(
-            title: Text(lecture.title),
-            backgroundColor: AppColors.primary,
-            foregroundColor: Colors.white,
-          ),
+          appBar: GradientAppBar(title: lecture.title),
           body: ListView(
             padding: const EdgeInsets.all(16),
             children: [

@@ -5,6 +5,7 @@ import '../../../data/providers/api_exception.dart';
 import '../../../data/providers/catalog_provider.dart';
 import '../../../data/providers/wallet_provider.dart';
 import '../../../data/providers/purchase_provider.dart';
+import '../../../data/services/storage_service.dart';
 import '../../../data/models/course_model.dart';
 import '../../../data/models/purchase_model.dart';
 
@@ -12,14 +13,17 @@ class HomeController extends GetxController {
   final CatalogProvider _catalogProvider;
   final WalletProvider _walletProvider;
   final PurchaseProvider _purchaseProvider;
+  final StorageService _storage;
 
   HomeController()
       : _catalogProvider = CatalogProvider(Get.find<ApiClient>()),
         _walletProvider = WalletProvider(Get.find<ApiClient>()),
-        _purchaseProvider = PurchaseProvider(Get.find<ApiClient>());
+        _purchaseProvider = PurchaseProvider(Get.find<ApiClient>()),
+        _storage = Get.find<StorageService>();
 
   final isLoading = true.obs;
   final balance = '0.00'.obs;
+  final userName = ''.obs;
   final myCourses = <PurchaseModel>[].obs;
   final latestCourses = <CourseModel>[].obs;
 
@@ -28,7 +32,16 @@ class HomeController extends GetxController {
   @override
   void onInit() {
     super.onInit();
+    _loadUserName();
     loadData();
+  }
+
+  Future<void> _loadUserName() async {
+    final user = await _storage.getUser();
+    final name = user?.fullName.isNotEmpty == true
+        ? user!.fullName
+        : (user?.username ?? '');
+    userName.value = name;
   }
 
   Future<void> loadData() async {

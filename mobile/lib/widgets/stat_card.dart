@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../app/theme/app_colors.dart';
+import '../app/theme/app_shadows.dart';
 import '../app/theme/app_text_styles.dart';
 
 class StatCard extends StatelessWidget {
@@ -23,13 +24,7 @@ class StatCard extends StatelessWidget {
       decoration: BoxDecoration(
         color: AppColors.surface,
         borderRadius: BorderRadius.circular(16),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.06),
-            blurRadius: 10,
-            offset: const Offset(0, 4),
-          ),
-        ],
+        boxShadow: AppShadows.card,
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,

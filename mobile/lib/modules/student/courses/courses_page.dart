@@ -3,6 +3,7 @@ import 'package:get/get.dart';
 import '../../../app/theme/app_colors.dart';
 import '../../../app/routes/app_routes.dart';
 import '../../../widgets/course_card.dart';
+import '../../../widgets/gradient_app_bar.dart';
 import '../../../widgets/loading_shimmer.dart';
 import '../../../widgets/empty_state.dart';
 import 'courses_controller.dart';
@@ -17,7 +18,7 @@ class CoursesPage extends StatelessWidget {
       builder: (ctrl) {
         return Scaffold(
           backgroundColor: AppColors.background,
-          appBar: AppBar(title: const Text('الدورات')),
+          appBar: const GradientAppBar(title: 'الدورات'),
           body: Obx(() {
             if (ctrl.isLoading.value) return const LoadingListShimmer();
 
@@ -110,10 +111,12 @@ class CoursesPage extends StatelessWidget {
                         itemBuilder: (context, index) {
                           final course = ctrl.courses[index];
                           return CourseCard(
+                            courseId: course.id,
                             name: course.name,
                             teacherName: course.teacherName,
                             price: course.price,
                             specialization: course.specializationName,
+                            specializationId: course.specializationId,
                             year: course.year,
                             onTap: () => Get.toNamed(AppRoutes.courseDetail,
                                 arguments: {'courseId': course.id, 'course': course}),

@@ -5,7 +5,9 @@ import '../../../app/theme/app_colors.dart';
 import '../../../app/theme/app_text_styles.dart';
 import '../../../widgets/custom_button.dart';
 import '../../../widgets/custom_text_field.dart';
+import '../../../widgets/gradient_app_bar.dart';
 import '../../../widgets/loading_shimmer.dart';
+import '../../../widgets/section_header.dart';
 import 'profile_controller.dart';
 
 class ProfilePage extends StatelessWidget {
@@ -18,7 +20,7 @@ class ProfilePage extends StatelessWidget {
       builder: (ctrl) {
         return Scaffold(
           backgroundColor: AppColors.background,
-          appBar: AppBar(title: const Text('حسابي')),
+          appBar: const GradientAppBar(title: 'حسابي'),
           body: Obx(() {
             if (ctrl.isLoading.value) return const LoadingListShimmer();
 
@@ -89,9 +91,9 @@ class ProfilePage extends StatelessWidget {
                     ),
                   ),
                   const SizedBox(height: 24),
-                  Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 16),
-                    child: Text('تغيير كلمة المرور', style: AppTextStyles.titleLarge),
+                  const SectionHeader(
+                    title: 'تغيير كلمة المرور',
+                    icon: Icons.lock_reset_rounded,
                   ),
                   const SizedBox(height: 12),
                   Padding(

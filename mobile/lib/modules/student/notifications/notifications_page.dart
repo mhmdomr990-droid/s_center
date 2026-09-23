@@ -2,12 +2,34 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../../../app/theme/app_colors.dart';
 import '../../../app/theme/app_text_styles.dart';
+import '../../../widgets/gradient_app_bar.dart';
 import '../../../widgets/loading_shimmer.dart';
 import '../../../widgets/empty_state.dart';
+import '../../../data/models/notification_model.dart';
 import 'notifications_controller.dart';
 
 class NotificationsPage extends StatelessWidget {
   const NotificationsPage({super.key});
+
+  (IconData, Color) _notifStyle(NotificationModel notif) {
+    final text = '${notif.title} ${notif.body}'.toLowerCase();
+    if (text.contains('purchase') || text.contains('شراء')) {
+      return (Icons.shopping_bag_rounded, AppColors.primary);
+    }
+    if (text.contains('topup') ||
+        text.contains('wallet') ||
+        text.contains('شحن') ||
+        text.contains('رصيد')) {
+      return (Icons.account_balance_wallet_rounded, AppColors.success);
+    }
+    if (text.contains('device') || text.contains('جهاز')) {
+      return (Icons.phonelink_lock_rounded, AppColors.warning);
+    }
+    if (text.contains('welcome') || text.contains('مرحبا')) {
+      return (Icons.celebration_rounded, const Color(0xFF6A1B9A));
+    }
+    return (Icons.notifications_rounded, AppColors.primary);
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -16,8 +38,8 @@ class NotificationsPage extends StatelessWidget {
       builder: (ctrl) {
         return Scaffold(
           backgroundColor: AppColors.background,
-          appBar: AppBar(
-            title: const Text('الإشعارات'),
+          appBar: GradientAppBar(
+            title: 'الإشعارات',
             actions: [
               Obx(() {
                 if (ctrl.unreadCount.value == 0) return const SizedBox();
@@ -46,7 +68,8 @@ class NotificationsPage extends StatelessWidget {
                 padding: const EdgeInsets.only(top: 8),
                 itemCount: ctrl.notifications.length,
                 itemBuilder: (context, index) {
-                  final notif = ctrl.notifications[index];
+                          final notif = ctrl.notifications[index];
+                          final (notifIcon, notifColor) = _notifStyle(notif);
                   return GestureDetector(
                     onTap: () {
                       if (!notif.isRead) ctrl.markAsRead(notif.id);
@@ -67,12 +90,16 @@ class NotificationsPage extends StatelessWidget {
                           Container(
                             padding: const EdgeInsets.all(8),
                             decoration: BoxDecoration(
-                              color: notif.isRead ? AppColors.textHint.withValues(alpha: 0.2) : AppColors.primary.withValues(alpha: 0.1),
-                              borderRadius: BorderRadius.circular(8),
+                              color: notif.isRead
+                                  ? notifColor.withValues(alpha: 0.08)
+                                  : notifColor.withValues(alpha: 0.14),
+                              borderRadius: BorderRadius.circular(10),
                             ),
                             child: Icon(
-                              notif.isRead ? Icons.notifications_none : Icons.notifications_active,
-                              color: notif.isRead ? AppColors.textHint : AppColors.primary,
+                              notifIcon,
+                              color: notif.isRead
+                                  ? notifColor.withValues(alpha: 0.5)
+                                  : notifColor,
                               size: 22,
                             ),
                           ),

@@ -6,8 +6,11 @@ import '../../../app/theme/app_text_styles.dart';
 import '../../../app/routes/app_routes.dart';
 import '../../../widgets/balance_card.dart';
 import '../../../widgets/stat_card.dart';
+import '../../../widgets/gradient_app_bar.dart';
 import '../../../widgets/loading_shimmer.dart';
 import '../../../widgets/custom_button.dart';
+import '../../../widgets/section_header.dart';
+import '../../../widgets/empty_state.dart';
 import '../../../data/models/topup_request_model.dart';
 import 'wallet_controller.dart';
 
@@ -21,7 +24,7 @@ class WalletPage extends StatelessWidget {
       builder: (ctrl) {
         return Scaffold(
           backgroundColor: AppColors.background,
-          appBar: AppBar(title: const Text('المحفظة')),
+          appBar: const GradientAppBar(title: 'المحفظة'),
           body: Obx(() {
             if (ctrl.isLoading.value) return const LoadingListShimmer();
 
@@ -47,46 +50,34 @@ class WalletPage extends StatelessWidget {
                     ),
                   ),
                   const SizedBox(height: 24),
-                  Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 16),
-                    child: Row(
-                      children: [
-                        Expanded(child: Text('طلبات الشحن', style: AppTextStyles.titleLarge)),
-                        if (ctrl.topupTotal.value > ctrl.topupRequests.length)
-                          Text('${ctrl.topupRequests.length}/${ctrl.topupTotal.value}',
-                              style: AppTextStyles.caption),
-                      ],
-                    ),
+                  SectionHeader(
+                    title: 'طلبات الشحن',
+                    icon: Icons.receipt_long_rounded,
+                    trailing: ctrl.topupTotal.value > ctrl.topupRequests.length
+                        ? Text('${ctrl.topupRequests.length}/${ctrl.topupTotal.value}',
+                            style: AppTextStyles.caption)
+                        : null,
                   ),
                   const SizedBox(height: 8),
                   if (ctrl.topupRequests.isEmpty)
                     Padding(
                       padding: const EdgeInsets.symmetric(horizontal: 16),
-                      child: Container(
-                        width: double.infinity,
-                        padding: const EdgeInsets.all(16),
-                        decoration: BoxDecoration(
-                          color: AppColors.surface,
-                          borderRadius: BorderRadius.circular(12),
-                          border: Border.all(color: AppColors.divider.withValues(alpha: 0.5)),
-                        ),
-                        child: Text('لا توجد طلبات شحن بعد',
-                            style: AppTextStyles.bodySmall, textAlign: TextAlign.center),
+                      child: EmptyState(
+                        icon: Icons.outbox_rounded,
+                        title: 'لا توجد طلبات شحن بعد',
+                        subtitle: 'ستظهر طلباتك هنا بمجرد إرسالها',
                       ),
                     )
                   else
                     ...ctrl.topupRequests.map((req) => _buildTopupRequestCard(ctrl, req)),
                   const SizedBox(height: 24),
-                  Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 16),
-                    child: Row(
-                      children: [
-                        Expanded(child: Text('سجل الحركات', style: AppTextStyles.titleLarge)),
-                        if (ctrl.transactionsTotal.value > ctrl.transactions.length)
-                          Text('${ctrl.transactions.length}/${ctrl.transactionsTotal.value}',
-                              style: AppTextStyles.caption),
-                      ],
-                    ),
+                  SectionHeader(
+                    title: 'سجل الحركات',
+                    icon: Icons.swap_horiz_rounded,
+                    trailing: ctrl.transactionsTotal.value > ctrl.transactions.length
+                        ? Text('${ctrl.transactions.length}/${ctrl.transactionsTotal.value}',
+                            style: AppTextStyles.caption)
+                        : null,
                   ),
                   const SizedBox(height: 8),
                   if (ctrl.transactions.isEmpty)

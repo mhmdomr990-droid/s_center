@@ -34,4 +34,15 @@ class AppColors {
     end: Alignment.bottomLeft,
     colors: [Color(0xFF2E7D32), Color(0xFF43A047), Color(0xFF66BB6A)],
   );
+
+  static const List<Color> specPalette = [
+    Color(0xFF1565C0),
+    Color(0xFF6A1B9A),
+    Color(0xFFEF6C00),
+    Color(0xFF00838F),
+    Color(0xFFC62828),
+  ];
+
+  static Color specializationColor(int id) =>
+      id <= 0 ? primary : specPalette[id % specPalette.length];
 }
