@@ -4,6 +4,7 @@ import { z } from 'zod';
 import { UserRole } from '../../entities/enums';
 import { requireRole } from '../../middlewares/role';
 import { validate } from '../../middlewares/validate';
+import { lectureVideoUpload } from '../../middlewares/videoUpload';
 import { asyncHandler } from '../../utils/asyncHandler';
 import {
 	adminIdParamSchema,
@@ -94,8 +95,8 @@ panelAdminRoutes.post('/courses/:id', validate({ params: adminIdParamSchema, bod
 panelAdminRoutes.post('/courses/:id/toggle', validate({ params: adminIdParamSchema, body: togglePublishSchema }), asyncHandler(toggleCourseAction));
 
 panelAdminRoutes.get('/lectures', asyncHandler(lecturesPage));
-panelAdminRoutes.post('/lectures', validate({ body: lectureCreateSchema }), asyncHandler(createLectureAction));
-panelAdminRoutes.post('/lectures/:id', validate({ params: adminIdParamSchema, body: lectureUpdateSchema }), asyncHandler(updateLectureAction));
+panelAdminRoutes.post('/lectures', lectureVideoUpload.single('video'), validate({ body: lectureCreateSchema }), asyncHandler(createLectureAction));
+panelAdminRoutes.post('/lectures/:id', lectureVideoUpload.single('video'), validate({ params: adminIdParamSchema, body: lectureUpdateSchema }), asyncHandler(updateLectureAction));
 panelAdminRoutes.post('/lectures/:id/hide', validate({ params: adminIdParamSchema }), asyncHandler(hideLectureAction));
 
 panelAdminRoutes.get('/topups', validate({ query: topupRequestsQuerySchema }), asyncHandler(topupsPage));

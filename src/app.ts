@@ -10,9 +10,11 @@ import { adminRoutes } from './modules/admin/routes';
 import { authRoutes } from './modules/auth/routes';
 import { catalogRoutes } from './modules/catalog/routes';
 import { notificationsRoutes } from './modules/notifications/routes';
+import { lectureMediaRoutes } from './modules/media/routes';
 import { purchaseRoutes } from './modules/purchase/routes';
 import { walletRoutes } from './modules/wallet/routes';
 import { teacherRoutes } from './modules/teacher/routes';
+import { getMediaDownload, getMediaPlay } from './modules/media/controller';
 import { panelAuthRoutes } from './panel/routes/auth.routes';
 import { panelAdminRoutes } from './panel/routes/admin.routes';
 import { panelTeacherRoutes } from './panel/routes/teacher.routes';
@@ -85,16 +87,20 @@ app.use(express.static(path.resolve(process.cwd(), 'public')));
 app.use('/api', generalRateLimit);
 
 app.get('/', (_req, res) => {
-  res.redirect('/panel');
+  res.sendFile(path.resolve(process.cwd(), 'public', 'landing', 'index.html'));
 });
 
 app.use('/api/auth', authRoutes);
 app.use('/api', catalogRoutes);
+app.use('/api', lectureMediaRoutes);
 app.use('/api/wallet', walletRoutes);
 app.use('/api', purchaseRoutes);
 app.use('/api/notifications', notificationsRoutes);
 app.use('/api/admin', adminRoutes);
 app.use('/api/teacher', teacherRoutes);
+
+app.get('/media/play/:token', getMediaPlay);
+app.get('/media/download/:token', getMediaDownload);
 
 app.use('/panel', csrfOrigin, panelAuthRoutes);
 app.use('/panel/admin', csrfOrigin, panelAdminRoutes);

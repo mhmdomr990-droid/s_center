@@ -2,7 +2,7 @@ import { ApiError, apiGet, apiPost } from './api.js';
 import { requireAuth } from './auth.js';
 import { formatMoney, markdownLite } from './format.js';
 import { initNav } from './nav.js';
-import { setViewState, withSubmitLock } from './ui.js';
+import { renderBreadcrumb, setViewState, showToast, withSubmitLock } from './ui.js';
 
 function getCourseContext() {
   const params = new URLSearchParams(window.location.search);
@@ -10,73 +10,77 @@ function getCourseContext() {
     id: Number(params.get('id') || 0),
     name: params.get('name') || 'تفاصيل المادة',
     price: params.get('price') || null,
+    from: params.get('from') || '',
+    specializationId: params.get('specialization') || '',
+    specializationName: params.get('specializationName') || '',
+    year: params.get('year') || '',
   };
 }
 
-function isDirectVideo(url) {
-  return /\.(mp4|webm|ogg)(\?.*)?$/i.test(url);
-}
-
-function isYouTubeHost(hostname) {
-  const host = hostname.toLowerCase();
-  return host === 'youtu.be' || host.endsWith('youtube.com') || host.endsWith('youtube-nocookie.com');
-}
-
-function toEmbeddableVideoUrl(url) {
-  try {
-    const parsed = new URL(url);
-    const host = parsed.hostname.toLowerCase();
-
-    if (host === 'youtu.be') {
-      const id = parsed.pathname.replace(/^\//, '');
-      return id ? `https://www.youtube.com/embed/${id}` : url;
-    }
-
-    if (host.endsWith('youtube.com')) {
-      if (parsed.pathname === '/watch') {
-        const id = parsed.searchParams.get('v');
-        return id ? `https://www.youtube.com/embed/${id}?rel=0` : url;
-      }
-
-      if (parsed.pathname.startsWith('/shorts/')) {
-        const id = parsed.pathname.split('/').filter(Boolean)[1];
-        return id ? `https://www.youtube.com/embed/${id}?rel=0` : url;
-      }
-
-      if (parsed.pathname.startsWith('/embed/')) {
-        return url;
-      }
-    }
-  } catch (_error) {
-    return url;
+function buildCourseBreadcrumb(context) {
+  if (context.from === 'my-courses') {
+    return [
+      { label: 'الرئيسية', href: '/student/index.html' },
+      { label: 'مقرراتي', href: '/student/courses.html' },
+      { label: context.name },
+    ];
   }
 
-  return url;
+  if (context.specializationName && context.year) {
+    return [
+      { label: 'الرئيسية', href: '/student/index.html' },
+      { label: context.specializationName, href: `/student/index.html?specialization=${encodeURIComponent(context.specializationId)}` },
+      { label: `السنة ${context.year}`, href: `/student/index.html?specialization=${encodeURIComponent(context.specializationId)}&year=${encodeURIComponent(context.year)}` },
+      { label: context.name },
+    ];
+  }
+
+  return [
+    { label: 'الرئيسية', href: '/student/index.html' },
+    { label: 'المقررات', href: '/student/index.html' },
+    { label: context.name },
+  ];
 }
 
-function renderVideo(url) {
-  if (isDirectVideo(url)) {
-    return `<video controls preload="metadata" src="${url}" class="student-media"></video>`;
-  }
+function renderVideoPlayer(lecture) {
+  return `
+    <div class="student-media-wrap">
+      <video controls preload="metadata" class="student-media" data-media-lecture-id="${lecture.id}"></video>
+      <p class="student-muted" data-media-state="${lecture.id}">جارٍ تجهيز الفيديو المحمي...</p>
+    </div>
+  `;
+}
 
-  const embeddableUrl = toEmbeddableVideoUrl(url);
-  let referrerPolicy = 'no-referrer';
-  try {
-    const parsed = new URL(embeddableUrl);
-    if (isYouTubeHost(parsed.hostname)) {
-      // YouTube embeds may fail with error 153 when no referrer is sent.
-      referrerPolicy = 'strict-origin-when-cross-origin';
+async function hydrateVideoPlayers(root) {
+  const players = Array.from(root.querySelectorAll('video[data-media-lecture-id]'));
+  await Promise.all(players.map(async (player) => {
+    const lectureId = Number(player.getAttribute('data-media-lecture-id') || 0);
+    const state = root.querySelector(`[data-media-state="${lectureId}"]`);
+    if (!lectureId) {
+      return;
     }
-  } catch (_error) {
-    referrerPolicy = 'no-referrer';
-  }
 
-  return `<iframe src="${embeddableUrl}" class="student-media" loading="lazy" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen referrerpolicy="${referrerPolicy}"></iframe>`;
+    try {
+      const response = await apiPost(`/lectures/${lectureId}/stream-url`, {}, { requiresAuth: true });
+      player.src = response.url;
+      player.setAttribute('preload', 'metadata');
+      if (state) {
+        state.textContent = 'يمكن تشغيل الفيديو الآن.';
+      }
+    } catch (error) {
+      player.removeAttribute('src');
+      player.load();
+      if (state) {
+        state.textContent = error?.message || 'تعذر تجهيز الفيديو.';
+        state.className = 'student-muted student-danger-text';
+      }
+    }
+  }));
 }
 
 function renderLectureBody(lecture) {
-  if (lecture.type === 'VIDEO' && lecture.url) {
-    return renderVideo(lecture.url);
+  if (lecture.type === 'VIDEO') {
+    return renderVideoPlayer(lecture);
   }
 
   if (lecture.type === 'PDF' && lecture.url) {
@@ -112,7 +116,11 @@ function renderLectures(lectures) {
               <h3>${index + 1}. ${lecture.title}</h3>
               <span class="student-badge warning">مقفل</span>
             </div>
-            <p class="student-muted">🔒 اشترِ المادة للوصول إلى هذا الدرس.</p>
+            <div class="polish-lecture-lock" aria-hidden="true">
+              <div class="preview">محتوى الدرس متاح بعد الشراء</div>
+              <div class="overlay">🔒</div>
+            </div>
+            <p class="student-muted">اشترِ المادة للوصول إلى هذا الدرس.</p>
           </article>
         `;
       }
@@ -140,12 +148,14 @@ document.addEventListener('DOMContentLoaded', async () => {
   const buyPanel = document.getElementById('buyPanel');
   const buyMessage = document.getElementById('buyMessage');
   const buyButton = document.getElementById('buyButton');
+  const breadcrumb = document.getElementById('studentBreadcrumb');
 
   if (!state || !list || !title || !buyPanel || !buyMessage || !buyButton) {
     return;
   }
 
   const context = getCourseContext();
+  renderBreadcrumb(breadcrumb, buildCourseBreadcrumb(context));
 
   if (!context.id) {
     setViewState(state, {
@@ -165,10 +175,12 @@ document.addEventListener('DOMContentLoaded', async () => {
       type: 'loading',
       title: 'جار تحميل الدروس',
       message: 'انتظر قليلًا...',
+      variant: 'detail',
     });
 
     const lectures = await apiGet(`/courses/${context.id}/lectures`);
     list.innerHTML = renderLectures(lectures);
+    void hydrateVideoPlayers(list);
     setViewState(state, null);
 
     const hasLocked = lectures.some((lecture) => lecture.locked);
@@ -187,7 +199,11 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     void withSubmitLock(buyButton, async () => {
       try {
-        const wallet = await apiGet('/wallet');
+        const [wallet, beforeCourses] = await Promise.all([
+          apiGet('/wallet'),
+          apiGet('/me/courses'),
+        ]);
+        const hadCoursesBeforePurchase = Array.isArray(beforeCourses) && beforeCourses.length > 0;
         const balanceText = formatMoney(wallet.balance);
         const priceText = context.price ? formatMoney(context.price) : 'غير محدد';
         const confirmed = window.confirm(`سعر المادة: ${priceText} ل.س\nرصيدك الحالي: ${balanceText} ل.س\nهل تريد المتابعة؟`);
@@ -199,10 +215,23 @@ document.addEventListener('DOMContentLoaded', async () => {
         await apiPost(`/courses/${context.id}/purchase`, {}, { idempotent: true });
         buyMessage.textContent = 'تم الشراء بنجاح، يتم الآن فتح الدروس.';
         buyMessage.className = 'student-inline-message success';
+        showToast('تم شراء المادة بنجاح.', 'success');
+        if (!hadCoursesBeforePurchase) {
+          window.Polish?.confettiBurst();
+        }
         await loadLectures();
       } catch (error) {
         if (error instanceof ApiError && error.status === 400 && String(error.message).includes('Insufficient balance')) {
-          buyMessage.innerHTML = 'رصيدك غير كافٍ لإتمام الشراء. <a href="/student/wallet.html">انتقل إلى شحن المحفظة</a>.';
+          let current = 0;
+          try {
+            const wallet = await apiGet('/wallet');
+            current = Number(wallet.balance || 0);
+          } catch (_walletError) {
+            current = 0;
+          }
+          const price = Number(context.price || 0);
+          const missing = Math.max(0, price - current);
+          buyMessage.innerHTML = `الرصيد غير كافٍ. المبلغ الناقص: ${formatMoney(missing)} ل.س. <a href="/student/wallet.html">انتقل إلى شحن المحفظة</a>.`;
           buyMessage.className = 'student-inline-message error';
           return;
         }

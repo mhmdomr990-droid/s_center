@@ -2,7 +2,7 @@ import { Column, Entity, JoinColumn, ManyToOne } from 'typeorm';
 
 import { BaseColumns } from './BaseColumns';
 import { Course } from './Course';
-import { LectureType } from './enums';
+import { LectureType, LectureUploadStatus } from './enums';
 import { User } from './User';
 
 @Entity({ name: 'lectures' })
@@ -23,6 +23,18 @@ export class Lecture extends BaseColumns {
 
   @Column({ type: 'text', nullable: true })
   url!: string | null;
+
+  @Column({ name: 'storage_filename', type: 'varchar', length: 255, nullable: true })
+  storageFilename!: string | null;
+
+  @Column({ name: 'file_size', type: 'bigint', nullable: true })
+  fileSize!: string | null;
+
+  @Column({ name: 'duration_seconds', type: 'int', nullable: true })
+  durationSeconds!: number | null;
+
+  @Column({ name: 'upload_status', type: 'enum', enum: LectureUploadStatus, default: LectureUploadStatus.READY })
+  uploadStatus!: LectureUploadStatus;
 
   @Column({ type: 'text', nullable: true })
   content!: string | null;

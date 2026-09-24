@@ -39,13 +39,16 @@ export function csrfOrigin(req: Request, _res: Response, next: NextFunction) {
 
   const tokenFromCookie = req.cookies?.panel_csrf_token;
   const tokenFromBody = typeof req.body?.csrf_token === 'string' ? req.body.csrf_token : undefined;
+  const tokenFromQuery = typeof req.query?.csrf_token === 'string' ? req.query.csrf_token : undefined;
+  const tokenFromHeader = typeof req.get('x-csrf-token') === 'string' ? req.get('x-csrf-token') || undefined : undefined;
+  const tokenFromRequest = tokenFromBody || tokenFromQuery || tokenFromHeader;
 
-  if (!tokenFromCookie || !tokenFromBody) {
+  if (!tokenFromCookie || !tokenFromRequest) {
     return next(new AppError(403, 'انتهت صلاحية النموذج أو تم التلاعب به'));
   }
 
   try {
-    if (!timingSafeEqual(Buffer.from(tokenFromCookie), Buffer.from(tokenFromBody))) {
+    if (!timingSafeEqual(Buffer.from(tokenFromCookie), Buffer.from(tokenFromRequest))) {
       return next(new AppError(403, 'انتهت صلاحية النموذج أو تم التلاعب به'));
     }
   } catch (error) {

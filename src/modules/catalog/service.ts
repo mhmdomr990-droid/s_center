@@ -3,7 +3,7 @@ import { Course } from '../../entities/Course';
 import { Lecture } from '../../entities/Lecture';
 import { Purchase } from '../../entities/Purchase';
 import { Specialization } from '../../entities/Specialization';
-import { UserRole } from '../../entities/enums';
+import { LectureType, UserRole } from '../../entities/enums';
 import { User } from '../../entities/User';
 import { AppError } from '../../utils/AppError';
 
@@ -84,7 +84,7 @@ export async function listLectures(user: User, courseId: number) {
       id: lecture.id,
       title: lecture.title,
       type: lecture.type,
-      url: lecture.url,
+      url: lecture.type === LectureType.VIDEO ? null : lecture.url,
       content: lecture.content,
       is_published: lecture.isPublished,
       sort_order: lecture.sortOrder,

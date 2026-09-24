@@ -1,4 +1,5 @@
 @baseUrl = http://localhost:3000/api
+@mediaBaseUrl = http://localhost:3000
 
 @studentToken = PasteStudentTokenHere
 @teacherToken = PasteTeacherTokenHere
@@ -214,38 +215,70 @@ Accept: application/json
 ###
 POST {{baseUrl}}/admin/lectures
 Authorization: Bearer {{adminToken}}
-Content-Type: application/json
+Content-Type: multipart/form-data
 Accept: application/json
 
-{
-  "course_id": 1,
-  "title": "Lecture 1",
-  "type": "VIDEO",
-  "url": "https://example.com/video-1",
-  "content": null,
-  "is_published": true,
-  "sort_order": 1
-}
+course_id=1
+title=Lecture 1
+type=VIDEO
+sort_order=1
+video=@C:\Users\fadi\Desktop\science_center\fixtures\lecture-1.mp4;type=video/mp4
 
 ###
 PATCH {{baseUrl}}/admin/lectures/{{lectureId}}
 Authorization: Bearer {{adminToken}}
-Content-Type: application/json
+Content-Type: multipart/form-data
 Accept: application/json
 
-{
-  "title": "Lecture 1 Updated",
-  "type": "TEXT",
-  "url": null,
-  "content": "Lecture text content",
-  "is_published": true,
-  "sort_order": 2
-}
+title=Lecture 1 Updated
+type=TEXT
+content=Lecture text content
+sort_order=2
 
 ###
 DELETE {{baseUrl}}/admin/lectures/{{lectureId}}
 Authorization: Bearer {{adminToken}}
 Accept: application/json
+
+### Teacher - Lectures
+POST {{baseUrl}}/teacher/courses/{{courseId}}/lectures
+Authorization: Bearer {{teacherToken}}
+Content-Type: multipart/form-data
+Accept: application/json
+
+title=Teacher Lecture 1
+type=VIDEO
+sort_order=1
+video=@C:\Users\fadi\Desktop\science_center\fixtures\teacher-lecture-1.mp4;type=video/mp4
+
+###
+PATCH {{baseUrl}}/teacher/lectures/{{lectureId}}
+Authorization: Bearer {{teacherToken}}
+Content-Type: multipart/form-data
+Accept: application/json
+
+title=Teacher Lecture 1 Updated
+type=TEXT
+content=Updated lecture notes
+sort_order=2
+
+### Signed media URLs
+POST {{baseUrl}}/lectures/{{lectureId}}/stream-url
+Authorization: Bearer {{studentToken}}
+Accept: application/json
+
+###
+POST {{baseUrl}}/lectures/{{lectureId}}/download-url
+Authorization: Bearer {{studentToken}}
+Accept: application/json
+
+###
+GET {{mediaBaseUrl}}/media/play/{{signedToken}}
+Accept: application/octet-stream
+
+###
+GET {{mediaBaseUrl}}/media/download/{{signedToken}}
+Accept: application/octet-stream
 
 ### Admin - Top-up Requests
 GET {{baseUrl}}/admin/topup-requests?status=PENDING

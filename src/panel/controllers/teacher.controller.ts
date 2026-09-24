@@ -1,6 +1,7 @@
 import type { Request, Response } from 'express';
 
 import { AppError } from '../../utils/AppError';
+import type { StoredVideoFile } from '../../services/media';
 import { archiveTeacherLecture, createLectureForTeacher, getTeacherStats, listCourseLectures, listMyCourses, listTeacherPayouts, updateTeacherLecture } from '../../modules/teacher/service';
 import { setFlash } from '../middlewares/flash';
 
@@ -41,13 +42,13 @@ export async function lecturesPage(req: Request, res: Response) {
 }
 
 export async function createLectureAction(req: Request, res: Response) {
-  await createLectureForTeacher(req.user!.id, Number(req.params.id), req.body);
+  await createLectureForTeacher(req.user!.id, Number(req.params.id), req.body, req.file as StoredVideoFile | undefined);
   setFlash(res, 'success', 'تم حفظ المحاضرة');
   return res.redirect(`/panel/teacher/lectures?courseId=${req.params.id}`);
 }
 
 export async function updateLectureAction(req: Request, res: Response) {
-  await updateTeacherLecture(req.user!.id, Number(req.params.id), req.body);
+  await updateTeacherLecture(req.user!.id, Number(req.params.id), req.body, req.file as StoredVideoFile | undefined);
   setFlash(res, 'success', 'تم تحديث المحاضرة');
   const courseId = Number(req.body.course_id);
   if (Number.isFinite(courseId) && courseId > 0) {

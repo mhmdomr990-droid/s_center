@@ -46,6 +46,17 @@
         </tr>
       </thead>
       <tbody>
+        <% if (!specializationSales.length) { %>
+          <tr>
+            <td colspan="3">
+              <section class="polish-empty">
+                <svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M4 5h16v14H4V5zm2 2v10h12V7H6z"/></svg>
+                <h4>لا تتوفر بيانات مبيعات ضمن هذه الفترة</h4>
+                <p>اختر فترة أوسع أو انتظر تسجيل عمليات شراء جديدة.</p>
+              </section>
+            </td>
+          </tr>
+        <% } %>
         <% specializationSales.forEach((row) => { %>
           <tr>
             <td><%= row.name %></td>

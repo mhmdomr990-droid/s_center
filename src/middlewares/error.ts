@@ -29,6 +29,15 @@ export function errorMiddleware(error: unknown, _req: Request, res: Response, _n
     return res.status(error.statusCode).json({ success: false, message: error.message, code: error.code });
   }
 
+  if (error instanceof Error && (error.name === 'MulterError' || (error as { code?: string }).code?.startsWith('LIMIT_'))) {
+    const message = error.message || 'Invalid upload';
+    if (isPanelRequest(req)) {
+      setFlash(res, 'error', message);
+      return renderPanelErrorPage(res, 400);
+    }
+    return res.status(400).json({ success: false, message });
+  }
+
   // Validation errors
   if (error instanceof ZodError) {
     if (isPanelRequest(req)) {

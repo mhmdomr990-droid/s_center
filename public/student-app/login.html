@@ -4,6 +4,15 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>تسجيل الدخول - تطبيق الطالب</title>
+  <meta name="description" content="تسجيل الدخول إلى تطبيق الطالب في المركز الوطني للعلوم.">
+  <meta property="og:title" content="تسجيل الدخول - تطبيق الطالب">
+  <meta property="og:description" content="تسجيل الدخول إلى تطبيق الطالب في المركز الوطني للعلوم.">
+  <meta property="og:type" content="website">
+  <meta name="twitter:card" content="summary">
+  <meta name="twitter:title" content="تسجيل الدخول - تطبيق الطالب">
+  <meta name="twitter:description" content="تسجيل الدخول إلى تطبيق الطالب في المركز الوطني للعلوم.">
+  <link rel="icon" type="image/svg+xml" href="/favicon.svg">
+  <script src="/js/theme-init.js"></script>
   <link rel="stylesheet" href="/student/css/student.css">
 </head>
 <body>
@@ -12,7 +21,7 @@
       <h1>تسجيل الدخول</h1>
       <p class="student-subtitle">ادخل ببيانات حساب الطالب.</p>
       <div id="authError" class="student-error-box" hidden></div>
-      <form id="loginForm" class="student-form" novalidate>
+      <form id="loginForm" class="student-form" novalidate data-submit-lock="off">
         <label class="student-form-row">
           <span>اسم المستخدم</span>
           <input type="text" name="username" autocomplete="username" required>
@@ -29,6 +38,7 @@
       </p>
     </section>
   </main>
+  <script src="/js/polish.js"></script>
   <script type="module" src="/student/js/login.js"></script>
 </body>
 </html>

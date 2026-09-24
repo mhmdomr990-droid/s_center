@@ -46,12 +46,12 @@ export const getTeacherCoursePreview = asyncHandler(async (req: Request, res: Re
 });
 
 export const postTeacherLecture = asyncHandler(async (req: Request, res: Response) => {
-  const data = await createLectureForTeacher(req.user!.id, Number(req.params.id), req.body);
+  const data = await createLectureForTeacher(req.user!.id, Number(req.params.id), req.body, req.file ?? null);
   res.status(201).json({ success: true, data });
 });
 
 export const patchTeacherLecture = asyncHandler(async (req: Request, res: Response) => {
-  const data = await updateTeacherLecture(req.user!.id, Number(req.params.id), req.body);
+  const data = await updateTeacherLecture(req.user!.id, Number(req.params.id), req.body, req.file ?? null);
   res.status(200).json({ success: true, data });
 });
 

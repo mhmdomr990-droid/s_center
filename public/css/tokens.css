@@ -13,3 +13,19 @@
   --warning: #a36d00;
   --shadow: 0 14px 40px rgba(37, 28, 17, 0.08);
 }
+
+[data-theme='dark'] {
+  color-scheme: dark;
+  --bg: #10161d;
+  --panel: #18212b;
+  --panel-soft: #1f2a36;
+  --text: #e7edf3;
+  --muted: #9fb0c1;
+  --border: #2d3b4a;
+  --brand: #5fa9d8;
+  --brand-soft: #1f3f57;
+  --success: #6ac498;
+  --danger: #ef8c8c;
+  --warning: #e6be69;
+  --shadow: 0 16px 34px rgba(0, 0, 0, 0.35);
+}

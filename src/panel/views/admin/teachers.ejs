@@ -5,6 +5,12 @@
   <div><h1 style="margin:0;">المدرسون</h1></div>
   <button class="panel-btn panel-btn-primary" data-modal-open="teacher-create-modal">إضافة مدرس</button>
 </div>
+<%- include('../partials/breadcrumb', {
+  items: [
+    { label: 'لوحة التحكم', href: '/panel/admin/overview' },
+    { label: 'المعلّمون' },
+  ],
+}) %>
 <div class="panel-table">
   <table>
     <thead>
@@ -18,6 +24,17 @@
       </tr>
     </thead>
     <tbody>
+      <% if (!teachers.length) { %>
+        <tr>
+          <td colspan="6">
+            <section class="polish-empty">
+              <svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M12 3l10 5-10 5L2 8l10-5zm-6 8.7V16c0 2.2 2.7 4 6 4s6-1.8 6-4v-4.3l-6 3-6-3z"/></svg>
+              <h4>لا يوجد مدرسون بعد</h4>
+              <p>يمكنك إضافة حساب مدرس جديد من الزر العلوي.</p>
+            </section>
+          </td>
+        </tr>
+      <% } %>
       <% teachers.forEach((item) => { %>
         <tr>
           <td><%= item.full_name %> (<%= item.username %>)</td>

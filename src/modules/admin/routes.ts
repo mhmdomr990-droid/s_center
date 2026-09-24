@@ -3,6 +3,7 @@ import { Router } from 'express';
 import { authMiddleware } from '../../middlewares/auth';
 import { requireRole } from '../../middlewares/role';
 import { validate } from '../../middlewares/validate';
+import { lectureVideoUpload } from '../../middlewares/videoUpload';
 import { UserRole } from '../../entities/enums';
 import {
   adjustBalanceSchema,
@@ -101,9 +102,9 @@ adminRoutes.put('/courses/:id/lectures/order', validate({ params: adminIdParamSc
 adminRoutes.delete('/courses/:id', validate({ params: adminIdParamSchema }), deleteAdminCourse);
 
 adminRoutes.get('/lectures', validate({ query: adminLecturesQuerySchema }), getAdminLectures);
-adminRoutes.post('/lectures', validate({ body: lectureCreateSchema }), postAdminLecture);
+adminRoutes.post('/lectures', lectureVideoUpload.single('video'), validate({ body: lectureCreateSchema }), postAdminLecture);
 adminRoutes.get('/lectures/:id', validate({ params: adminIdParamSchema }), getAdminLectureById);
-adminRoutes.patch('/lectures/:id', validate({ params: adminIdParamSchema, body: lectureUpdateSchema }), patchAdminLecture);
+adminRoutes.patch('/lectures/:id', lectureVideoUpload.single('video'), validate({ params: adminIdParamSchema, body: lectureUpdateSchema }), patchAdminLecture);
 adminRoutes.patch('/lectures/:id/published', validate({ params: adminIdParamSchema, body: publishedBodySchema }), patchAdminLecturePublished);
 adminRoutes.delete('/lectures/:id', validate({ params: adminIdParamSchema }), deleteAdminLecture);
 

@@ -3,24 +3,143 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>مركز العلوم - بوابة الدخول</title>
-  <link rel="stylesheet" href="/css/welcome.css">
+  <title>المركز الوطني للعلوم</title>
+  <meta name="description" content="المركز الوطني للعلوم: معهد تدريبي لطلاب الهندسات ومختلف الاختصاصات العلمية.">
+  <link rel="stylesheet" href="/css/landing.css">
+  <script src="/js/landing.js" defer></script>
 </head>
-<body>
-  <main class="welcome-shell">
-    <section class="welcome-card">
-      <p class="welcome-kicker">Science Center</p>
-      <h1>أهلاً بك في بوابة مركز العلوم</h1>
-      <p class="welcome-subtitle">اختر طريقة الدخول المناسبة لك للمتابعة.</p>
+<body class="landing-page">
+  <header class="site-header" id="top">
+    <nav class="nav-shell" aria-label="التنقل الرئيسي">
+      <a class="brand" href="/" aria-label="العودة للرئيسية">
+        <span class="brand-mark" aria-hidden="true">م</span>
+        <span class="brand-text">المركز الوطني للعلوم</span>
+      </a>
 
-      <div class="welcome-actions">
-        <a class="welcome-btn student" href="/student/login.html">دخول الطالب</a>
-        <a class="welcome-btn teacher" href="/panel/login">دخول المدرّس</a>
-        <a class="welcome-btn admin" href="/panel/login">دخول المدير</a>
+      <button class="nav-toggle" type="button" aria-expanded="false" aria-controls="siteMenu" data-nav-toggle>
+        <svg class="icon" aria-hidden="true"><use href="/landing/icons.svg#icon-menu"></use></svg>
+        <span>القائمة</span>
+      </button>
+
+      <div class="nav-links" id="siteMenu" data-nav-menu>
+        <a href="#about">من نحن</a>
+        <a href="#goals">أهدافنا</a>
+        <a href="#contact">تواصل معنا</a>
       </div>
 
-      <p class="welcome-note">ملاحظة: دخول المدرّس والمدير من نفس صفحة لوحة التحكم، ويُحدَّد الدور تلقائيًا حسب الحساب.</p>
+      <a class="login-cta" href="/welcome/login-select.html">تسجيل الدخول</a>
+    </nav>
+  </header>
+
+  <main>
+    <section class="hero section-shell">
+      <div class="hero-content">
+        <p class="eyebrow">منصة تدريب علمي احترافية</p>
+        <h1>نرفع جاهزية طلاب الهندسات والاختصاصات العلمية عبر تدريب معرفي وتطبيقي متوازن</h1>
+        <p class="hero-subtitle">بيئة تعليمية منظمة تساعد الطالب على بناء فهم أعمق، وتنمية مهارات عملية تدعم مساره الأكاديمي والمهني.</p>
+        <div class="hero-actions">
+          <a class="btn btn-primary" href="/welcome/login-select.html">تسجيل الدخول</a>
+          <a class="btn btn-secondary" href="#about">تعرّف علينا</a>
+        </div>
+      </div>
+      <div class="hero-art" aria-hidden="true">
+        <svg viewBox="0 0 400 320" role="img">
+          <path d="M44 228c20-48 53-76 98-84 45-8 90 2 128-20 32-19 52-50 86-63 16-6 31-9 44-8v267H0V198c15 9 30 22 44 30z"></path>
+          <circle cx="275" cy="95" r="42"></circle>
+          <circle cx="140" cy="110" r="25"></circle>
+        </svg>
+      </div>
+    </section>
+
+    <section class="section-shell" id="about">
+      <div class="section-head">
+        <h2>من نحن</h2>
+      </div>
+      <div class="about-grid">
+        <p>المركز الوطني للعلوم معهد تدريبي متخصص يقدّم دورات علمية وتعليمية تستهدف طلاب الهندسات ومختلف الاختصاصات العلمية، مع تركيز واضح على جودة المحتوى ودقة الطرح.</p>
+        <p>نؤمن بأن بناء المعرفة العلمية لا يكتمل دون ممارسة منهجية، لذلك نعمل على تقديم تجربة تعلّم تربط بين الفهم النظري والتطبيق العملي ضمن إطار أكاديمي منظم.</p>
+        <p>نقدّم بيئة تعليمية داعمة تساعد الطالب على تطوير أدواته التحليلية، وتعزيز ثقته في التعامل مع المسائل العلمية، والاستعداد بشكل أفضل لمتطلبات الدراسة الجامعية.</p>
+      </div>
+    </section>
+
+    <section class="section-shell" id="goals">
+      <div class="section-head">
+        <h2>أهدافنا</h2>
+      </div>
+      <div class="goal-grid">
+        <article class="goal-card">
+          <svg class="icon" aria-hidden="true"><use href="/landing/icons.svg#icon-up"></use></svg>
+          <h3>رفع السوية العلمية للطلاب</h3>
+          <p>تعزيز المستوى المعرفي بأسلوب تدريبي واضح ومتدرج.</p>
+        </article>
+        <article class="goal-card">
+          <svg class="icon" aria-hidden="true"><use href="/landing/icons.svg#icon-spark"></use></svg>
+          <h3>تقديم الخبرات وتطويرها</h3>
+          <p>نقل خبرات تعليمية عملية وتحديثها بما يخدم احتياجات الطالب.</p>
+        </article>
+        <article class="goal-card">
+          <svg class="icon" aria-hidden="true"><use href="/landing/icons.svg#icon-link"></use></svg>
+          <h3>ربط النظرية بالتطبيق</h3>
+          <p>تحويل المفاهيم العلمية إلى فهم قابل للاستخدام الأكاديمي والعملي.</p>
+        </article>
+        <article class="goal-card">
+          <svg class="icon" aria-hidden="true"><use href="/landing/icons.svg#icon-support"></use></svg>
+          <h3>دعم مختلف التخصصات الهندسية</h3>
+          <p>توجيه تدريبي مرن يراعي تنوّع المسارات الهندسية والعلمية.</p>
+        </article>
+      </div>
+    </section>
+
+    <section class="section-shell teaser" id="why">
+      <div class="section-head">
+        <h2>لماذا نحن</h2>
+      </div>
+      <p>إذا كنت تبحث عن بيئة تدريب علمي منضبطة وتفاعلية، سجّل الدخول الآن واستعرض الدورات المتاحة بما يناسب مرحلتك الدراسية وتخصصك.</p>
+      <a class="btn btn-primary" href="/welcome/login-select.html">ابدأ الآن</a>
+    </section>
+
+    <section class="section-shell" id="contact">
+      <div class="section-head">
+        <h2>تواصل معنا</h2>
+      </div>
+      <div class="contact-grid">
+        <div class="contact-card">
+          <h3>الهاتف</h3>
+          <div class="contact-line">
+            <svg class="icon" aria-hidden="true"><use href="/landing/icons.svg#icon-phone"></use></svg>
+            <a href="tel:+963947900013" dir="ltr">+963 947 900 013</a>
+          </div>
+          <button class="btn btn-secondary" type="button" data-copy-phone data-phone-value="+963947900013">نسخ الرقم</button>
+        </div>
+
+        <div class="contact-card">
+          <h3>فيسبوك</h3>
+          <a class="btn btn-facebook" href="https://www.facebook.com/p/المركز-الوطني-للعلوم-100063612949479/" target="_blank" rel="noopener noreferrer">
+            <svg class="icon" aria-hidden="true"><use href="/landing/icons.svg#icon-facebook"></use></svg>
+            <span>زيارة الصفحة الرسمية</span>
+          </a>
+        </div>
+      </div>
+
+      <div class="map-wrap" aria-label="موقع المركز على الخريطة">
+        <iframe src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d1291.0455368326516!2d35.796874037789756!3d35.519291853689985!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x1526ad726e8f2ebd%3A0xeb591ec352781c44!2z2KfZhNmF2LHZg9iyINin2YTZiNi32YbZiiDZhNmE2LnZhNmI2YU!5e1!3m2!1sar!2sfr!4v1790149468647!5m2!1sar!2sfr" width="600" height="450" style="border:0;" allowfullscreen="" loading="lazy" referrerpolicy="strict-origin-when-cross-origin"></iframe>
+      </div>
     </section>
   </main>
+
+  <footer class="site-footer">
+    <div>
+      <h3>المركز الوطني للعلوم</h3>
+      <p>تدريب علمي متخصص لطلاب الهندسات ومختلف الاختصاصات.</p>
+    </div>
+    <div class="footer-links">
+      <a href="tel:+963947900013" dir="ltr">+963 947 900 013</a>
+      <a href="https://www.facebook.com/p/المركز-الوطني-للعلوم-100063612949479/" target="_blank" rel="noopener noreferrer">Facebook</a>
+      <a href="/welcome/login-select.html">تسجيل الدخول</a>
+    </div>
+    <small>جميع الحقوق محفوظة <span data-year></span></small>
+  </footer>
+
+  <div class="toast" role="status" aria-live="polite" data-toast>تم النسخ</div>
 </body>
 </html>

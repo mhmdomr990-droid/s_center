@@ -2,6 +2,12 @@
 <%- include('../layout/sidebar', { currentUser, csrfToken, pendingTopupsCount }) %>
 <%- include('../partials/flash', { flash }) %>
 <div class="panel-topbar"><h1 style="margin:0;">الإشعارات</h1></div>
+<%- include('../partials/breadcrumb', {
+  items: [
+    { label: 'لوحة التحكم', href: '/panel/admin/overview' },
+    { label: 'الإشعارات' },
+  ],
+}) %>
 <div class="panel-card">
   <form method="post" action="/panel/admin/notifications" class="panel-form">
     <input type="hidden" name="csrf_token" value="<%= csrfToken %>">

@@ -8,6 +8,12 @@
   </div>
   <button class="panel-btn panel-btn-primary" data-modal-open="specialization-create-modal">إضافة تخصص</button>
 </div>
+<%- include('../partials/breadcrumb', {
+  items: [
+    { label: 'لوحة التحكم', href: '/panel/admin/overview' },
+    { label: 'التخصصات' },
+  ],
+}) %>
 <div class="panel-table">
   <table>
     <thead>
@@ -19,6 +25,17 @@
       </tr>
     </thead>
     <tbody>
+      <% if (!specializations.length) { %>
+        <tr>
+          <td colspan="4">
+            <section class="polish-empty">
+              <svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M12 3l9 5-9 5-9-5 9-5zm-9 8l9 5 9-5v5l-9 5-9-5v-5z"/></svg>
+              <h4>لا توجد تخصصات بعد</h4>
+              <p>أضف تخصصًا جديدًا ليظهر في تطبيق الطالب.</p>
+            </section>
+          </td>
+        </tr>
+      <% } %>
       <% specializations.forEach((item) => { %>
         <tr>
           <td><%= item.name %></td>

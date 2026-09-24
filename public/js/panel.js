@@ -1,4 +1,22 @@
 (() => {
+  window.Polish?.consumeFlashToasts();
+  window.Polish?.initThemeToggle(document);
+  window.Polish?.bindCopyButtons(document);
+
+  document.querySelectorAll('.panel-topbar').forEach((bar) => {
+    if (bar.querySelector('[data-theme-toggle]')) {
+      return;
+    }
+    const toggle = document.createElement('button');
+    toggle.type = 'button';
+    toggle.className = 'polish-theme-toggle';
+    toggle.setAttribute('data-theme-toggle', '1');
+    toggle.setAttribute('aria-label', 'تبديل النمط');
+    toggle.innerHTML = '<span class="moon">◐</span><span class="sun">☀</span>';
+    bar.appendChild(toggle);
+  });
+  window.Polish?.initThemeToggle(document);
+
   const csrfTokenInput = document.querySelector('input[name="csrf_token"]');
   const csrfToken = csrfTokenInput ? csrfTokenInput.value : '';
 
@@ -60,6 +78,15 @@
     });
   });
 
+  document.querySelectorAll('form').forEach((form) => {
+    form.addEventListener('submit', () => {
+      const submit = form.querySelector('button[type="submit"], input[type="submit"]');
+      if (submit) {
+        window.Polish?.setButtonBusy(submit, true);
+      }
+    });
+  });
+
   document.querySelectorAll('.panel-modal').forEach((modal) => {
     modal.addEventListener('click', (event) => {
       if (event.target === modal) {
@@ -82,6 +109,12 @@
       return;
     }
 
+    const computed = getComputedStyle(document.documentElement);
+    const chartText = computed.getPropertyValue('--muted').trim() || '#6f665b';
+    const chartGrid = computed.getPropertyValue('--border').trim() || '#ded7ca';
+    Chart.defaults.color = chartText;
+    Chart.defaults.borderColor = chartGrid;
+
     new Chart(canvas, {
       type: chartType,
       data: parsed.data,
@@ -90,5 +123,16 @@
         ...(parsed.options || {}),
       },
     });
+  });
+
+  document.querySelectorAll('.panel-stat strong, [data-countup]').forEach((node) => {
+    const text = node.textContent || '0';
+    const normalized = text.replace(/[٠-٩]/g, (digit) => String('٠١٢٣٤٥٦٧٨٩'.indexOf(digit))).replace(/[^0-9.\-]/g, '');
+    const value = Number(normalized);
+    if (Number.isFinite(value)) {
+      const suffix = text.includes('ل.س') ? ' ل.س' : '';
+      const decimals = text.includes('.') || text.includes('٫') ? 2 : 0;
+      window.Polish?.animateCount(node, value, { duration: 760, decimals, suffix });
+    }
   });
 })();

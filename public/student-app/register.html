@@ -4,6 +4,8 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>إنشاء حساب - تطبيق الطالب</title>
+  <link rel="icon" type="image/svg+xml" href="/favicon.svg">
+  <script src="/js/theme-init.js"></script>
   <link rel="stylesheet" href="/student/css/student.css">
 </head>
 <body>
@@ -12,7 +14,7 @@
       <h1>إنشاء حساب جديد</h1>
       <p class="student-subtitle">الحساب سيتربط بهذا المتصفح كجهاز واحد.</p>
       <div id="authError" class="student-error-box" hidden></div>
-      <form id="registerForm" class="student-form" novalidate>
+      <form id="registerForm" class="student-form" novalidate data-submit-lock="off">
         <label class="student-form-row">
           <span>اسم المستخدم</span>
           <input type="text" name="username" minlength="3" maxlength="30" required>
@@ -37,6 +39,7 @@
       </p>
     </section>
   </main>
+  <script src="/js/polish.js"></script>
   <script type="module" src="/student/js/register.js"></script>
 </body>
 </html>

@@ -4,12 +4,15 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>تفاصيل المادة - تطبيق الطالب</title>
+  <link rel="icon" type="image/svg+xml" href="/favicon.svg">
+  <script src="/js/theme-init.js"></script>
   <link rel="stylesheet" href="/student/css/student.css">
 </head>
 <body>
   <div class="student-shell">
     <nav id="studentNav" class="student-nav"></nav>
     <main class="student-main">
+      <section id="studentBreadcrumb"></section>
       <section class="student-headline">
         <h1 id="courseTitle" class="student-page-title">تفاصيل المادة</h1>
         <p class="student-subtitle">قائمة المحاضرات والمحتوى المتاح.</p>
@@ -30,6 +33,7 @@
       <section id="lectureList" class="student-stack"></section>
     </main>
   </div>
+  <script src="/js/polish.js"></script>
   <script type="module" src="/student/js/course.js"></script>
 </body>
 </html>

@@ -2,7 +2,7 @@ import { apiGet, apiPatch } from './api.js';
 import { requireAuth } from './auth.js';
 import { formatDate } from './format.js';
 import { initNav, setUnreadBadge } from './nav.js';
-import { setViewState } from './ui.js';
+import { renderBreadcrumb, setViewState, showToast } from './ui.js';
 
 const LIMIT = 20;
 
@@ -14,10 +14,16 @@ document.addEventListener('DOMContentLoaded', async () => {
   const list = document.getElementById('notificationsList');
   const more = document.getElementById('notificationsMore');
   const readAll = document.getElementById('readAllButton');
+  const breadcrumb = document.getElementById('studentBreadcrumb');
 
   if (!state || !list || !more || !readAll) {
     return;
   }
+
+  renderBreadcrumb(breadcrumb, [
+    { label: 'الرئيسية', href: '/student/index.html' },
+    { label: 'الإشعارات' },
+  ]);
 
   let offset = 0;
   let unreadCount = 0;
@@ -52,6 +58,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     unreadCount = Math.max(0, unreadCount - 1);
     setUnreadBadge(unreadCount);
+    showToast('تم تعليم الإشعار كمقروء.', 'success');
   }
 
   async function loadNotifications(append) {
@@ -68,7 +75,12 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
 
     if (!items.length && !append) {
-      list.innerHTML = '<div class="student-empty-inline">لا توجد إشعارات.</div>';
+      list.innerHTML = window.Polish?.emptyState
+        ? window.Polish.emptyState({
+          title: 'صندوق الإشعارات فارغ',
+          message: 'عند وجود تحديثات جديدة ستظهر لك هنا مباشرة.',
+        })
+        : '<div class="student-empty-inline">لا توجد إشعارات.</div>';
     } else {
       list.insertAdjacentHTML('beforeend', items.map(renderItem).join(''));
     }
@@ -100,6 +112,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         card.classList.remove('unread');
       });
       list.querySelectorAll('.student-notification .student-badge').forEach((badge) => badge.remove());
+      showToast('تم تعليم كل الإشعارات كمقروءة.', 'success');
     })();
   });
 
@@ -108,9 +121,17 @@ document.addEventListener('DOMContentLoaded', async () => {
       type: 'loading',
       title: 'جار تحميل الإشعارات',
       message: 'لحظات...',
+      variant: 'table',
     });
 
     await loadNotifications(false);
+    window.Polish?.initPullToRefresh({
+      container: document.querySelector('.student-main'),
+      onRefresh: async () => {
+        offset = 0;
+        await loadNotifications(false);
+      },
+    });
     setViewState(state, null);
   } catch (error) {
     setViewState(state, {

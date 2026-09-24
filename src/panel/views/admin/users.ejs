@@ -10,6 +10,12 @@
     <button class="panel-btn panel-btn-secondary" type="submit">بحث</button>
   </form>
 </div>
+<%- include('../partials/breadcrumb', {
+  items: [
+    { label: 'لوحة التحكم', href: '/panel/admin/overview' },
+    { label: 'المستخدمون' },
+  ],
+}) %>
 <div class="panel-table">
   <table>
     <thead>
@@ -23,6 +29,17 @@
       </tr>
     </thead>
     <tbody>
+      <% if (!users.length) { %>
+        <tr>
+          <td colspan="6">
+            <section class="polish-empty">
+              <svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M10 4a4 4 0 100 8 4 4 0 000-8zm8 2h-2v2h2V6zm-2 6h2v2h-2v-2zM4 18c0-2.2 3-4 6-4s6 1.8 6 4v2H4v-2z"/></svg>
+              <h4>لا توجد نتائج مطابقة</h4>
+              <p>عدّل كلمات البحث أو امسح الفلاتر لإظهار المستخدمين.</p>
+            </section>
+          </td>
+        </tr>
+      <% } %>
       <% users.forEach((item) => { %>
         <tr>
           <td><%= item.username %></td>
@@ -38,9 +55,9 @@
             </form>
             <form method="post" action="/panel/admin/users/<%= item.id %>/reset-device" style="display:inline;">
               <input type="hidden" name="csrf_token" value="<%= csrfToken %>">
-              <button class="panel-btn panel-btn-secondary" type="submit" data-confirm="هل تريد تصفير الجهاز لهذا المستخدم؟">Reset Device</button>
+              <button class="panel-btn panel-btn-secondary" type="submit" data-confirm="هل تريد تصفير الجهاز لهذا المستخدم؟">إعادة ضبط الجهاز</button>
             </form>
-            <button class="panel-btn panel-btn-secondary" data-modal-open="user-reset-password-modal" data-modal-action="/panel/admin/users/<%= item.id %>/reset-password" data-modal-fill='<%= JSON.stringify(item) %>'>Reset Password</button>
+            <button class="panel-btn panel-btn-secondary" data-modal-open="user-reset-password-modal" data-modal-action="/panel/admin/users/<%= item.id %>/reset-password" data-modal-fill='<%= JSON.stringify(item) %>'>إعادة تعيين كلمة المرور</button>
             <button class="panel-btn panel-btn-secondary" data-modal-open="user-adjust-balance-modal" data-modal-action="/panel/admin/users/<%= item.id %>/adjust-balance" data-modal-fill='<%= JSON.stringify(item) %>'>تعديل الرصيد</button>
           </td>
         </tr>
@@ -54,7 +71,13 @@
     <form method="post" action="/panel/admin/users/0/reset-password" class="panel-form">
       <input type="hidden" name="csrf_token" value="<%= csrfToken %>">
       <div class="panel-form-grid">
-        <div><label>كلمة المرور الجديدة</label><input name="new_password" type="password" required></div>
+        <div>
+          <label>كلمة المرور الجديدة</label>
+          <div class="panel-toolbar" style="margin:0;">
+            <input id="resetPasswordField" name="new_password" type="password" required>
+            <button type="button" class="polish-copy-btn" data-copy-target="#resetPasswordField" data-copy-success="تم نسخ كلمة المرور">نسخ</button>
+          </div>
+        </div>
       </div>
       <div class="panel-form-actions"><button class="panel-btn panel-btn-primary" type="submit">حفظ</button></div>
     </form>

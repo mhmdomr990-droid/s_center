@@ -2,7 +2,7 @@ import { apiGet, apiPost } from './api.js';
 import { clearAuthStorage, requireAuth } from './auth.js';
 import { formatMoney } from './format.js';
 import { initNav } from './nav.js';
-import { setViewState, setText, withSubmitLock } from './ui.js';
+import { renderBreadcrumb, setText, setViewState, showToast, withSubmitLock } from './ui.js';
 
 function logout() {
   clearAuthStorage();
@@ -67,6 +67,7 @@ document.addEventListener('DOMContentLoaded', async () => {
       form.reset();
       msg.textContent = 'تم تغيير كلمة المرور بنجاح.';
       msg.className = 'student-inline-message success';
+      showToast('تم تحديث كلمة المرور بنجاح.', 'success');
     });
   });
 
@@ -80,7 +81,12 @@ document.addEventListener('DOMContentLoaded', async () => {
     const me = await apiGet('/auth/me');
     setText('profileUsername', me.username);
     setText('profileFullName', me.full_name);
-    setText('profileBalance', `${formatMoney(me.balance || 0)} ل.س`);
+    const balanceElement = document.getElementById('profileBalance');
+    if (window.Polish?.animateCount && balanceElement) {
+      window.Polish.animateCount(balanceElement, Number(me.balance || 0), { duration: 700, decimals: 2, suffix: ' ل.س' });
+    } else {
+      setText('profileBalance', `${formatMoney(me.balance || 0)} ل.س`);
+    }
 
     setViewState(state, null);
   } catch (error) {
@@ -92,4 +98,9 @@ document.addEventListener('DOMContentLoaded', async () => {
       actionLabel: 'إعادة المحاولة',
     });
   }
+  const breadcrumb = document.getElementById('studentBreadcrumb');
+  renderBreadcrumb(breadcrumb, [
+    { label: 'الرئيسية', href: '/student/index.html' },
+    { label: 'حسابي' },
+  ]);
 });

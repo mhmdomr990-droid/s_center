@@ -3,6 +3,7 @@ import type { Request, Response } from 'express';
 import { AppDataSource } from '../../config/data-source';
 import { User } from '../../entities/User';
 import { AppError } from '../../utils/AppError';
+import type { StoredVideoFile } from '../../services/media';
 import {
   approveTopupRequest,
   archiveCourse,
@@ -173,7 +174,7 @@ export async function createCourseAction(req: Request, res: Response) {
 }
 
 export async function updateCourseAction(req: Request, res: Response) {
-  await updateCourse(Number(req.params.id), req.body);
+  await updateCourse(Number(req.params.id), req.body, req.user!.id);
   setFlash(res, 'success', 'تم تحديث الكورس بنجاح');
   return res.redirect('/panel/admin/courses');
 }
@@ -202,13 +203,13 @@ export async function lecturesPage(req: Request, res: Response) {
 }
 
 export async function createLectureAction(req: Request, res: Response) {
-  await createLecture(req.user!.id, req.body);
+  await createLecture(req.user!.id, req.body, req.file as StoredVideoFile | undefined);
   setFlash(res, 'success', 'تم حفظ المحاضرة بنجاح');
   return res.redirect('/panel/admin/lectures');
 }
 
 export async function updateLectureAction(req: Request, res: Response) {
-  await updateLecture(Number(req.params.id), req.body);
+  await updateLecture(Number(req.params.id), req.body, req.file as StoredVideoFile | undefined);
   setFlash(res, 'success', 'تم تحديث المحاضرة بنجاح');
   return res.redirect('/panel/admin/lectures');
 }

@@ -4,12 +4,15 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>المحفظة - تطبيق الطالب</title>
+  <link rel="icon" type="image/svg+xml" href="/favicon.svg">
+  <script src="/js/theme-init.js"></script>
   <link rel="stylesheet" href="/student/css/student.css">
 </head>
 <body>
   <div class="student-shell">
     <nav id="studentNav" class="student-nav"></nav>
     <main class="student-main">
+      <section id="studentBreadcrumb"></section>
       <section class="student-headline">
         <h1 class="student-page-title">المحفظة</h1>
         <p class="student-subtitle">الرصيد، طلبات الشحن، وسجل العمليات.</p>
@@ -38,7 +41,10 @@
           </label>
           <label class="student-form-row">
             <span>رقم المرجع</span>
-            <input type="text" name="reference_number" required>
+            <div class="student-actions">
+              <input id="topupReferenceNumber" type="text" name="reference_number" required>
+              <button type="button" class="polish-copy-btn" data-copy-target="#topupReferenceNumber" data-copy-success="تم نسخ رقم المرجع">نسخ</button>
+            </div>
           </label>
           <label class="student-form-row">
             <span>اسم المرسل</span>
@@ -66,6 +72,7 @@
       </section>
     </main>
   </div>
+  <script src="/js/polish.js"></script>
   <script type="module" src="/student/js/wallet.js"></script>
 </body>
 </html>

@@ -36,6 +36,23 @@ function maybeRedirectToLogin() {
   }
 }
 
+function toArabicError(message) {
+  const text = String(message || '').trim();
+  if (!text) {
+    return 'تعذر إكمال الطلب. حاول مرة أخرى.';
+  }
+
+  if (/insufficient balance/i.test(text)) {
+    return 'رصيد المحفظة غير كافٍ لإتمام العملية.';
+  }
+
+  if (/request failed/i.test(text)) {
+    return 'تعذر تنفيذ الطلب. حاول مرة أخرى بعد قليل.';
+  }
+
+  return text;
+}
+
 export async function apiRequest(path, options = {}) {
   const {
     method = 'GET',
@@ -45,6 +62,7 @@ export async function apiRequest(path, options = {}) {
     requiresAuth = true,
     idempotent = false,
     skip401Redirect = false,
+    timeoutMs = 20000,
   } = options;
 
   const requestHeaders = {
@@ -67,11 +85,29 @@ export async function apiRequest(path, options = {}) {
     requestHeaders['Idempotency-Key'] = crypto.randomUUID();
   }
 
-  const response = await fetch(`/api${path}${toQuery(query)}`, {
-    method,
-    headers: requestHeaders,
-    body: body !== undefined ? JSON.stringify(body) : undefined,
-  });
+  const controller = typeof AbortController === 'function' ? new AbortController() : null;
+  const timeoutId = controller && timeoutMs > 0
+    ? window.setTimeout(() => controller.abort(), timeoutMs)
+    : null;
+
+  let response;
+  try {
+    response = await fetch(`/api${path}${toQuery(query)}`, {
+      method,
+      headers: requestHeaders,
+      body: body !== undefined ? JSON.stringify(body) : undefined,
+      signal: controller?.signal,
+    });
+  } catch (error) {
+    if (error instanceof DOMException && error.name === 'AbortError') {
+      throw new ApiError('انتهت مهلة الاتصال بالخادم. حاول مرة أخرى.', 408);
+    }
+    throw error;
+  } finally {
+    if (timeoutId) {
+      window.clearTimeout(timeoutId);
+    }
+  }
 
   let payload = null;
   const text = await response.text();
@@ -84,7 +120,7 @@ export async function apiRequest(path, options = {}) {
   }
 
   if (!response.ok || payload?.success === false) {
-    const message = payload?.message || response.statusText || 'Request failed';
+    const message = toArabicError(payload?.message || response.statusText || 'Request failed');
     const error = new ApiError(message, response.status, payload?.code, payload);
 
     if (error.status === 401) {

@@ -1,6 +1,12 @@
 <%- include('../layout/header', { title: 'الأرباح' }) %>
 <%- include('../layout/sidebar', { currentUser, csrfToken }) %>
 <%- include('../partials/flash', { flash }) %>
+<%- include('../partials/breadcrumb', {
+  items: [
+    { label: 'لوحة المعلّم', href: '/panel/teacher/courses' },
+    { label: 'الأرباح' },
+  ],
+}) %>
 <div class="panel-cards">
   <div class="panel-card panel-stat"><span>إجمالي المشتريات</span><strong><%= stats.total_purchases %></strong></div>
   <div class="panel-card panel-stat"><span>إجمالي الأرباح</span><strong><%= money(stats.total_earned) %></strong></div>
@@ -20,6 +26,17 @@
     <table>
       <thead><tr><th>الكورس</th><th>المشتريات</th><th>الأرباح</th></tr></thead>
       <tbody>
+        <% if (!stats.courses.length) { %>
+          <tr>
+            <td colspan="3">
+              <section class="polish-empty">
+                <svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M4 5h16v14H4V5zm2 2v10h12V7H6z"/></svg>
+                <h4>لا توجد أرباح مسجلة بعد</h4>
+                <p>ستظهر أرباح الكورسات هنا بعد أول عمليات شراء.</p>
+              </section>
+            </td>
+          </tr>
+        <% } %>
         <% stats.courses.forEach((item) => { %>
           <tr>
             <td><%= item.name %></td>
@@ -37,6 +54,17 @@
     <table>
       <thead><tr><th>المبلغ</th><th>ملاحظة</th><th>التاريخ</th></tr></thead>
       <tbody>
+        <% if (!payouts.length) { %>
+          <tr>
+            <td colspan="3">
+              <section class="polish-empty">
+                <svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M3 6h18v12H3V6zm2 2v8h14V8H5zm3 2h8v2H8v-2z"/></svg>
+                <h4>لا توجد دفعات حتى الآن</h4>
+                <p>عند تسجيل أي دفعة من الإدارة ستظهر هنا.</p>
+              </section>
+            </td>
+          </tr>
+        <% } %>
         <% payouts.forEach((item) => { %>
           <tr><td><%= money(item.amount) %></td><td><%= item.note || '-' %></td><td><%= date(item.created_at) %></td></tr>
         <% }) %>

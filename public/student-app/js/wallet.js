@@ -2,7 +2,7 @@ import { ApiError, apiGet, apiPost } from './api.js';
 import { requireAuth } from './auth.js';
 import { formatDate, formatMoney } from './format.js';
 import { initNav } from './nav.js';
-import { setViewState, withSubmitLock } from './ui.js';
+import { renderBreadcrumb, setViewState, showToast, withSubmitLock } from './ui.js';
 
 const PAGE_LIMIT = 20;
 
@@ -39,17 +39,27 @@ document.addEventListener('DOMContentLoaded', async () => {
   const topupMore = document.getElementById('topupMore');
   const txList = document.getElementById('txList');
   const txMore = document.getElementById('txMore');
+  const breadcrumb = document.getElementById('studentBreadcrumb');
 
   if (!state || !balance || !topupForm || !topupSubmit || !topupMessage || !topupList || !topupMore || !txList || !txMore) {
     return;
   }
+
+  renderBreadcrumb(breadcrumb, [
+    { label: 'الرئيسية', href: '/student/index.html' },
+    { label: 'المحفظة' },
+  ]);
 
   let topupOffset = 0;
   let txOffset = 0;
 
   async function loadWallet() {
     const data = await apiGet('/wallet');
-    balance.textContent = `${formatMoney(data.balance)} ل.س`;
+    if (window.Polish?.animateCount) {
+      window.Polish.animateCount(balance, Number(data.balance || 0), { duration: 720, decimals: 2, suffix: ' ل.س' });
+    } else {
+      balance.textContent = `${formatMoney(data.balance)} ل.س`;
+    }
   }
 
   async function loadTopups(append) {
@@ -63,7 +73,12 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
 
     if (!items.length && !append) {
-      topupList.innerHTML = '<div class="student-empty-inline">لا توجد طلبات شحن بعد.</div>';
+      topupList.innerHTML = window.Polish?.emptyState
+        ? window.Polish.emptyState({
+          title: 'لا توجد طلبات شحن بعد',
+          message: 'أرسل أول طلب شحن وسيظهر سجل المتابعة هنا.',
+        })
+        : '<div class="student-empty-inline">لا توجد طلبات شحن بعد.</div>';
     } else {
       topupList.insertAdjacentHTML(
         'beforeend',
@@ -74,7 +89,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                 <strong>${formatMoney(item.amount)} ل.س</strong>
                 ${topupStatusBadge(item.status)}
               </div>
-              <p class="student-muted">${item.method} - ${item.reference_number}</p>
+              <p class="student-muted">${item.method} - <span dir="ltr">${item.reference_number}</span> <button type="button" class="polish-copy-btn" data-copy-text="${item.reference_number}" data-copy-success="تم نسخ الرقم المرجعي">نسخ</button></p>
               <p class="student-muted">المرسل: ${item.sender_name}</p>
               <p class="student-muted">${formatDate(item.created_at)}</p>
               ${item.reject_reason ? `<p class="student-danger-text">سبب الرفض: ${item.reject_reason}</p>` : ''}
@@ -82,6 +97,7 @@ document.addEventListener('DOMContentLoaded', async () => {
           `)
           .join(''),
       );
+      window.Polish?.bindCopyButtons(topupList);
     }
 
     topupOffset += items.length;
@@ -99,7 +115,12 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
 
     if (!items.length && !append) {
-      txList.innerHTML = '<div class="student-empty-inline">لا توجد حركات مالية بعد.</div>';
+      txList.innerHTML = window.Polish?.emptyState
+        ? window.Polish.emptyState({
+          title: 'لا يوجد سجل مالي بعد',
+          message: 'ستظهر عمليات الشحن والشراء هنا فور تنفيذها.',
+        })
+        : '<div class="student-empty-inline">لا توجد حركات مالية بعد.</div>';
     } else {
       txList.insertAdjacentHTML(
         'beforeend',
@@ -142,6 +163,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         const created = await apiPost('/wallet/topup-requests', payload, { idempotent: true });
         topupMessage.textContent = `تم إرسال الطلب بنجاح. الحالة الحالية: ${created.status}.`;
         topupMessage.className = 'student-inline-message success';
+        showToast('تم إرسال طلب الشحن بنجاح.', 'success');
         topupForm.reset();
         topupOffset = 0;
         await loadTopups(false);
@@ -152,6 +174,7 @@ document.addEventListener('DOMContentLoaded', async () => {
           topupMessage.textContent = 'تعذر إرسال الطلب.';
         }
         topupMessage.className = 'student-inline-message error';
+        showToast(topupMessage.textContent || 'تعذر إرسال طلب الشحن.', 'error');
       }
     });
   });
@@ -169,11 +192,22 @@ document.addEventListener('DOMContentLoaded', async () => {
       type: 'loading',
       title: 'جار تحميل المحفظة',
       message: 'لحظات...',
+      variant: 'detail',
     });
 
     await loadWallet();
     await loadTopups(false);
     await loadTransactions(false);
+    window.Polish?.initPullToRefresh({
+      container: document.querySelector('.student-main'),
+      onRefresh: async () => {
+        topupOffset = 0;
+        txOffset = 0;
+        await loadWallet();
+        await loadTopups(false);
+        await loadTransactions(false);
+      },
+    });
     setViewState(state, null);
   } catch (error) {
     setViewState(state, {

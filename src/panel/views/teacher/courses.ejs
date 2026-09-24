@@ -6,6 +6,12 @@
     <h1 style="margin:0;">كورساتي</h1>
   </div>
 </div>
+<%- include('../partials/breadcrumb', {
+  items: [
+    { label: 'لوحة المعلّم', href: '/panel/teacher/courses' },
+    { label: 'مقرراتي' },
+  ],
+}) %>
 <div class="panel-table">
   <table>
     <thead>
@@ -19,6 +25,17 @@
       </tr>
     </thead>
     <tbody>
+      <% if (!courses.length) { %>
+        <tr>
+          <td colspan="6">
+            <section class="polish-empty">
+              <svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M4 5h16v2H4zm0 6h16v2H4zm0 6h10v2H4z"/></svg>
+              <h4>لا توجد مواد مسندة لك حاليًا</h4>
+              <p>عند إسناد كورس جديد لك من الإدارة سيظهر هنا مباشرة.</p>
+            </section>
+          </td>
+        </tr>
+      <% } %>
       <% courses.forEach((item) => { %>
         <tr>
           <td><%= item.name %></td>

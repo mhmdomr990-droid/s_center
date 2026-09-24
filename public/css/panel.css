@@ -1,4 +1,5 @@
 @import url('/css/tokens.css');
+@import url('/css/polish.css');
 
 * {
   box-sizing: border-box;
@@ -8,7 +9,7 @@ html, body {
   margin: 0;
   padding: 0;
   direction: rtl;
-  background: linear-gradient(180deg, #fbf8f2 0%, #f2ede4 100%);
+  background: linear-gradient(180deg, color-mix(in srgb, var(--bg) 74%, var(--panel-soft)) 0%, var(--bg) 100%);
   color: var(--text);
   font-family: Cairo, Tahoma, sans-serif;
 }
@@ -32,7 +33,7 @@ textarea {
 }
 
 .panel-sidebar {
-  background: rgba(255, 255, 255, 0.8);
+  background: color-mix(in srgb, var(--panel) 88%, transparent);
   backdrop-filter: blur(14px);
   border-left: 1px solid var(--border);
   padding: 24px 18px;
@@ -83,7 +84,16 @@ textarea {
 .panel-nav button:hover,
 .panel-nav .active {
   background: var(--brand-soft);
-  border-color: #bfd8eb;
+  border-color: color-mix(in srgb, var(--brand) 45%, var(--border));
+}
+
+[data-theme='dark'] .panel-sidebar {
+  background: color-mix(in srgb, var(--panel-soft) 92%, transparent);
+}
+
+[data-theme='dark'] .panel-nav a,
+[data-theme='dark'] .panel-nav button {
+  color: var(--text);
 }
 
 .panel-main {
@@ -154,7 +164,7 @@ select,
 textarea {
   width: 100%;
   border: 1px solid var(--border);
-  background: #fff;
+  background: var(--panel);
   border-radius: 12px;
   padding: 10px 12px;
   color: var(--text);
@@ -183,7 +193,7 @@ textarea {
 }
 
 .panel-btn-secondary {
-  background: #fff;
+  background: var(--panel);
   border-color: var(--border);
 }
 
@@ -210,7 +220,7 @@ textarea {
 }
 
 .panel-table th {
-  background: #f8f5ef;
+  background: color-mix(in srgb, var(--panel-soft) 70%, var(--panel));
   color: var(--muted);
   font-size: 0.92rem;
 }
@@ -289,7 +299,7 @@ textarea {
   padding: 10px 14px;
   border: 1px solid var(--border);
   border-radius: 999px;
-  background: #fff;
+  background: var(--panel);
 }
 
 .panel-tab.active {
@@ -311,7 +321,7 @@ textarea {
   padding: 8px 12px;
   border-radius: 10px;
   border: 1px solid var(--border);
-  background: #fff;
+  background: var(--panel);
 }
 
 .panel-pagination .active {

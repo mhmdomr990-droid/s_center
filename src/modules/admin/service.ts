@@ -9,13 +9,15 @@ import { Purchase } from '../../entities/Purchase';
 import { TeacherPayout } from '../../entities/TeacherPayout';
 import { Specialization } from '../../entities/Specialization';
 import { TopupRequest } from '../../entities/TopupRequest';
-import { TopupStatus, TransactionType } from '../../entities/enums';
+import { LectureType, LectureUploadStatus, TopupStatus, TransactionType } from '../../entities/enums';
 import { Transaction } from '../../entities/Transaction';
 import { User } from '../../entities/User';
 import { UserRole } from '../../entities/enums';
 import { AppError } from '../../utils/AppError';
 import { calculateMoneyShare, centsToMoney, toCents } from '../../utils/money';
 import { notify } from '../notifications/service';
+import { deleteStoredVideoFile, detectVideoDurationSeconds, type StoredVideoFile } from '../../services/media';
+import { logAuditEvent } from '../../services/auditLog';
 
 function mapSpecialization(specialization: Specialization) {
   return {
@@ -55,13 +57,31 @@ function mapLecture(lecture: Lecture) {
     course_teacher_id: lecture.course.teacher ? lecture.course.teacher.id : null,
     title: lecture.title,
     type: lecture.type,
-    url: lecture.url,
+    url: lecture.type === LectureType.VIDEO ? null : lecture.url,
     content: lecture.content,
     is_published: lecture.isPublished,
     sort_order: lecture.sortOrder,
     created_by: lecture.createdBy ? lecture.createdBy.id : null,
     created_at: lecture.createdAt,
     updated_at: lecture.updatedAt,
+  };
+}
+
+function normalizeOptionalText(value: unknown) {
+  if (value === undefined || value === null) {
+    return undefined;
+  }
+
+  const text = String(value).trim();
+  return text.length ? text : null;
+}
+
+async function readUploadedVideoMetadata(file: StoredVideoFile) {
+  return {
+    storageFilename: file.filename,
+    fileSize: String(file.size),
+    durationSeconds: detectVideoDurationSeconds(file.path),
+    uploadStatus: LectureUploadStatus.READY,
   };
 }
 
@@ -120,6 +140,55 @@ function addDateFilter(qb: { andWhere: (sql: string, params?: Record<string, unk
   if (to) {
     qb.andWhere(`${alias}.created_at <= :to`, { to });
   }
+}
+
+async function getTeacherHistoricalCourseSnapshot(courseId: number, teacherId: number | null) {
+  if (!teacherId) {
+    return {
+      purchasesCount: 0,
+      earned: '0.00',
+    };
+  }
+
+  const row = await AppDataSource.getRepository(Purchase)
+    .createQueryBuilder('purchase')
+    .select('COUNT(purchase.id)', 'purchases_count')
+    .addSelect('COALESCE(SUM(purchase.teacher_share), 0)', 'earned')
+    .where('purchase.course_id = :courseId', { courseId })
+    // Earnings attribution is historical and must come from purchase.teacher_id snapshots.
+    .andWhere('purchase.teacher_id = :teacherId', { teacherId })
+    .getRawOne<{ purchases_count: string; earned: string }>();
+
+  return {
+    purchasesCount: Number(row?.purchases_count ?? 0),
+    earned: String(row?.earned ?? '0.00'),
+  };
+}
+
+async function getTeacherTotals(teacherId: number) {
+  const [earnedRow, paidRow] = await Promise.all([
+    AppDataSource.getRepository(Purchase)
+      .createQueryBuilder('purchase')
+      .select('COALESCE(SUM(purchase.teacher_share), 0)', 'total_earned')
+      // Earnings attribution is historical and must come from purchase.teacher_id snapshots.
+      .where('purchase.teacher_id = :teacherId', { teacherId })
+      .getRawOne<{ total_earned: string }>(),
+    AppDataSource.getRepository(TeacherPayout)
+      .createQueryBuilder('payout')
+      .select('COALESCE(SUM(payout.amount), 0)', 'total_paid')
+      .where('payout.teacher_id = :teacherId', { teacherId })
+      .getRawOne<{ total_paid: string }>(),
+  ]);
+
+  const totalEarned = String(earnedRow?.total_earned ?? '0.00');
+  const totalPaid = String(paidRow?.total_paid ?? '0.00');
+  const remaining = centsToMoney(toCents(totalEarned) - toCents(totalPaid));
+
+  return {
+    totalEarned,
+    totalPaid,
+    remaining,
+  };
 }
 
 async function requireTeacherUser(id: number) {
@@ -263,6 +332,8 @@ export async function listCoursesFiltered(filters: {
     .addSelect('course.created_at', 'created_at')
     .addSelect('course.updated_at', 'updated_at')
     .addSelect('COUNT(purchase.id)', 'purchases_count')
+    .addSelect('COALESCE(SUM(CASE WHEN purchase.teacher_id = teacher.id THEN 1 ELSE 0 END), 0)', 'current_teacher_historical_purchases_count')
+    .addSelect('COALESCE(SUM(CASE WHEN purchase.teacher_id = teacher.id THEN purchase.teacher_share ELSE 0 END), 0)', 'current_teacher_historical_earned')
     .groupBy('course.id')
     .addGroupBy('specialization.id')
     .addGroupBy('specialization.name')
@@ -302,13 +373,32 @@ export async function listCoursesFiltered(filters: {
     is_published: Boolean(row.is_published),
     sort_order: Number(row.sort_order ?? 0),
     purchases_count: Number(row.purchases_count ?? 0),
+    current_teacher_historical_purchases_count: Number(row.current_teacher_historical_purchases_count ?? 0),
+    current_teacher_historical_earned: String(row.current_teacher_historical_earned ?? '0.00'),
     created_at: row.created_at,
     updated_at: row.updated_at,
   }));
 }
 
 export async function getCourseById(id: number) {
-  return mapCourse(await findCourseOrFail(id));
+  const course = await findCourseOrFail(id);
+  const oldTeacherId = course.teacher ? course.teacher.id : null;
+  const [snapshot, totals] = await Promise.all([
+    getTeacherHistoricalCourseSnapshot(course.id, oldTeacherId),
+    oldTeacherId ? getTeacherTotals(oldTeacherId) : Promise.resolve(null),
+  ]);
+
+  return {
+    ...mapCourse(course),
+    teacher_reassignment_notice: {
+      old_teacher_id: oldTeacherId,
+      old_teacher_full_name: course.teacher ? course.teacher.fullName : null,
+      course_purchases_count: snapshot.purchasesCount,
+      course_earned: snapshot.earned,
+      teacher_total_paid: totals?.totalPaid ?? '0.00',
+      teacher_total_remaining: totals?.remaining ?? '0.00',
+    },
+  };
 }
 
 export async function createCourse(input: { specialization_id: number; year: number; name: string; description?: string | null; price: string; is_published?: boolean; sort_order?: number; teacher_id?: number | null; teacher_percent?: string }) {
@@ -328,12 +418,18 @@ export async function createCourse(input: { specialization_id: number; year: num
   return mapCourse(await AppDataSource.getRepository(Course).save(course));
 }
 
-export async function updateCourse(id: number, input: Partial<{ specialization_id: number; teacher_id: number | null; year: number; name: string; description: string | null; price: string; teacher_percent: string; is_published: boolean; sort_order: number }>) {
+export async function updateCourse(
+  id: number,
+  input: Partial<{ specialization_id: number; teacher_id: number | null; year: number; name: string; description: string | null; price: string; teacher_percent: string; is_published: boolean; sort_order: number }>,
+  actorId?: number | null,
+) {
   const repository = AppDataSource.getRepository(Course);
   const course = await repository.findOne({ where: { id }, relations: { specialization: true, teacher: true } });
   if (!course) {
     throw new AppError(404, 'Course not found');
   }
+
+  const oldTeacherId = course.teacher ? course.teacher.id : null;
 
   if (input.specialization_id !== undefined) {
     course.specialization = await findSpecializationOrFail(input.specialization_id);
@@ -349,7 +445,26 @@ export async function updateCourse(id: number, input: Partial<{ specialization_i
   if (input.is_published !== undefined) course.isPublished = input.is_published;
   if (input.sort_order !== undefined) course.sortOrder = input.sort_order;
 
-  return mapCourse(await repository.save(course));
+  const saved = await repository.save(course);
+  const newTeacherId = saved.teacher ? saved.teacher.id : null;
+
+  if (input.teacher_id !== undefined && oldTeacherId !== newTeacherId) {
+    const oldTeacherSnapshot = await getTeacherHistoricalCourseSnapshot(saved.id, oldTeacherId);
+    await logAuditEvent({
+      action: 'COURSE_TEACHER_REASSIGNED',
+      actorId: actorId ?? null,
+      entityType: 'COURSE',
+      entityId: saved.id,
+      metadata: {
+        old_teacher_id: oldTeacherId,
+        new_teacher_id: newTeacherId,
+        old_teacher_historical_purchases_count: oldTeacherSnapshot.purchasesCount,
+        old_teacher_historical_earned: oldTeacherSnapshot.earned,
+      },
+    });
+  }
+
+  return mapCourse(saved);
 }
 
 export async function archiveCourse(id: number) {
@@ -388,37 +503,127 @@ export async function getLectureById(id: number) {
   return mapLecture(await findLectureOrFail(id));
 }
 
-export async function createLecture(adminId: number, input: { course_id: number; title: string; type: string; url?: string | null; content?: string | null; is_published?: boolean; sort_order?: number }) {
+export async function createLecture(adminId: number, input: { course_id: number; title: string; type: string; url?: string | null; content?: string | null; is_published?: boolean; sort_order?: number }, file?: StoredVideoFile | null) {
   const course = await findCourseOrFail(input.course_id);
-  const lecture = AppDataSource.getRepository(Lecture).create({
-    course,
-    createdBy: { id: adminId } as User,
-    title: input.title,
-    type: input.type as Lecture['type'],
-    url: input.url ?? null,
-    content: input.content ?? null,
-    isPublished: input.is_published ?? true,
-    sortOrder: input.sort_order ?? 0,
-  });
-  return mapLecture(await AppDataSource.getRepository(Lecture).save(lecture));
+  const repository = AppDataSource.getRepository(Lecture);
+  const isVideo = input.type === LectureType.VIDEO;
+  const normalizedUrl = normalizeOptionalText(input.url);
+  const normalizedContent = normalizeOptionalText(input.content);
+
+  if (isVideo) {
+    if (normalizedUrl) {
+      throw new AppError(400, 'Video lectures must not include an external URL');
+    }
+    if (!file) {
+      throw new AppError(400, 'Video file is required');
+    }
+  } else if (file) {
+    throw new AppError(400, 'Video uploads are only allowed for VIDEO lectures');
+  }
+
+  let uploadedFilename: string | null = file?.filename ?? null;
+
+  try {
+    const videoMetadata = file ? await readUploadedVideoMetadata(file) : null;
+    const lecture = repository.create({
+      course,
+      createdBy: { id: adminId } as User,
+      title: input.title,
+      type: input.type as Lecture['type'],
+      url: isVideo ? null : normalizedUrl ?? null,
+      storageFilename: isVideo ? videoMetadata?.storageFilename ?? null : null,
+      fileSize: isVideo ? videoMetadata?.fileSize ?? null : null,
+      durationSeconds: isVideo ? videoMetadata?.durationSeconds ?? null : null,
+      uploadStatus: isVideo ? LectureUploadStatus.READY : LectureUploadStatus.READY,
+      content: isVideo ? null : normalizedContent ?? null,
+      isPublished: input.is_published ?? true,
+      sortOrder: input.sort_order ?? 0,
+    });
+
+    const saved = await repository.save(lecture);
+    uploadedFilename = null;
+    return mapLecture(saved);
+  } catch (error) {
+    if (uploadedFilename) {
+      await deleteStoredVideoFile(uploadedFilename);
+    }
+    throw error;
+  }
 }
 
-export async function updateLecture(id: number, input: Partial<{ course_id: number; title: string; type: string; url: string | null; content: string | null; is_published: boolean; sort_order: number }>) {
+export async function updateLecture(id: number, input: Partial<{ course_id: number; title: string; type: string; url: string | null; content: string | null; is_published: boolean; sort_order: number }>, file?: StoredVideoFile | null) {
   const repository = AppDataSource.getRepository(Lecture);
   const lecture = await repository.findOne({ where: { id }, relations: { course: { specialization: true, teacher: true }, createdBy: true } });
   if (!lecture) {
     throw new AppError(404, 'Lecture not found');
   }
 
+  const nextType = input.type ? (input.type as LectureType) : lecture.type;
+  const replacingVideo = nextType === LectureType.VIDEO && !!file;
+  const removingVideo = lecture.type === LectureType.VIDEO && nextType !== LectureType.VIDEO;
+  const oldVideoFilename = lecture.storageFilename;
+
+  if (file && nextType !== LectureType.VIDEO) {
+    throw new AppError(400, 'Video uploads are only allowed for VIDEO lectures');
+  }
+
+  const normalizedUrl = input.url === undefined ? undefined : normalizeOptionalText(input.url);
+  const normalizedContent = input.content === undefined ? undefined : normalizeOptionalText(input.content);
+
+  if (nextType === LectureType.VIDEO) {
+    if (normalizedUrl) {
+      throw new AppError(400, 'Video lectures must not include an external URL');
+    }
+    if (!file && !lecture.storageFilename) {
+      throw new AppError(400, 'Video file is required');
+    }
+  }
+
+  let uploadedFilename: string | null = file?.filename ?? null;
+
   if (input.course_id !== undefined) lecture.course = await findCourseOrFail(input.course_id);
   if (input.title !== undefined) lecture.title = input.title;
-  if (input.type !== undefined) lecture.type = input.type as Lecture['type'];
-  if (input.url !== undefined) lecture.url = input.url;
-  if (input.content !== undefined) lecture.content = input.content;
+  if (input.type !== undefined) lecture.type = nextType;
+  if (nextType === LectureType.VIDEO) {
+    lecture.url = null;
+    lecture.content = null;
+  } else {
+    if (input.url !== undefined) lecture.url = normalizedUrl ?? null;
+    if (input.content !== undefined) lecture.content = normalizedContent ?? null;
+  }
   if (input.is_published !== undefined) lecture.isPublished = input.is_published;
   if (input.sort_order !== undefined) lecture.sortOrder = input.sort_order;
 
-  return mapLecture(await repository.save(lecture));
+  if (nextType === LectureType.VIDEO) {
+    if (file) {
+      const videoMetadata = await readUploadedVideoMetadata(file);
+      lecture.storageFilename = videoMetadata.storageFilename;
+      lecture.fileSize = videoMetadata.fileSize;
+      lecture.durationSeconds = videoMetadata.durationSeconds;
+      lecture.uploadStatus = LectureUploadStatus.READY;
+    } else {
+      lecture.uploadStatus = LectureUploadStatus.READY;
+    }
+  } else {
+    lecture.storageFilename = null;
+    lecture.fileSize = null;
+    lecture.durationSeconds = null;
+    lecture.uploadStatus = LectureUploadStatus.READY;
+  }
+
+  try {
+    const saved = await repository.save(lecture);
+    uploadedFilename = null;
+    if ((replacingVideo || removingVideo) && oldVideoFilename && oldVideoFilename !== saved.storageFilename) {
+      await deleteStoredVideoFile(oldVideoFilename);
+    }
+    return mapLecture(saved);
+  } catch (error) {
+    if (uploadedFilename) {
+      await deleteStoredVideoFile(uploadedFilename);
+    }
+    throw error;
+  }
 }
 
 export async function archiveLecture(id: number) {
@@ -798,11 +1003,11 @@ export async function createTeacher(input: { username: string; full_name: string
 function buildTeacherAggregateQuery(from?: string, to?: string) {
   const purchaseAgg = AppDataSource.createQueryBuilder()
     .from(Purchase, 'purchase')
-    .innerJoin('purchase.course', 'course')
-    .select('course.teacher_id', 'teacher_id')
+    // Earnings attribution is historical and must come from purchase.teacher_id snapshots.
+    .select('purchase.teacher_id', 'teacher_id')
     .addSelect('COUNT(purchase.id)', 'purchases_count')
     .addSelect('COALESCE(SUM(purchase.teacher_share), 0)', 'total_earned')
-    .where('course.teacher_id IS NOT NULL');
+    .where('purchase.teacher_id IS NOT NULL');
 
   const payoutAgg = AppDataSource.createQueryBuilder()
     .from(TeacherPayout, 'payout')
@@ -812,7 +1017,7 @@ function buildTeacherAggregateQuery(from?: string, to?: string) {
   addDateFilter(purchaseAgg, 'purchase', from, to);
   addDateFilter(payoutAgg, 'payout', from, to);
 
-  purchaseAgg.groupBy('course.teacher_id');
+  purchaseAgg.groupBy('purchase.teacher_id');
   payoutAgg.groupBy('payout.teacher_id');
 
   return { purchaseAgg, payoutAgg };
@@ -888,9 +1093,9 @@ export async function payoutTeacher(teacherId: number, createdById: number, amou
     const earnedRow = await manager
       .getRepository(Purchase)
       .createQueryBuilder('purchase')
-      .innerJoin('purchase.course', 'course')
       .select('COALESCE(SUM(purchase.teacher_share), 0)', 'total_earned')
-      .where('course.teacher_id = :teacherId', { teacherId })
+      // Earnings attribution is historical and must come from purchase.teacher_id snapshots.
+      .where('purchase.teacher_id = :teacherId', { teacherId })
       .getRawOne<{ total_earned: string }>();
 
     const paidRow = await manager

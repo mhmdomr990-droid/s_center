@@ -7,6 +7,14 @@
     <p class="panel-muted" style="margin:6px 0 0;"><%= teacher.full_name %></p>
   </div>
 </div>
+<%- include('../partials/breadcrumb', {
+  items: [
+    { label: 'لوحة التحكم', href: '/panel/admin/overview' },
+    { label: 'المعلّمون', href: '/panel/admin/teachers' },
+    { label: teacher.full_name },
+    { label: 'سجل الدفعات' },
+  ],
+}) %>
 <div class="panel-card" style="margin-bottom:16px;">
   <div class="panel-grid-3">
     <div><span class="panel-muted">المستحق</span><strong><%= money(summary.earned) %></strong></div>
@@ -40,6 +48,17 @@
       <tr><th>المبلغ</th><th>ملاحظة</th><th>أنشئ بواسطة</th><th>التاريخ</th></tr>
     </thead>
     <tbody>
+      <% if (!payouts.length) { %>
+        <tr>
+          <td colspan="4">
+            <section class="polish-empty">
+              <svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M3 6h18v12H3V6zm2 2v8h14V8H5zm3 2h8v2H8v-2z"/></svg>
+              <h4>لا توجد دفعات مسجلة لهذا المدرس</h4>
+              <p>أضف دفعة جديدة وسيظهر سجلها هنا.</p>
+            </section>
+          </td>
+        </tr>
+      <% } %>
       <% payouts.forEach((item) => { %>
         <tr>
           <td><%= money(item.amount) %></td>

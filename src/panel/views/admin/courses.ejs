@@ -8,6 +8,12 @@
   </div>
   <button class="panel-btn panel-btn-primary" data-modal-open="course-create-modal">إضافة كورس</button>
 </div>
+<%- include('../partials/breadcrumb', {
+  items: [
+    { label: 'لوحة التحكم', href: '/panel/admin/overview' },
+    { label: 'المقررات' },
+  ],
+}) %>
 <div class="panel-toolbar">
   <form method="get" action="/panel/admin/courses">
     <input type="text" name="specializationId" placeholder="التخصص" value="<%= filters.specializationId || '' %>">
@@ -31,6 +37,17 @@
       </tr>
     </thead>
     <tbody>
+      <% if (!courses.length) { %>
+        <tr>
+          <td colspan="9">
+            <section class="polish-empty">
+              <svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M4 5h16v14H4V5zm2 2v10h12V7H6zm2 2h8v2H8V9z"/></svg>
+              <h4>لا توجد كورسات مطابقة للفلاتر الحالية</h4>
+              <p>غيّر معايير التصفية لإظهار نتائج أخرى.</p>
+            </section>
+          </td>
+        </tr>
+      <% } %>
       <% courses.forEach((item) => { %>
         <tr>
           <td><%= item.name %></td>
@@ -92,6 +109,7 @@
     <div class="panel-modal-header"><h3>تعديل كورس</h3><button type="button" class="panel-modal-close" data-modal-close>×</button></div>
     <form method="post" action="/panel/admin/courses/0" class="panel-form">
       <input type="hidden" name="csrf_token" value="<%= csrfToken %>">
+      <p class="panel-muted" id="course-reassignment-warning" style="margin:0 0 12px;display:none;"></p>
       <div class="panel-form-grid">
         <div><label>التخصص</label>
           <select name="specialization_id" data-fill="specialization_id">
@@ -120,4 +138,50 @@
     </form>
   </div>
 </div>
+<script>
+  (() => {
+    const warning = document.getElementById('course-reassignment-warning');
+    if (!warning) {
+      return;
+    }
+
+    const formatMoney = (value) => {
+      const num = Number(value ?? 0);
+      if (!Number.isFinite(num)) {
+        return '0.00';
+      }
+      return num.toFixed(2);
+    };
+
+    document.querySelectorAll('[data-modal-open="course-edit-modal"]').forEach((trigger) => {
+      trigger.addEventListener('click', () => {
+        const raw = trigger.getAttribute('data-modal-fill');
+        if (!raw) {
+          warning.style.display = 'none';
+          warning.textContent = '';
+          return;
+        }
+
+        try {
+          const item = JSON.parse(raw);
+          const teacherName = item.teacher_full_name || 'بدون اسم';
+          const purchasesCount = Number(item.current_teacher_historical_purchases_count ?? 0);
+          const earned = formatMoney(item.current_teacher_historical_earned ?? '0.00');
+
+          if (!item.teacher_id) {
+            warning.style.display = 'none';
+            warning.textContent = '';
+            return;
+          }
+
+          warning.textContent = `تنبيه: سيحتفظ الأستاذ الحالي (${teacherName}) بأرباحه من ${purchasesCount} عملية شراء سابقة بقيمة ${earned}.`;
+          warning.style.display = 'block';
+        } catch (_error) {
+          warning.style.display = 'none';
+          warning.textContent = '';
+        }
+      });
+    });
+  })();
+</script>
 <%- include('../layout/footer') %>

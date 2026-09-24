@@ -16,8 +16,12 @@ function normalizeUsername(value) {
 }
 
 document.addEventListener('DOMContentLoaded', async () => {
-  await redirectIfAuthenticated();
-  ensureDeviceId();
+  try {
+    ensureDeviceId();
+  } catch (_error) {
+    setError('تعذر تهيئة جهازك الحالي. أعد تحميل الصفحة أو امسح بيانات الموقع.');
+    return;
+  }
 
   const form = document.getElementById('loginForm');
   const submit = document.getElementById('loginSubmit');
@@ -25,6 +29,8 @@ document.addEventListener('DOMContentLoaded', async () => {
   if (!form || !submit) {
     return;
   }
+
+  void redirectIfAuthenticated().catch(() => {});
 
   form.addEventListener('submit', (event) => {
     event.preventDefault();

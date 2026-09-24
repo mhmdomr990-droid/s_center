@@ -10,6 +10,12 @@ export enum LectureType {
   TEXT = 'TEXT',
 }
 
+export enum LectureUploadStatus {
+  PENDING = 'PENDING',
+  READY = 'READY',
+  FAILED = 'FAILED',
+}
+
 export enum TopupMethod {
   SHAM_CASH = 'SHAM_CASH',
   TRANSFER_OFFICE = 'TRANSFER_OFFICE',

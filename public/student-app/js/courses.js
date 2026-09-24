@@ -2,7 +2,7 @@ import { apiGet } from './api.js';
 import { requireAuth } from './auth.js';
 import { formatDate, formatMoney } from './format.js';
 import { initNav } from './nav.js';
-import { setViewState } from './ui.js';
+import { renderBreadcrumb, setViewState } from './ui.js';
 
 const PAYMENTS_STEP = 10;
 
@@ -18,6 +18,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   const tabPayments = document.getElementById('tabPayments');
   const coursesSection = document.getElementById('coursesSection');
   const paymentsSection = document.getElementById('paymentsSection');
+  const breadcrumb = document.getElementById('studentBreadcrumb');
 
   if (!state || !coursesList || !paymentsList || !paymentsMore || !tabCourses || !tabPayments || !coursesSection || !paymentsSection) {
     return;
@@ -32,11 +33,19 @@ document.addEventListener('DOMContentLoaded', async () => {
       coursesSection.hidden = true;
       tabPayments.classList.add('is-active');
       tabCourses.classList.remove('is-active');
+      renderBreadcrumb(breadcrumb, [
+        { label: 'الرئيسية', href: '/student/index.html' },
+        { label: 'مدفوعاتي' },
+      ]);
     } else {
       coursesSection.hidden = false;
       paymentsSection.hidden = true;
       tabCourses.classList.add('is-active');
       tabPayments.classList.remove('is-active');
+      renderBreadcrumb(breadcrumb, [
+        { label: 'الرئيسية', href: '/student/index.html' },
+        { label: 'مقرراتي' },
+      ]);
     }
   }
 
@@ -44,7 +53,12 @@ document.addEventListener('DOMContentLoaded', async () => {
     const chunk = payments.slice(paymentsVisible, paymentsVisible + PAYMENTS_STEP);
 
     if (!payments.length) {
-      paymentsList.innerHTML = '<div class="student-empty-inline">لا توجد مدفوعات حتى الآن.</div>';
+      paymentsList.innerHTML = window.Polish?.emptyState
+        ? window.Polish.emptyState({
+          title: 'لا توجد مدفوعات حتى الآن',
+          message: 'عند شراء أي مادة، ستظهر تفاصيل عمليات الدفع هنا.',
+        })
+        : '<div class="student-empty-inline">لا توجد مدفوعات حتى الآن.</div>';
       paymentsMore.hidden = true;
       return;
     }
@@ -78,6 +92,7 @@ document.addEventListener('DOMContentLoaded', async () => {
       type: 'loading',
       title: 'جار التحميل',
       message: 'يتم جلب دوراتك ومدفوعاتك...',
+      variant: 'table',
     });
 
     const [myCourses, myPayments] = await Promise.all([
@@ -86,7 +101,14 @@ document.addEventListener('DOMContentLoaded', async () => {
     ]);
 
     if (!myCourses.length) {
-      coursesList.innerHTML = '<div class="student-empty-inline">لم تشترِ أي مادة بعد.</div>';
+      coursesList.innerHTML = window.Polish?.emptyState
+        ? window.Polish.emptyState({
+          title: 'لم تشترِ أي مادة بعد',
+          message: 'ابدأ من صفحة الكتالوج لاختيار المواد المناسبة لك.',
+          actionHref: '/student/index.html',
+          actionLabel: 'استعراض الكتالوج',
+        })
+        : '<div class="student-empty-inline">لم تشترِ أي مادة بعد.</div>';
     } else {
       coursesList.innerHTML = myCourses
         .map((course) => `
@@ -98,7 +120,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             <p>${course.description || 'لا يوجد وصف.'}</p>
             <p class="student-muted">المدرس: ${course.teacher_full_name || 'غير محدد'}</p>
             <p class="student-muted">تاريخ الشراء: ${formatDate(course.purchased_at)}</p>
-            <a class="student-btn student-btn-primary" href="/student/course.html?id=${course.id}&name=${encodeURIComponent(course.name)}&price=${encodeURIComponent(course.price)}&purchased=1">
+            <a class="student-btn student-btn-primary" href="/student/course.html?id=${course.id}&name=${encodeURIComponent(course.name)}&price=${encodeURIComponent(course.price)}&purchased=1&from=my-courses">
               متابعة الدروس
             </a>
           </article>

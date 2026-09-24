@@ -63,6 +63,10 @@ export function initNav(activeKey) {
         <strong>مركز العلوم</strong>
         <small>تطبيق الطالب</small>
       </div>
+      <button type="button" class="polish-theme-toggle student-theme-toggle" data-theme-toggle aria-label="تبديل النمط">
+        <span class="moon">◐</span>
+        <span class="sun">☀</span>
+      </button>
       <div class="student-nav-links">
         ${NAV_ITEMS.map((item) => renderItem(item, activeKey)).join('')}
       </div>
@@ -70,5 +74,6 @@ export function initNav(activeKey) {
   `;
 
   hydrateUnreadBadgeFromStorage();
+  window.Polish?.initThemeToggle(nav);
   void refreshUnreadBadge();
 }

@@ -6,6 +6,18 @@
     <h1 style="margin:0;">محاضراتي</h1>
   </div>
 </div>
+<%
+  const teacherSelectedCourse = selectedCourseId ? courses.find((course) => String(course.course_id) === String(selectedCourseId)) : null;
+  const teacherLectureBreadcrumb = [
+    { label: 'لوحة المعلّم', href: '/panel/teacher/courses' },
+    { label: 'مقرراتي', href: '/panel/teacher/courses' },
+  ];
+  if (teacherSelectedCourse) {
+    teacherLectureBreadcrumb.push({ label: teacherSelectedCourse.name });
+  }
+  teacherLectureBreadcrumb.push({ label: 'المحاضرات' });
+%>
+<%- include('../partials/breadcrumb', { items: teacherLectureBreadcrumb }) %>
 <div class="panel-toolbar">
   <form method="get" action="/panel/teacher/lectures">
     <select name="courseId">
@@ -26,6 +38,17 @@
       <tr><th>العنوان</th><th>النوع</th><th>الترتيب</th><th>الحالة</th><th>إجراءات</th></tr>
     </thead>
     <tbody>
+      <% if (!lectures.length) { %>
+        <tr>
+          <td colspan="5">
+            <section class="polish-empty">
+              <svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M4 4h16v16H4V4zm3 3v10h10V7H7zm2 2h6v2H9V9z"/></svg>
+              <h4>لا توجد محاضرات في هذه الصفحة</h4>
+              <p><%= selectedCourseId ? 'ابدأ بإضافة محاضرة جديدة لهذا الكورس.' : 'اختر كورسًا أولًا ثم اعرض المحاضرات.' %></p>
+            </section>
+          </td>
+        </tr>
+      <% } %>
       <% lectures.forEach((item) => { %>
         <tr>
           <td><%= item.title %></td>
@@ -33,7 +56,7 @@
           <td><%= item.sort_order %></td>
           <td><%= item.is_published ? 'منشور' : 'مخفي' %></td>
           <td>
-            <button class="panel-btn panel-btn-secondary" data-modal-open="teacher-lecture-edit-modal" data-modal-action="/panel/teacher/lectures/<%= item.id %>" data-modal-fill='<%= JSON.stringify(item) %>'>تعديل</button>
+            <button class="panel-btn panel-btn-secondary" data-modal-open="teacher-lecture-edit-modal" data-modal-action="/panel/teacher/lectures/<%= item.id %>?csrf_token=<%= csrfToken %>" data-modal-fill='<%= JSON.stringify(item) %>'>تعديل</button>
             <form method="post" action="/panel/teacher/lectures/<%= item.id %>/hide?courseId=<%= selectedCourseId %>" style="display:inline;">
               <input type="hidden" name="csrf_token" value="<%= csrfToken %>">
               <button class="panel-btn panel-btn-secondary" type="submit" data-confirm="هل تريد إخفاء هذه المحاضرة؟">إخفاء</button>
@@ -47,13 +70,14 @@
 <div class="panel-modal" id="teacher-lecture-create-modal">
   <div class="panel-modal-content">
     <div class="panel-modal-header"><h3>إضافة محاضرة</h3><button type="button" class="panel-modal-close" data-modal-close>×</button></div>
-    <form method="post" action="/panel/teacher/courses/<%= selectedCourseId || 0 %>/lectures" class="panel-form">
+    <form method="post" action="/panel/teacher/courses/<%= selectedCourseId || 0 %>/lectures?csrf_token=<%= csrfToken %>" class="panel-form" enctype="multipart/form-data">
       <input type="hidden" name="csrf_token" value="<%= csrfToken %>">
       <div class="panel-form-grid">
         <div><label>العنوان</label><input name="title" required></div>
         <div><label>النوع</label>
           <select name="type"><option value="VIDEO">VIDEO</option><option value="PDF">PDF</option><option value="TEXT">TEXT</option></select>
         </div>
+        <div><label>ملف الفيديو</label><input type="file" name="video" accept="video/mp4,video/webm,video/quicktime,video/x-matroska"></div>
         <div><label>الرابط</label><input name="url"></div>
         <div><label>المحتوى</label><textarea name="content"></textarea></div>
         <div><label>الترتيب</label><input name="sort_order" type="number" min="0" value="0"></div>
@@ -65,7 +89,7 @@
 <div class="panel-modal" id="teacher-lecture-edit-modal">
   <div class="panel-modal-content">
     <div class="panel-modal-header"><h3>تعديل محاضرة</h3><button type="button" class="panel-modal-close" data-modal-close>×</button></div>
-    <form method="post" action="/panel/teacher/lectures/0" class="panel-form">
+    <form method="post" action="/panel/teacher/lectures/0?csrf_token=<%= csrfToken %>" class="panel-form" enctype="multipart/form-data">
       <input type="hidden" name="csrf_token" value="<%= csrfToken %>">
       <input type="hidden" name="course_id" data-fill="course_id">
       <div class="panel-form-grid">
@@ -73,6 +97,7 @@
         <div><label>النوع</label>
           <select name="type" data-fill="type"><option value="VIDEO">VIDEO</option><option value="PDF">PDF</option><option value="TEXT">TEXT</option></select>
         </div>
+        <div><label>استبدال ملف الفيديو</label><input type="file" name="video" accept="video/mp4,video/webm,video/quicktime,video/x-matroska"></div>
         <div><label>الرابط</label><input name="url" data-fill="url"></div>
         <div><label>المحتوى</label><textarea name="content" data-fill="content"></textarea></div>
         <div><label>الترتيب</label><input name="sort_order" type="number" min="0" data-fill="sort_order"></div>

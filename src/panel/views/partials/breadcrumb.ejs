@@ -1,0 +1,16 @@
+<% if (Array.isArray(items) && items.length) { %>
+  <nav class="breadcrumb-nav" aria-label="مسار التنقل">
+    <ol class="breadcrumb" data-collapsible="true">
+      <% items.forEach((item, index) => { %>
+        <% const isLast = index === items.length - 1; %>
+        <li data-breadcrumb-item="true">
+          <% if (!isLast && item.href) { %>
+            <a href="<%= item.href %>"><%= item.label %></a>
+          <% } else { %>
+            <span aria-current="page"><%= item.label %></span>
+          <% } %>
+        </li>
+      <% }) %>
+    </ol>
+  </nav>
+<% } %>

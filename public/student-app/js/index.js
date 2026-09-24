@@ -2,7 +2,7 @@ import { apiGet } from './api.js';
 import { requireAuth } from './auth.js';
 import { formatMoney } from './format.js';
 import { initNav } from './nav.js';
-import { setViewState } from './ui.js';
+import { renderBreadcrumb, setViewState } from './ui.js';
 
 function getParams() {
   const params = new URLSearchParams(window.location.search);
@@ -79,7 +79,7 @@ function renderCourses(specializationId, year, specializationName, courses) {
     <section class="student-grid">
       ${courses
         .map((course) => {
-          const detailUrl = `/student/course.html?id=${course.id}&name=${encodeURIComponent(course.name)}&price=${encodeURIComponent(course.price)}&purchased=${course.purchased ? '1' : '0'}`;
+          const detailUrl = `/student/course.html?id=${course.id}&name=${encodeURIComponent(course.name)}&price=${encodeURIComponent(course.price)}&purchased=${course.purchased ? '1' : '0'}&from=catalog&specialization=${encodeURIComponent(specializationId)}&specializationName=${encodeURIComponent(specializationName)}&year=${encodeURIComponent(year)}`;
           return `
             <article class="student-card">
               <div class="student-card-row">
@@ -104,6 +104,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   const state = document.getElementById('homeState');
   const content = document.getElementById('homeContent');
+  const breadcrumb = document.getElementById('studentBreadcrumb');
 
   if (!state || !content) {
     return;
@@ -114,6 +115,7 @@ document.addEventListener('DOMContentLoaded', async () => {
       type: 'loading',
       title: 'جار التحميل',
       message: 'يتم جلب الاختصاصات...',
+      variant: 'cards',
     });
 
     const { specializationId, year } = getParams();
@@ -131,6 +133,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
 
     if (!specializationId) {
+      renderBreadcrumb(breadcrumb, []);
       content.innerHTML = `
         <section class="student-headline">
           <h1>اختر اختصاصك</h1>
@@ -155,9 +158,19 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
 
     if (!year) {
+      renderBreadcrumb(breadcrumb, [
+        { label: 'الرئيسية', href: '/student/index.html' },
+        { label: specialization.name },
+      ]);
       content.innerHTML = renderYears(specializationId, specialization.name);
       return;
     }
+
+    renderBreadcrumb(breadcrumb, [
+      { label: 'الرئيسية', href: '/student/index.html' },
+      { label: specialization.name, href: buildHomeLink(specializationId, null) },
+      { label: `السنة ${year}` },
+    ]);
 
     const courses = await apiGet('/courses', {
       query: { specializationId, year },

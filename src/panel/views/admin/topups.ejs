@@ -12,6 +12,21 @@
     <a class="panel-tab <%= status === 'REJECTED' ? 'active' : '' %>" href="/panel/admin/topups?status=REJECTED">مرفوضة</a>
   </div>
 </div>
+<%
+  const statusLabelMap = {
+    PENDING: 'معلّقة',
+    APPROVED: 'مقبولة',
+    REJECTED: 'مرفوضة',
+  };
+  const topupsBreadcrumb = [
+    { label: 'لوحة التحكم', href: '/panel/admin/overview' },
+    { label: 'طلبات الشحن', href: '/panel/admin/topups' },
+  ];
+  if (status && statusLabelMap[status]) {
+    topupsBreadcrumb.push({ label: statusLabelMap[status] });
+  }
+%>
+<%- include('../partials/breadcrumb', { items: topupsBreadcrumb }) %>
 <div class="panel-table">
   <table>
     <thead>
@@ -27,6 +42,17 @@
       </tr>
     </thead>
     <tbody>
+      <% if (!requests.length) { %>
+        <tr>
+          <td colspan="8">
+            <section class="polish-empty">
+              <svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M12 2l8 4v6c0 5-3.4 9.6-8 10-4.6-.4-8-5-8-10V6l8-4zm0 6a2 2 0 100 4 2 2 0 000-4zm-2 7h4v2h-4z"/></svg>
+              <h4>لا توجد طلبات ضمن هذه الحالة</h4>
+              <p>جرّب الانتقال إلى تبويب آخر أو انتظر وصول طلبات جديدة.</p>
+            </section>
+          </td>
+        </tr>
+      <% } %>
       <% requests.forEach((item) => { %>
         <tr>
           <td><%= item.username %> - <%= item.full_name %></td>

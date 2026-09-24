@@ -18,6 +18,11 @@ const envSchema = z.object({
   JWT_EXPIRES_IN: z.string().min(1),
   STAFF_JWT_EXPIRES_IN: z.string().optional(),
   CORS_ORIGINS: z.string().min(1),
+  VIDEO_STORAGE_PATH: z.string().min(1).optional(),
+  VIDEO_MAX_SIZE_MB: z.coerce.number().int().positive().default(2048),
+  VIDEO_SIGNING_SECRET: z.string().min(1).optional(),
+  DOWNLOAD_URL_EXPIRY_MINUTES: z.coerce.number().int().positive().default(120),
+  DOWNLOAD_TTL_DAYS: z.coerce.number().int().positive().default(100),
   ADMIN_USERNAME: z.string().optional(),
   ADMIN_PASSWORD: z.string().optional(),
   DEBUG_PANEL: z
@@ -42,5 +47,7 @@ if (corsOrigins.length === 0) {
 export const env = {
   ...parsed.data,
   STAFF_JWT_EXPIRES_IN: parsed.data.STAFF_JWT_EXPIRES_IN || parsed.data.JWT_EXPIRES_IN,
+  VIDEO_STORAGE_PATH: parsed.data.VIDEO_STORAGE_PATH || 'storage/videos',
+  VIDEO_SIGNING_SECRET: parsed.data.VIDEO_SIGNING_SECRET || parsed.data.JWT_SECRET,
   CORS_ORIGINS: corsOrigins,
 };

@@ -1,4 +1,5 @@
 @import url('/css/tokens.css');
+@import url('/css/polish.css');
 
 * {
   box-sizing: border-box;
@@ -11,9 +12,9 @@ body {
   direction: rtl;
   color: var(--text);
   background:
-    radial-gradient(circle at 90% -20%, #f6e9d5 0, transparent 45%),
-    radial-gradient(circle at 0% 120%, #dceaf8 0, transparent 40%),
-    linear-gradient(180deg, #fbf8f2 0%, #f2ede4 100%);
+    radial-gradient(circle at 90% -20%, color-mix(in srgb, var(--brand-soft) 52%, transparent) 0, transparent 45%),
+    radial-gradient(circle at 0% 120%, color-mix(in srgb, var(--panel-soft) 80%, transparent) 0, transparent 40%),
+    linear-gradient(180deg, color-mix(in srgb, var(--bg) 64%, var(--panel-soft)) 0%, var(--bg) 100%);
   font-family: Cairo, Tahoma, sans-serif;
 }
 
@@ -35,7 +36,7 @@ textarea {
   width: 100%;
   border: 1px solid var(--border);
   border-radius: 12px;
-  background: #fff;
+  background: var(--panel);
   padding: 10px 12px;
   color: var(--text);
 }
@@ -185,7 +186,7 @@ textarea {
 }
 
 .student-btn-secondary {
-  background: #fff;
+  background: var(--panel);
   border-color: var(--border);
 }
 
@@ -203,7 +204,7 @@ textarea {
 .student-state {
   border: 1px dashed var(--border);
   border-radius: 16px;
-  background: rgba(255, 255, 255, 0.7);
+  background: color-mix(in srgb, var(--panel) 74%, transparent);
   padding: 16px;
   text-align: center;
   margin-bottom: 14px;
@@ -232,7 +233,7 @@ textarea {
   padding: 16px;
   text-align: center;
   color: var(--muted);
-  background: rgba(255, 255, 255, 0.75);
+  background: color-mix(in srgb, var(--panel) 72%, transparent);
 }
 
 .student-form {
@@ -284,7 +285,7 @@ textarea {
 }
 
 .student-error-box {
-  background: #fceeee;
+  background: color-mix(in srgb, var(--danger) 18%, var(--panel));
   border: 1px solid rgba(178, 59, 59, 0.25);
   color: var(--danger);
   border-radius: 12px;
@@ -319,7 +320,7 @@ textarea {
   border: 1px solid var(--border);
   border-radius: 12px;
   margin: 8px 0;
-  background: #fff;
+  background: var(--panel);
 }
 
 @media (min-width: 768px) {
@@ -343,7 +344,7 @@ textarea {
   right: 0;
   left: 0;
   z-index: 20;
-  background: rgba(255, 255, 255, 0.95);
+  background: color-mix(in srgb, var(--panel) 86%, transparent);
   border-top: 1px solid var(--border);
   padding-bottom: env(safe-area-inset-bottom);
   backdrop-filter: blur(10px);
@@ -352,6 +353,7 @@ textarea {
 .student-nav-inner {
   max-width: 1100px;
   margin: 0 auto;
+  position: relative;
 }
 
 .student-nav-brand {
@@ -361,6 +363,13 @@ textarea {
 .student-nav-links {
   display: grid;
   grid-template-columns: repeat(5, minmax(0, 1fr));
+}
+
+.student-theme-toggle {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  z-index: 3;
 }
 
 .student-nav-link {
@@ -411,7 +420,7 @@ textarea {
 .student-tab {
   border: 1px solid var(--border);
   border-radius: 999px;
-  background: #fff;
+  background: var(--panel);
   padding: 8px 12px;
   cursor: pointer;
 }
@@ -439,7 +448,7 @@ textarea {
     border-top: 0;
     border-left: 1px solid var(--border);
     padding: 18px 10px;
-    background: rgba(255, 255, 255, 0.7);
+    background: color-mix(in srgb, var(--panel) 76%, transparent);
   }
 
   .student-nav-brand {
@@ -456,6 +465,11 @@ textarea {
   .student-nav-links {
     grid-template-columns: 1fr;
     gap: 6px;
+  }
+
+  .student-theme-toggle {
+    position: static;
+    margin: 0 10px 12px;
   }
 
   .student-nav-link {
@@ -484,6 +498,19 @@ textarea {
   .student-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
+}
+
+[data-theme='dark'] .student-nav {
+  background: color-mix(in srgb, var(--panel-soft) 88%, transparent);
+}
+
+[data-theme='dark'] .student-nav-link {
+  color: var(--muted);
+}
+
+[data-theme='dark'] .student-nav-link.is-active {
+  color: var(--text);
+  border: 1px solid color-mix(in srgb, var(--brand) 36%, var(--border));
 }
 
 @media (min-width: 1100px) {
