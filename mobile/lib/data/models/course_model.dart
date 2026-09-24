@@ -9,6 +9,7 @@ class CourseModel {
   final String name;
   final String? description;
   final String price;
+  final String? earned;
   final bool isPublished;
   final int sortOrder;
   final int? purchasesCount;
@@ -25,6 +26,7 @@ class CourseModel {
     required this.name,
     this.description,
     required this.price,
+    this.earned,
     required this.isPublished,
     required this.sortOrder,
     this.purchasesCount,
@@ -33,7 +35,7 @@ class CourseModel {
 
   factory CourseModel.fromJson(Map<String, dynamic> json) {
     return CourseModel(
-      id: json['id'] ?? 0,
+      id: json['id'] ?? json['course_id'] ?? 0,
       specializationId: json['specialization_id'] ?? 0,
       specializationName: json['specialization_name'] ?? json['specialization']?['name'] ?? '',
       teacherId: json['teacher_id'] ?? json['teacher']?['id'],
@@ -43,6 +45,7 @@ class CourseModel {
       name: json['name'] ?? '',
       description: json['description'],
       price: (json['price'] ?? '0.00').toString(),
+      earned: (json['earned'] ?? json['total_earned'])?.toString(),
       isPublished: json['is_published'] ?? true,
       sortOrder: json['sort_order'] ?? 0,
       purchasesCount: json['purchases_count'],

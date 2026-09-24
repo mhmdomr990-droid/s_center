@@ -66,15 +66,31 @@ class TeacherCoursesController extends GetxController {
     }
   }
 
-  Future<void> createLecture(int courseId, {required String title, required String type, String? url, String? content}) async {
+  Future<void> createLecture(int courseId, {required String title, required String type, String? url, String? content, int? sortOrder}) async {
     isSaving.value = true;
     try {
-      await _teacherProvider.createLecture(courseId, title: title, type: type, url: url, content: content);
+      await _teacherProvider.createLecture(courseId, title: title, type: type, url: url, content: content, sortOrder: sortOrder);
       Get.back();
       Get.snackbar('نجاح', 'تم إضافة المحاضرة', backgroundColor: Color(0xFF43A047), colorText: Color(0xFFFFFFFF));
       loadCourseDetail(courseId);
     } catch (e) {
       Get.snackbar('خطأ', 'فشل إضافة المحاضرة', backgroundColor: Color(0xFFE53935), colorText: Color(0xFFFFFFFF));
+    } finally {
+      isSaving.value = false;
+    }
+  }
+
+  Future<void> updateLecture(int lectureId, int courseId,
+      {required String title, required String type, String? url, String? content, int? sortOrder}) async {
+    isSaving.value = true;
+    try {
+      await _teacherProvider.updateLecture(lectureId,
+          title: title, type: type, url: url, content: content, sortOrder: sortOrder);
+      Get.back();
+      Get.snackbar('نجاح', 'تم تحديث المحاضرة', backgroundColor: Color(0xFF43A047), colorText: Color(0xFFFFFFFF));
+      loadCourseDetail(courseId);
+    } catch (e) {
+      Get.snackbar('خطأ', 'فشل تحديث المحاضرة', backgroundColor: Color(0xFFE53935), colorText: Color(0xFFFFFFFF));
     } finally {
       isSaving.value = false;
     }

@@ -81,6 +81,10 @@ class TeacherCourseDetailPage extends StatelessWidget {
                     isPublished: lecture.isPublished,
                     trailing: PopupMenuButton(
                       itemBuilder: (context) => [
+                        const PopupMenuItem(
+                          value: 'edit',
+                          child: Text('تعديل'),
+                        ),
                         PopupMenuItem(
                           value: 'toggle',
                           child: Text(lecture.isPublished ? 'إخفاء' : 'إظهار'),
@@ -88,7 +92,10 @@ class TeacherCourseDetailPage extends StatelessWidget {
                         PopupMenuItem(value: 'delete', child: const Text('حذف', style: TextStyle(color: Colors.red))),
                       ],
                       onSelected: (value) {
-                        if (value == 'toggle') {
+                        if (value == 'edit') {
+                          Get.toNamed(AppRoutes.addLecture,
+                              arguments: {'courseId': courseId, 'lecture': lecture});
+                        } else if (value == 'toggle') {
                           ctrl.togglePublished(lecture.id, !lecture.isPublished, courseId);
                         } else if (value == 'delete') {
                           _confirmDelete(ctrl, lecture.id, courseId);

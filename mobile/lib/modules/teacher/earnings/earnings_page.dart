@@ -51,11 +51,77 @@ class EarningsPage extends StatelessWidget {
                         Row(
                           children: [
                             _buildStat('المتبقّي', '${ctrl.remaining.value} SYP'),
+                            const SizedBox(width: 16),
+                            _buildStat('إجمالي المشتريات', '${ctrl.totalPurchases.value}'),
                           ],
                         ),
                       ],
                     ),
                   ),
+                  const SizedBox(height: 16),
+                  Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      color: AppColors.courseCard,
+                      borderRadius: BorderRadius.circular(16),
+                      border: Border.all(color: AppColors.cardBorder),
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text('كيف تُحتسب الأرباح؟', style: AppTextStyles.titleMedium),
+                        const SizedBox(height: 8),
+                        Text('إجمالي الأرباح = مجموع حصة المدرس من كل عمليات شراء الكورسات.',
+                            style: AppTextStyles.bodySmall.copyWith(color: AppColors.textSecondary, height: 1.6)),
+                        Text('المدفوع = مجموع الدفعات التي أنشأها الأدمن للمدرس.',
+                            style: AppTextStyles.bodySmall.copyWith(color: AppColors.textSecondary, height: 1.6)),
+                        Text('المتبقي = الأرباح - المدفوع (المبلغ المستحق غير المصروف بعد).',
+                            style: AppTextStyles.bodySmall.copyWith(color: AppColors.textSecondary, height: 1.6)),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 24),
+                  Text('الأرباح حسب الكورس', style: AppTextStyles.titleLarge),
+                  const SizedBox(height: 8),
+                  if (ctrl.perCourse.isEmpty)
+                    EmptyState(icon: Icons.school_outlined, title: 'لا توجد دورات', subtitle: 'لم تُسجَّل أي مشتريات بعد')
+                  else
+                    ...ctrl.perCourse.map((item) => Container(
+                          margin: const EdgeInsets.only(bottom: 8),
+                          padding: const EdgeInsets.all(14),
+                          decoration: BoxDecoration(
+                            color: AppColors.courseCard,
+                            borderRadius: BorderRadius.circular(12),
+                            border: Border.all(color: AppColors.cardBorder),
+                          ),
+                          child: Row(
+                            children: [
+                              Container(
+                                padding: const EdgeInsets.all(8),
+                                decoration: BoxDecoration(
+                                  color: AppColors.primary.withValues(alpha: 0.1),
+                                  borderRadius: BorderRadius.circular(8),
+                                ),
+                                child: const Icon(Icons.school, color: AppColors.primary, size: 22),
+                              ),
+                              const SizedBox(width: 12),
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text('${item['name'] ?? ''}', style: AppTextStyles.bodyMedium, maxLines: 1, overflow: TextOverflow.ellipsis),
+                                    Text('${item['purchases_count'] ?? 0} مشتري', style: AppTextStyles.caption),
+                                  ],
+                                ),
+                              ),
+                              Text(
+                                '${item['earned'] ?? '0.00'} SYP',
+                                style: GoogleFonts.cairo(fontWeight: FontWeight.bold, color: AppColors.primary, fontSize: 15),
+                              ),
+                            ],
+                          ),
+                        )),
                   const SizedBox(height: 24),
                   Text('سجل الدفعات', style: AppTextStyles.titleLarge),
                   const SizedBox(height: 8),

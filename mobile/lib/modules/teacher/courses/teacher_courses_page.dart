@@ -5,6 +5,7 @@ import '../../../app/routes/app_routes.dart';
 import '../../../widgets/loading_shimmer.dart';
 import '../../../widgets/empty_state.dart';
 import '../../../widgets/gradient_app_bar.dart';
+import '../../../widgets/status_pill.dart';
 import 'teacher_courses_controller.dart';
 
 class TeacherCoursesPage extends StatelessWidget {
@@ -49,31 +50,52 @@ class TeacherCoursesPage extends StatelessWidget {
                           BoxShadow(color: Colors.black.withValues(alpha: 0.05), blurRadius: 8, offset: const Offset(0, 3)),
                         ],
                       ),
-                      child: Row(
-                        children: [
-                          Container(
-                            width: 50,
-                            height: 50,
-                            decoration: BoxDecoration(
-                              color: AppColors.primary.withValues(alpha: 0.1),
-                              borderRadius: BorderRadius.circular(12),
+                        child: Row(
+                          children: [
+                            Container(
+                              width: 50,
+                              height: 50,
+                              decoration: BoxDecoration(
+                                color: AppColors.primary.withValues(alpha: 0.1),
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                              child: const Icon(Icons.school, color: AppColors.primary, size: 26),
                             ),
-                            child: const Icon(Icons.school, color: AppColors.primary, size: 26),
-                          ),
-                          const SizedBox(width: 12),
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(course.name, style: Theme.of(context).textTheme.titleMedium?.copyWith(fontSize: 15), maxLines: 1, overflow: TextOverflow.ellipsis),
-                                const SizedBox(height: 4),
-                                Text('السنة ${course.year} | ${course.purchasesCount ?? 0} مشتري', style: Theme.of(context).textTheme.bodySmall),
-                              ],
+                            const SizedBox(width: 12),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(course.name, style: Theme.of(context).textTheme.titleMedium?.copyWith(fontSize: 15), maxLines: 1, overflow: TextOverflow.ellipsis),
+                                  const SizedBox(height: 4),
+                                  Text('السنة ${course.year} | ${course.purchasesCount ?? 0} مشتري', style: Theme.of(context).textTheme.bodySmall),
+                                  const SizedBox(height: 6),
+                                  Row(
+                                    children: [
+                                      StatusPill(
+                                        label: course.isPublished ? 'منشور' : 'مخفي',
+                                        color: course.isPublished ? AppColors.success : AppColors.textSecondary,
+                                      ),
+                                      const SizedBox(width: 8),
+                                      Flexible(
+                                        child: Text(
+                                          'أرباح ${course.earned ?? '0.00'} SYP',
+                                          style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                                                color: AppColors.primary,
+                                                fontWeight: FontWeight.w600,
+                                              ),
+                                          maxLines: 1,
+                                          overflow: TextOverflow.ellipsis,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ],
+                              ),
                             ),
-                          ),
-                          Icon(Icons.arrow_back_ios_new, size: 16, color: AppColors.textHint),
-                        ],
-                      ),
+                            Icon(Icons.arrow_back_ios_new, size: 16, color: AppColors.textHint),
+                          ],
+                        ),
                     ),
                   );
                 },

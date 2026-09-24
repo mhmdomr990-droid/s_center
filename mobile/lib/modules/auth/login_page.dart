@@ -33,10 +33,26 @@ class LoginPage extends StatelessWidget {
                 child: const Icon(Icons.school, size: 60, color: AppColors.primary),
               ),
               const SizedBox(height: 20),
-              Text('مرحباً بعودتك', style: AppTextStyles.headlineLarge),
+              Obx(() => Text(
+                    ctrl.loginRole.value == 'TEACHER' ? 'دخول المعلمين' : 'مرحباً بعودتك',
+                    style: AppTextStyles.headlineLarge,
+                  )),
               const SizedBox(height: 8),
-              Text('سجّل دخولك للوصول لدوراتك', style: AppTextStyles.bodyMedium.copyWith(color: AppColors.textSecondary)),
-              const SizedBox(height: 48),
+              Obx(() => Text(
+                    ctrl.loginRole.value == 'TEACHER'
+                        ? 'سجّل دخولك لإدارة دوراتك ومحاضراتك'
+                        : 'سجّل دخولك للوصول لدوراتك',
+                    style: AppTextStyles.bodyMedium.copyWith(color: AppColors.textSecondary),
+                  )),
+              const SizedBox(height: 24),
+              Obx(() => Row(
+                    children: [
+                      _buildRoleTab(ctrl, 'STUDENT', 'طالب', Icons.school_outlined),
+                      const SizedBox(width: 12),
+                      _buildRoleTab(ctrl, 'TEACHER', 'معلم', Icons.menu_book_outlined),
+                    ],
+                  )),
+              const SizedBox(height: 24),
               Form(
                 child: Column(
                   children: [
@@ -66,28 +82,67 @@ class LoginPage extends StatelessWidget {
               ),
               const SizedBox(height: 32),
               Obx(() => CustomButton(
-                text: 'تسجيل الدخول',
-                isLoading: ctrl.isLoading.value,
-                onPressed: ctrl.login,
-                icon: Icons.login,
-              )),
+                    text: ctrl.loginRole.value == 'TEACHER' ? 'دخول المعلم' : 'تسجيل الدخول',
+                    isLoading: ctrl.isLoading.value,
+                    onPressed: ctrl.login,
+                    icon: Icons.login,
+                  )),
               const SizedBox(height: 20),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Text('ليس لديك حساب؟ ', style: AppTextStyles.bodyMedium),
-                  GestureDetector(
-                    onTap: () => Get.toNamed(AppRoutes.register),
-                    child: Text(
-                      'سجّل الآن',
-                      style: GoogleFonts.cairo(
-                        fontSize: 15,
-                        fontWeight: FontWeight.w600,
-                        color: AppColors.primary,
+              Obx(() {
+                if (ctrl.loginRole.value == 'TEACHER') return const SizedBox.shrink();
+                return Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Text('ليس لديك حساب؟ ', style: AppTextStyles.bodyMedium),
+                    GestureDetector(
+                      onTap: () => Get.toNamed(AppRoutes.register),
+                      child: Text(
+                        'سجّل الآن',
+                        style: GoogleFonts.cairo(
+                          fontSize: 15,
+                          fontWeight: FontWeight.w600,
+                          color: AppColors.primary,
+                        ),
                       ),
                     ),
-                  ),
-                ],
+                  ],
+                );
+              }),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildRoleTab(AuthController ctrl, String role, String label, IconData icon) {
+    final isSelected = ctrl.loginRole.value == role;
+    return Expanded(
+      child: GestureDetector(
+        onTap: () => ctrl.loginRole.value = role,
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 200),
+          padding: const EdgeInsets.symmetric(vertical: 12),
+          decoration: BoxDecoration(
+            color: isSelected ? AppColors.primary : AppColors.courseCard,
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(
+              color: isSelected ? AppColors.primary : AppColors.cardBorder,
+              width: isSelected ? 2 : 1,
+            ),
+          ),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(icon, size: 20, color: isSelected ? Colors.white : AppColors.textSecondary),
+              const SizedBox(width: 8),
+              Text(
+                label,
+                style: TextStyle(
+                  color: isSelected ? Colors.white : AppColors.textPrimary,
+                  fontWeight: FontWeight.w600,
+                  fontSize: 15,
+                ),
               ),
             ],
           ),

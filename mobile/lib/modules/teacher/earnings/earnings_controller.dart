@@ -13,6 +13,8 @@ class EarningsController extends GetxController {
   final totalEarned = '0.00'.obs;
   final totalPaid = '0.00'.obs;
   final remaining = '0.00'.obs;
+  final totalPurchases = 0.obs;
+  final perCourse = <Map<String, dynamic>>[].obs;
   final payouts = <PayoutModel>[].obs;
   final selectedMonth = ''.obs;
 
@@ -36,6 +38,12 @@ class EarningsController extends GetxController {
       totalEarned.value = (stats['total_earned'] ?? '0.00').toString();
       totalPaid.value = (stats['total_paid'] ?? '0.00').toString();
       remaining.value = (stats['remaining'] ?? '0.00').toString();
+      totalPurchases.value = stats['total_purchases'] ?? 0;
+
+      final coursesData = stats['courses'];
+      if (coursesData is List) {
+        perCourse.value = coursesData.cast<Map<String, dynamic>>();
+      }
 
       final payoutData = results[1].data['data'];
       if (payoutData is List) {

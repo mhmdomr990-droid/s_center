@@ -18,6 +18,7 @@ class AuthController extends GetxController {
   final isLoading = false.obs;
   final obscurePassword = true.obs;
   final obscureConfirmPassword = true.obs;
+  final loginRole = 'STUDENT'.obs;
   final user = Rxn<UserModel>();
   bool _authChecked = false;
 
@@ -63,6 +64,19 @@ class AuthController extends GetxController {
       final data = response.data['data'];
       final token = data['token'] as String;
       final userData = UserModel.fromJson(data['user']);
+
+      final wantTeacher = loginRole.value == 'TEACHER';
+      if (wantTeacher != userData.isTeacher) {
+        Get.snackbar(
+          'خطأ',
+          wantTeacher
+              ? 'هذا حساب طالب — اختر تبويب الطالب'
+              : 'هذا حساب معلم — اختر تبويب المعلم',
+          backgroundColor: Colors.red,
+          colorText: Colors.white,
+        );
+        return;
+      }
 
       await _storage.saveToken(token);
       await _storage.saveUser(userData);

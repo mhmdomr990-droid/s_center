@@ -95,22 +95,23 @@ class ProfilePage extends StatelessWidget {
                                     .copyWith(color: Colors.white70),
                               ),
                               const SizedBox(height: 8),
-                              Row(
-                                children: [
-                                  const Icon(
-                                      Icons.account_balance_wallet_rounded,
-                                      color: Colors.white70,
-                                      size: 16),
-                                  const SizedBox(width: 6),
-                                  Text(
-                                    '${formatAmount(user?.balance ?? '0.00')} SYP',
-                                    style: GoogleFonts.cairo(
-                                        color: Colors.white,
-                                        fontSize: 14,
-                                        fontWeight: FontWeight.w600),
-                                  ),
-                                ],
-                              ),
+                              if (user?.isTeacher != true)
+                                Row(
+                                  children: [
+                                    const Icon(
+                                        Icons.account_balance_wallet_rounded,
+                                        color: Colors.white70,
+                                        size: 16),
+                                    const SizedBox(width: 6),
+                                    Text(
+                                      '${formatAmount(user?.balance ?? '0.00')} SYP',
+                                      style: GoogleFonts.cairo(
+                                          color: Colors.white,
+                                          fontSize: 14,
+                                          fontWeight: FontWeight.w600),
+                                    ),
+                                  ],
+                                ),
                             ],
                           ),
                         ),

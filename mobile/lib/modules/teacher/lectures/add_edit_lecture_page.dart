@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../../../app/theme/app_colors.dart';
+import '../../../data/models/lecture_model.dart';
 import '../../../widgets/custom_button.dart';
 import '../../../widgets/custom_text_field.dart';
 import '../../../widgets/gradient_app_bar.dart';
@@ -13,15 +14,18 @@ class AddEditLecturePage extends StatelessWidget {
   Widget build(BuildContext context) {
     final args = Get.arguments as Map<String, dynamic>;
     final courseId = args['courseId'] as int;
+    final lecture = args['lecture'] as LectureModel?;
+    final isEdit = lecture != null;
 
-    final titleCtrl = TextEditingController();
-    final urlCtrl = TextEditingController();
-    final contentCtrl = TextEditingController();
-    final selectedType = 'VIDEO'.obs;
+    final titleCtrl = TextEditingController(text: lecture?.title ?? '');
+    final urlCtrl = TextEditingController(text: lecture?.url ?? '');
+    final contentCtrl = TextEditingController(text: lecture?.content ?? '');
+    final sortCtrl = TextEditingController(text: (lecture?.sortOrder ?? 0).toString());
+    final selectedType = (lecture?.type ?? 'VIDEO').obs;
 
     return Scaffold(
       backgroundColor: AppColors.background,
-      appBar: const GradientAppBar(title: 'إضافة محاضرة'),
+      appBar: GradientAppBar(title: isEdit ? 'تعديل محاضرة' : 'إضافة محاضرة'),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16),
         child: Column(
@@ -67,26 +71,57 @@ class AddEditLecturePage extends StatelessWidget {
               }
               return const SizedBox();
             }),
+            const SizedBox(height: 16),
+            CustomTextField(
+              labelText: 'الترتيب (رقمي)',
+              prefixIcon: Icons.sort,
+              controller: sortCtrl,
+              keyboardType: TextInputType.number,
+            ),
             const SizedBox(height: 24),
             GetBuilder<TeacherCoursesController>(
               builder: (ctrl) {
                 return Obx(() => CustomButton(
-                  text: 'إضافة المحاضرة',
+                  text: isEdit ? 'حفظ التغييرات' : 'إضافة المحاضرة',
                   isLoading: ctrl.isSaving.value,
                   onPressed: () {
                     if (titleCtrl.text.isEmpty) {
                       Get.snackbar('خطأ', 'أدخل عنوان المحاضرة', backgroundColor: AppColors.error, colorText: Colors.white);
                       return;
                     }
-                    ctrl.createLecture(
-                      courseId,
-                      title: titleCtrl.text.trim(),
-                      type: selectedType.value,
-                      url: urlCtrl.text.isNotEmpty ? urlCtrl.text.trim() : null,
-                      content: contentCtrl.text.isNotEmpty ? contentCtrl.text.trim() : null,
-                    );
+                    final sortOrder = int.tryParse(sortCtrl.text.trim());
+                    if (selectedType.value == 'VIDEO' || selectedType.value == 'PDF') {
+                      if (urlCtrl.text.isEmpty) {
+                        Get.snackbar('خطأ', 'أدخل رابط المحاضرة', backgroundColor: AppColors.error, colorText: Colors.white);
+                        return;
+                      }
+                    }
+                    if (isEdit) {
+                      ctrl.updateLecture(
+                        lecture.id,
+                        courseId,
+                        title: titleCtrl.text.trim(),
+                        type: selectedType.value,
+                        url: selectedType.value == 'TEXT'
+                            ? null
+                            : (urlCtrl.text.isNotEmpty ? urlCtrl.text.trim() : null),
+                        content: selectedType.value == 'TEXT'
+                            ? (contentCtrl.text.isNotEmpty ? contentCtrl.text.trim() : null)
+                            : null,
+                        sortOrder: sortOrder,
+                      );
+                    } else {
+                      ctrl.createLecture(
+                        courseId,
+                        title: titleCtrl.text.trim(),
+                        type: selectedType.value,
+                        url: urlCtrl.text.isNotEmpty ? urlCtrl.text.trim() : null,
+                        content: contentCtrl.text.isNotEmpty ? contentCtrl.text.trim() : null,
+                        sortOrder: sortOrder,
+                      );
+                    }
                   },
-                  icon: Icons.add,
+                  icon: isEdit ? Icons.save_outlined : Icons.add,
                 ));
               },
             ),

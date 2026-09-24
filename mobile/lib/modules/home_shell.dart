@@ -159,6 +159,7 @@ class TeacherShell extends StatelessWidget {
         TeacherHomePage(),
         TeacherCoursesPage(),
         EarningsPage(),
+        ProfilePage(),
       ];
       return Scaffold(
         body: IndexedStack(
@@ -181,6 +182,7 @@ class TeacherShell extends StatelessWidget {
                   _buildNavItem(currentIndex, 0, Icons.dashboard_rounded, 'لوحة التحكم'),
                   _buildNavItem(currentIndex, 1, Icons.school_rounded, 'الدورات'),
                   _buildNavItem(currentIndex, 2, Icons.account_balance_rounded, 'الأرباح'),
+                  _buildNavItem(currentIndex, 3, Icons.person_rounded, 'حسابي'),
                 ],
               ),
             ),
