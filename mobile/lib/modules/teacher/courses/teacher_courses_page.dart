@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../../../app/theme/app_colors.dart';
+import '../../../app/theme/app_text_styles.dart';
 import '../../../app/routes/app_routes.dart';
 import '../../../widgets/loading_shimmer.dart';
 import '../../../widgets/empty_state.dart';
@@ -63,9 +64,9 @@ class TeacherCoursesPage extends StatelessWidget {
                               child: Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
-                                  Text(course.name, style: Theme.of(context).textTheme.titleMedium?.copyWith(fontSize: 15), maxLines: 1, overflow: TextOverflow.ellipsis),
+                                  Text(course.name, style: AppTextStyles.titleMedium.copyWith(fontSize: 15), maxLines: 1, overflow: TextOverflow.ellipsis),
                                   const SizedBox(height: 4),
-                                  Text('السنة ${course.year} | ${course.purchasesCount ?? 0} مشتري', style: Theme.of(context).textTheme.bodySmall),
+                                  Text('السنة ${course.year} | ${course.purchasesCount ?? 0} مشتري', style: AppTextStyles.bodySmall),
                                   const SizedBox(height: 6),
                                   Row(
                                     children: [
@@ -77,7 +78,7 @@ class TeacherCoursesPage extends StatelessWidget {
                                       Flexible(
                                         child: Text(
                                           'أرباح ${course.earned ?? '0.00'} SYP',
-                                          style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                                          style: AppTextStyles.bodySmall.copyWith(
                                                 color: AppColors.primary,
                                                 fontWeight: FontWeight.w600,
                                               ),

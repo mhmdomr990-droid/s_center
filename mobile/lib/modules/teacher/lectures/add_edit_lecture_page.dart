@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../../../app/theme/app_colors.dart';
+import '../../../app/theme/app_text_styles.dart';
 import '../../../data/models/lecture_model.dart';
 import '../../../widgets/custom_button.dart';
 import '../../../widgets/custom_text_field.dart';
@@ -37,7 +38,7 @@ class AddEditLecturePage extends StatelessWidget {
               controller: titleCtrl,
             ),
             const SizedBox(height: 16),
-            Text('نوع المحاضرة', style: Theme.of(context).textTheme.titleMedium),
+            Text('نوع المحاضرة', style: AppTextStyles.titleMedium),
             const SizedBox(height: 8),
             Obx(() => Row(
               children: [

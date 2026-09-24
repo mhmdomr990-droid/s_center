@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../../../app/theme/app_colors.dart';
+import '../../../app/theme/app_text_styles.dart';
 import '../../../widgets/custom_button.dart';
 import '../../../widgets/custom_text_field.dart';
 import '../../../widgets/gradient_app_bar.dart';
@@ -47,7 +48,7 @@ class TopupPage extends StatelessWidget {
                   keyboardType: TextInputType.number,
                 ),
                 const SizedBox(height: 16),
-                Text('طريقة الدفع', style: Theme.of(context).textTheme.titleMedium),
+                Text('طريقة الدفع', style: AppTextStyles.titleMedium),
                 const SizedBox(height: 8),
                 Row(
                   children: [
