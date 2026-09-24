@@ -111,7 +111,7 @@ class EarningsPage extends StatelessWidget {
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
                                     Text('${item['name'] ?? ''}', style: AppTextStyles.bodyMedium, maxLines: 1, overflow: TextOverflow.ellipsis),
-                                    Text('${item['purchases_count'] ?? 0} مشتري', style: AppTextStyles.caption),
+                                    Text(_metaLine(item), style: AppTextStyles.caption, maxLines: 1, overflow: TextOverflow.ellipsis),
                                   ],
                                 ),
                               ),
@@ -172,6 +172,18 @@ class EarningsPage extends StatelessWidget {
         );
       },
     );
+  }
+
+  String _metaLine(Map<String, dynamic> item) {
+    final spec = (item['specialization_name'] ?? '').toString();
+    final year = (item['year'] as num?)?.toInt() ?? 0;
+    final yearLabel = year > 0 ? 'السنة $year' : '';
+    final parts = <String>[
+      if (spec.isNotEmpty) spec,
+      if (yearLabel.isNotEmpty) yearLabel,
+      '${item['purchases_count'] ?? 0} مشتري',
+    ];
+    return parts.join(' — ');
   }
 
   Widget _buildStat(String label, String value) {

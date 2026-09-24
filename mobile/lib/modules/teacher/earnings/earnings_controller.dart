@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../../../data/providers/api_client.dart';
 import '../../../data/providers/teacher_provider.dart';
+import '../../../data/services/catalog_lookup.dart';
 import '../../../data/models/payout_model.dart';
 
 class EarningsController extends GetxController {
@@ -42,7 +43,23 @@ class EarningsController extends GetxController {
 
       final coursesData = stats['courses'];
       if (coursesData is List) {
-        perCourse.value = coursesData.cast<Map<String, dynamic>>();
+        await CatalogLookup.ensureLoaded();
+        perCourse.value = coursesData.map<Map<String, dynamic>>((e) {
+          final json = Map<String, dynamic>.from(e as Map);
+          final meta = CatalogLookup.metaFor(
+              ((json['course_id'] ?? json['id'] ?? 0) as num).toInt());
+          if (meta != null) {
+            json['year'] = meta['year'] ?? json['year'];
+            json['specialization_id'] =
+                meta['specialization_id'] ?? json['specialization_id'];
+            json['specialization_name'] =
+                meta['specialization_id'] != null
+                    ? CatalogLookup.specName(
+                        (meta['specialization_id'] as num).toInt())
+                    : '';
+          }
+          return json;
+        }).toList();
       }
 
       final payoutData = results[1].data['data'];

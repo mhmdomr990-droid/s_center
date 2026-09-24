@@ -3,6 +3,7 @@ import 'package:get/get.dart';
 import '../../../data/providers/api_client.dart';
 import '../../../data/providers/teacher_provider.dart';
 import '../../../data/services/storage_service.dart';
+import '../../../data/services/catalog_lookup.dart';
 import '../../../data/models/course_model.dart';
 
 class TeacherHomeController extends GetxController {
@@ -51,7 +52,11 @@ class TeacherHomeController extends GetxController {
 
       final coursesData = data['per_course'];
       if (coursesData is List) {
-        courses.value = coursesData.map<CourseModel>((e) => CourseModel.fromJson(e)).toList();
+        await CatalogLookup.ensureLoaded();
+        courses.value = coursesData.map<CourseModel>((e) {
+          final json = Map<String, dynamic>.from(e as Map);
+          return CourseModel.fromJson(CatalogLookup.enrichJson(json));
+        }).toList();
       }
 
       final dailyData = data['daily_sales'];

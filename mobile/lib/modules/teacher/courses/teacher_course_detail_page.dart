@@ -60,11 +60,17 @@ class TeacherCourseDetailPage extends StatelessWidget {
                       const SizedBox(height: 8),
                       Row(
                         children: [
+                          if (course.specializationName.isNotEmpty) ...[
+                            _buildInfoChip(course.specializationName),
+                            const SizedBox(width: 8),
+                          ],
                           _buildInfoChip('${course.purchasesCount ?? 0} مشتري'),
                           const SizedBox(width: 8),
                           _buildInfoChip('${course.price} SYP'),
-                          const SizedBox(width: 8),
-                          _buildInfoChip('السنة ${course.year}'),
+                          if (course.year > 0) ...[
+                            const SizedBox(width: 8),
+                            _buildInfoChip('السنة ${course.year}'),
+                          ],
                         ],
                       ),
                     ],

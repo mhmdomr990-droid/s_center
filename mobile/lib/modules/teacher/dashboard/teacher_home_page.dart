@@ -6,6 +6,7 @@ import '../../../app/theme/app_text_styles.dart';
 import '../../../app/routes/app_routes.dart';
 import '../../../widgets/loading_shimmer.dart';
 import '../../../widgets/gradient_app_bar.dart';
+import '../../../data/models/course_model.dart';
 import 'teacher_home_controller.dart';
 
 class TeacherHomePage extends StatelessWidget {
@@ -137,6 +138,8 @@ class TeacherHomePage extends StatelessWidget {
                                 children: [
                                   Text(course.name, style: AppTextStyles.titleMedium.copyWith(fontSize: 15), maxLines: 1, overflow: TextOverflow.ellipsis),
                                   const SizedBox(height: 4),
+                                  Text(_courseMetaLine(course), style: AppTextStyles.caption, maxLines: 1, overflow: TextOverflow.ellipsis),
+                                  const SizedBox(height: 2),
                                   Text('${course.purchasesCount ?? 0} مشتري', style: AppTextStyles.caption),
                                 ],
                               ),
@@ -153,6 +156,14 @@ class TeacherHomePage extends StatelessWidget {
         );
       },
     );
+  }
+
+  String _courseMetaLine(CourseModel course) {
+    final spec = course.specializationName;
+    final year = course.year > 0 ? 'السنة ${course.year}' : '';
+    if (spec.isEmpty) return year;
+    if (year.isEmpty) return spec;
+    return '$spec — $year';
   }
 
   Widget _buildStatItem(String label, String value) {
