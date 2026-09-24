@@ -7,6 +7,7 @@ import '../../../app/theme/app_text_styles.dart';
 import '../../../app/routes/app_routes.dart';
 import '../../../widgets/custom_button.dart';
 import '../../../widgets/gradient_app_bar.dart';
+import '../../../widgets/download_lecture_button.dart';
 import '../../../widgets/lecture_tile.dart';
 import '../../../widgets/loading_shimmer.dart';
 import '../../../widgets/section_header.dart';
@@ -298,11 +299,19 @@ class CourseDetailPage extends StatelessWidget {
                 else
                   ...ctrl.lectures.asMap().entries.map((entry) {
                     final lecture = entry.value;
+                    final canDownload = lecture.isVideo &&
+                        (ctrl.isPurchased(courseId) || course.isPurchased);
                     return LectureTile(
                       index: entry.key + 1,
                       title: lecture.title,
                       type: lecture.type,
                       isNew: _isNewLecture(lecture.createdAt),
+                      trailing: lecture.isVideo
+                          ? DownloadLectureButton(
+                              lectureId: lecture.id,
+                              enabled: canDownload,
+                            )
+                          : null,
                       onTap: () => Get.toNamed(AppRoutes.lectureView, arguments: {
                         'lecture': lecture,
                         'lectures': ctrl.lectures,

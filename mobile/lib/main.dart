@@ -8,6 +8,8 @@ import 'app/routes/app_routes.dart';
 import 'data/providers/api_client.dart';
 import 'data/services/storage_service.dart';
 import 'data/services/device_service.dart';
+import 'data/services/download_manager.dart';
+import 'data/services/screen_guard.dart';
 import 'modules/auth/auth_controller.dart';
 import 'widgets/app_scroll_behavior.dart';
 
@@ -26,6 +28,9 @@ void main() async {
   Get.put(apiClient);
   Get.put(themeController);
   Get.put(AuthController());
+  Get.put(DownloadManager(), permanent: true);
+
+  await ScreenGuard.instance.protect();
 
   runApp(const SCenterApp());
 }
