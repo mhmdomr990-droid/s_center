@@ -23,9 +23,9 @@ class AppColors {
   static Color divider = const Color(0xFFE1E4E9);
   static Color shimmerBase = const Color(0xFFB9D3F1);
   static Color shimmerHighlight = const Color(0xFFE3EEFC);
-  static Color bottomNavBg = const Color(0xFFC2DAF5);
-  static Color bottomNavSelected = const Color(0xFF1976D2);
-  static Color bottomNavUnselected = const Color(0xFFBDBDBD);
+  static Color bottomNavBg = const Color(0xFF1976D2);
+  static Color bottomNavSelected = const Color(0xFFFFFFFF);
+  static Color bottomNavUnselected = const Color(0xFF90CAF9);
 
   static void setDarkMode(bool dark) {
     if (dark) {
@@ -67,9 +67,9 @@ class AppColors {
       divider = const Color(0xFFE1E4E9);
       shimmerBase = const Color(0xFFB9D3F1);
       shimmerHighlight = const Color(0xFFE3EEFC);
-      bottomNavBg = const Color(0xFFC2DAF5);
-      bottomNavSelected = const Color(0xFF1976D2);
-      bottomNavUnselected = const Color(0xFFBDBDBD);
+      bottomNavBg = const Color(0xFF1976D2);
+      bottomNavSelected = const Color(0xFFFFFFFF);
+      bottomNavUnselected = const Color(0xFF90CAF9);
       primaryGradient = const LinearGradient(
         begin: Alignment.topLeft,
         end: Alignment.bottomRight,
