@@ -2,14 +2,19 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../../../data/providers/api_client.dart';
 import '../../../data/providers/teacher_provider.dart';
+import '../../../data/services/storage_service.dart';
 import '../../../data/models/course_model.dart';
 
 class TeacherHomeController extends GetxController {
   final TeacherProvider _teacherProvider;
+  final StorageService _storage;
 
-  TeacherHomeController() : _teacherProvider = TeacherProvider(Get.find<ApiClient>());
+  TeacherHomeController()
+      : _teacherProvider = TeacherProvider(Get.find<ApiClient>()),
+        _storage = Get.find<StorageService>();
 
   final isLoading = true.obs;
+  final userName = ''.obs;
   final totalPurchases = 0.obs;
   final totalEarned = '0.00'.obs;
   final totalPaid = '0.00'.obs;
@@ -21,7 +26,16 @@ class TeacherHomeController extends GetxController {
   @override
   void onInit() {
     super.onInit();
+    _loadUserName();
     loadDashboard();
+  }
+
+  Future<void> _loadUserName() async {
+    final user = await _storage.getUser();
+    final name = user?.fullName.isNotEmpty == true
+        ? user!.fullName
+        : (user?.username ?? '');
+    userName.value = name;
   }
 
   Future<void> loadDashboard() async {

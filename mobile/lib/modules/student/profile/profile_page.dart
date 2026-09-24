@@ -11,6 +11,7 @@ import '../../../widgets/custom_text_field.dart';
 import '../../../widgets/gradient_app_bar.dart';
 import '../../../widgets/loading_shimmer.dart';
 import '../../../widgets/section_header.dart';
+import '../../../widgets/status_pill.dart';
 import 'profile_controller.dart';
 
 class ProfilePage extends StatelessWidget {
@@ -54,48 +55,100 @@ class ProfilePage extends StatelessWidget {
                     clipBehavior: Clip.antiAlias,
                     child: Row(
                       children: [
-                        Container(
-                          width: 64,
-                          height: 64,
-                          alignment: Alignment.center,
-                          decoration: BoxDecoration(
-                            color: Colors.white.withValues(alpha: 0.2),
-                            shape: BoxShape.circle,
-                          ),
-                          child: Text(
-                            _initials(user?.fullName.isNotEmpty == true
-                                ? user!.fullName
-                                : (user?.username ?? '')),
-                            style: GoogleFonts.cairo(
-                              fontSize: 24,
-                              fontWeight: FontWeight.bold,
-                              color: Colors.white,
+                        if (user?.isTeacher == true)
+                          Container(
+                            width: 64,
+                            height: 64,
+                            alignment: Alignment.center,
+                            decoration: BoxDecoration(
+                              color: Colors.white.withValues(alpha: 0.2),
+                              shape: BoxShape.circle,
+                            ),
+                            child: const Icon(Icons.person, size: 36, color: Colors.white),
+                          )
+                        else
+                          Container(
+                            width: 64,
+                            height: 64,
+                            alignment: Alignment.center,
+                            decoration: BoxDecoration(
+                              color: Colors.white.withValues(alpha: 0.2),
+                              shape: BoxShape.circle,
+                            ),
+                            child: Text(
+                              _initials(user?.fullName.isNotEmpty == true
+                                  ? user!.fullName
+                                  : (user?.username ?? '')),
+                              style: GoogleFonts.cairo(
+                                fontSize: 24,
+                                fontWeight: FontWeight.bold,
+                                color: Colors.white,
+                              ),
                             ),
                           ),
-                        ),
                         const SizedBox(width: 16),
                         Expanded(
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              Text(
-                                user?.fullName.isNotEmpty == true
-                                    ? user!.fullName
-                                    : (user?.username ?? ''),
-                                style: AppTextStyles.titleMedium.copyWith(
-                                    color: Colors.white,
-                                    fontWeight: FontWeight.bold),
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
+                              Row(
+                                children: [
+                                  Flexible(
+                                    child: Text(
+                                      user?.fullName.isNotEmpty == true
+                                          ? user!.fullName
+                                          : (user?.username ?? ''),
+                                      style: AppTextStyles.titleMedium.copyWith(
+                                          color: Colors.white,
+                                          fontWeight: FontWeight.bold),
+                                      maxLines: 1,
+                                      overflow: TextOverflow.ellipsis,
+                                    ),
+                                  ),
+                                  if (user?.isTeacher == true) ...[
+                                    const SizedBox(width: 8),
+                                    const StatusPill(label: 'معلم', color: AppColors.primary),
+                                  ],
+                                ],
                               ),
-                              const SizedBox(height: 4),
-                              Text(
-                                '@${user?.username ?? ''}',
-                                style: AppTextStyles.bodySmall
-                                    .copyWith(color: Colors.white70),
-                              ),
-                              const SizedBox(height: 8),
-                              if (user?.isTeacher != true)
+                              if (user?.isTeacher != true) ...[
+                                const SizedBox(height: 4),
+                                Text(
+                                  '@${user?.username ?? ''}',
+                                  style: AppTextStyles.bodySmall
+                                      .copyWith(color: Colors.white70),
+                                ),
+                              ],
+                              if (user?.isTeacher == true) ...[
+                                const SizedBox(height: 8),
+                                Row(
+                                  children: [
+                                    const Icon(Icons.school_rounded,
+                                        color: Colors.white70, size: 16),
+                                    const SizedBox(width: 6),
+                                    Obx(() => Text(
+                                          '${ctrl.teacherCoursesCount.value} دورات',
+                                          style: GoogleFonts.cairo(
+                                              color: Colors.white,
+                                              fontSize: 14,
+                                              fontWeight: FontWeight.w600),
+                                        )),
+                                    const SizedBox(width: 16),
+                                    const Icon(Icons.payments_outlined,
+                                        color: Colors.white70, size: 16),
+                                    const SizedBox(width: 6),
+                                    Obx(() => Text(
+                                          '${ctrl.teacherTotalEarned.value} SYP أرباح',
+                                          style: GoogleFonts.cairo(
+                                              color: Colors.white,
+                                              fontSize: 14,
+                                              fontWeight: FontWeight.w600),
+                                        )),
+                                  ],
+                                ),
+                              ],
+                              if (user?.isTeacher != true) ...[
+                                const SizedBox(height: 8),
                                 Row(
                                   children: [
                                     const Icon(
@@ -112,6 +165,7 @@ class ProfilePage extends StatelessWidget {
                                     ),
                                   ],
                                 ),
+                              ],
                             ],
                           ),
                         ),

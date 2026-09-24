@@ -3,6 +3,7 @@ import 'package:get/get.dart';
 import '../../../data/providers/api_client.dart';
 import '../../../data/providers/api_exception.dart';
 import '../../../data/providers/auth_provider.dart';
+import '../../../data/providers/teacher_provider.dart';
 import '../../../data/services/storage_service.dart';
 import '../../../data/models/user_model.dart';
 import '../../../app/routes/app_routes.dart';
@@ -20,6 +21,8 @@ class ProfileController extends GetxController {
   final isChangingPassword = false.obs;
   final isLoggingOut = false.obs;
   final user = Rxn<UserModel>();
+  final teacherCoursesCount = 0.obs;
+  final teacherTotalEarned = '0.00'.obs;
 
   final oldPasswordCtrl = TextEditingController();
   final newPasswordCtrl = TextEditingController();
@@ -50,11 +53,28 @@ class ProfileController extends GetxController {
       final userData = UserModel.fromJson(response.data['data']);
       user.value = userData;
       await _storage.saveUser(userData);
+
+      if (userData.isTeacher) {
+        _loadTeacherStats();
+      }
     } catch (e) {
       Get.snackbar('خطأ', apiErrorMessage(e, fallback: 'تعذر تحميل بيانات الحساب'),
           backgroundColor: Color(0xFFE53935), colorText: Color(0xFFFFFFFF));
     } finally {
       isLoading.value = false;
+    }
+  }
+
+  Future<void> _loadTeacherStats() async {
+    try {
+      final teacherProvider = TeacherProvider(Get.find<ApiClient>());
+      final response = await teacherProvider.getStats();
+      final stats = response.data['data'];
+      final courses = stats['courses'];
+      teacherCoursesCount.value = courses is List ? courses.length : 0;
+      teacherTotalEarned.value = (stats['total_earned'] ?? '0.00').toString();
+    } catch (_) {
+      // ignore — stats are optional decoration on the card
     }
   }
 

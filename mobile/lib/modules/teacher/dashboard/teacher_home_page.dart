@@ -18,7 +18,16 @@ class TeacherHomePage extends StatelessWidget {
       builder: (ctrl) {
         return Scaffold(
           backgroundColor: AppColors.background,
-          appBar: const GradientAppBar(title: 'لوحة التحكم'),
+          appBar: GradientAppBar(
+            centerTitle: false,
+            titleWidget: Obx(() => Text(
+                  ctrl.userName.value.isEmpty
+                      ? 'مرحباً أستاذ 👋'
+                      : 'مرحباً أستاذ ${ctrl.userName.value} 👋',
+                  style:
+                      GoogleFonts.cairo(fontWeight: FontWeight.w600, fontSize: 17),
+                )),
+          ),
           body: Obx(() {
             if (ctrl.isLoading.value) return const LoadingListShimmer();
 
