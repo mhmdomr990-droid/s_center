@@ -11,16 +11,16 @@ class AppColors {
   static const Color success = Color(0xFF43A047);
   static const Color warning = Color(0xFFFFA000);
 
-  static Color background = const Color(0xFFCADEF7);
+  static Color background = const Color(0xFFEFF2F6);
   static Color sectionStrip = const Color(0xFFB6D2F2);
-  static Color surface = const Color(0xFFF5F9FD);
+  static Color surface = const Color(0xFFF8F9FB);
   static Color card = const Color(0xFFC2DAF5);
   static Color courseCard = const Color(0xFFC2DAF5);
   static Color cardBorder = const Color(0xFF9FC4EB);
   static Color textPrimary = const Color(0xFF212121);
   static Color textSecondary = const Color(0xFF757575);
   static Color textHint = const Color(0xFFBDBDBD);
-  static Color divider = const Color(0xFFD3E2F1);
+  static Color divider = const Color(0xFFE1E4E9);
   static Color shimmerBase = const Color(0xFFB9D3F1);
   static Color shimmerHighlight = const Color(0xFFE3EEFC);
   static Color bottomNavBg = const Color(0xFFC2DAF5);
@@ -55,16 +55,16 @@ class AppColors {
         colors: [Color(0xFF0D2747), Color(0xFF14538A), Color(0xFF1E88E5)],
       );
     } else {
-      background = const Color(0xFFCADEF7);
+      background = const Color(0xFFEFF2F6);
       sectionStrip = const Color(0xFFB6D2F2);
-      surface = const Color(0xFFF5F9FD);
+      surface = const Color(0xFFF8F9FB);
       card = const Color(0xFFC2DAF5);
       courseCard = const Color(0xFFC2DAF5);
       cardBorder = const Color(0xFF9FC4EB);
       textPrimary = const Color(0xFF212121);
       textSecondary = const Color(0xFF757575);
       textHint = const Color(0xFFBDBDBD);
-      divider = const Color(0xFFD3E2F1);
+      divider = const Color(0xFFE1E4E9);
       shimmerBase = const Color(0xFFB9D3F1);
       shimmerHighlight = const Color(0xFFE3EEFC);
       bottomNavBg = const Color(0xFFC2DAF5);
