@@ -17,8 +17,13 @@ class TeacherCourseDetailPage extends StatelessWidget {
     final courseId = args['courseId'] as int;
 
     return GetBuilder<TeacherCoursesController>(
-      initState: (_) {
-        Get.find<TeacherCoursesController>().loadCourseDetail(courseId);
+      init: TeacherCoursesController(),
+      initState: (state) {
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (Get.isRegistered<TeacherCoursesController>()) {
+            Get.find<TeacherCoursesController>().loadCourseDetail(courseId);
+          }
+        });
       },
       builder: (ctrl) {
         return Scaffold(

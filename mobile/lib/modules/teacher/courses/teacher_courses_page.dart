@@ -15,9 +15,6 @@ class TeacherCoursesPage extends StatelessWidget {
   Widget build(BuildContext context) {
     return GetBuilder<TeacherCoursesController>(
       init: TeacherCoursesController(),
-      initState: (_) {
-        Get.find<TeacherCoursesController>().loadCourses();
-      },
       builder: (ctrl) {
         return Scaffold(
           backgroundColor: AppColors.background,

@@ -16,6 +16,12 @@ class TeacherCoursesController extends GetxController {
   final lectures = <LectureModel>[].obs;
   final currentCourse = Rxn<CourseModel>();
 
+  @override
+  void onInit() {
+    super.onInit();
+    loadCourses();
+  }
+
   Future<void> loadCourses() async {
     isLoading.value = true;
     try {
