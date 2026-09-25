@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:get/get.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -15,6 +16,7 @@ import '../../../data/providers/media_provider.dart';
 import '../../../data/services/download_manager.dart';
 import '../../../data/services/screen_guard.dart';
 import '../../../widgets/gradient_app_bar.dart';
+import 'video_fullscreen_page.dart';
 
 class LectureController extends GetxController {
   final currentIndex = 0.obs;
@@ -26,12 +28,26 @@ class LectureController extends GetxController {
   final isPlaying = false.obs;
   final position = Duration.zero.obs;
   final duration = Duration.zero.obs;
+  final isScrubbing = false.obs;
+  final scrubPosition = Duration.zero.obs;
+  final isFullscreen = false.obs;
 
   VideoPlayerController? videoController;
   DownloadManager get _downloads => Get.find<DownloadManager>();
   MediaProvider get _media => MediaProvider(Get.find<ApiClient>());
 
   int _tempPlayLectureId = -1;
+  DateTime? _streamUrlFetchedAt;
+  bool _wasPlaying = false;
+  bool _recovering = false;
+  int _recoveryCount = 0;
+  Duration _seekIntent = Duration.zero;
+
+  bool get _streamUrlStale =>
+      !isOffline.value &&
+      _streamUrlFetchedAt != null &&
+      DateTime.now().difference(_streamUrlFetchedAt!) >=
+          const Duration(minutes: 9);
 
   @override
   void onInit() {
@@ -40,7 +56,10 @@ class LectureController extends GetxController {
     lectures = args['lectures'] as List<LectureModel>;
     currentIndex.value = args['currentIndex'] as int;
     unawaited(ScreenGuard.instance.protect());
-    ever<int>(currentIndex, (_) => unawaited(_loadPlayer()));
+    ever<int>(currentIndex, (_) {
+      _recoveryCount = 0;
+      unawaited(_loadPlayer());
+    });
     unawaited(_loadPlayer());
   }
 
@@ -88,10 +107,17 @@ class LectureController extends GetxController {
     }
   }
 
-  Future<void> _loadPlayer() async {
+  Future<void> _loadPlayer(
+      {Duration resumeAt = Duration.zero, bool autoplay = false}) async {
     await _disposePlayer();
     playerError.value = null;
     isOffline.value = false;
+    isScrubbing.value = false;
+    position.value = Duration.zero;
+    duration.value = Duration.zero;
+    _recovering = false;
+    _streamUrlFetchedAt = null;
+    _seekIntent = Duration.zero;
 
     final lecture = currentLecture;
     if (!lecture.isVideo) return;
@@ -102,37 +128,77 @@ class LectureController extends GetxController {
         final file = await _downloads.decryptToTemp(lecture.id);
         _tempPlayLectureId = lecture.id;
         isOffline.value = true;
-        await _initController(VideoPlayerController.file(file));
+        await _initController(VideoPlayerController.file(file),
+            resumeAt: resumeAt, autoplay: autoplay);
         return;
       }
 
       final resp = await _media.getStreamUrl(lecture.id);
+      _streamUrlFetchedAt = DateTime.now();
       final path = resp.data['data']['url'] as String;
       final url = MediaProvider.absolute(path);
-      await _initController(VideoPlayerController.networkUrl(Uri.parse(url)));
+      await _initController(VideoPlayerController.networkUrl(Uri.parse(url)),
+          resumeAt: resumeAt, autoplay: autoplay);
     } catch (e) {
       playerError.value = apiErrorMessage(e, fallback: 'تعذر تشغيل الفيديو');
-      if (lecture.url != null && lecture.url!.isNotEmpty) {
-        // Legacy external link fallback shown in UI.
-      }
     } finally {
       isLoadingPlayer.value = false;
+      final c = videoController;
+      if (c != null && c.value.hasError) {
+        unawaited(_onPlaybackError());
+      }
     }
   }
 
-  Future<void> _initController(VideoPlayerController controller) async {
+  Future<void> _initController(VideoPlayerController controller,
+      {Duration resumeAt = Duration.zero, bool autoplay = false}) async {
     videoController = controller;
     await controller.initialize();
+    if (resumeAt > Duration.zero) {
+      final dur = controller.value.duration;
+      final target = (dur > Duration.zero && resumeAt > dur) ? dur : resumeAt;
+      try {
+        await controller.seekTo(target);
+      } catch (_) {
+        // Ignore seek failures; error listener handles recovery.
+      }
+      position.value = target;
+    }
     controller.addListener(() {
       if (videoController != controller) return;
-      position.value = controller.value.position;
-      duration.value = controller.value.duration;
-      isPlaying.value = controller.value.isPlaying;
-      if (controller.value.hasError) {
-        playerError.value = 'خطأ في تشغيل الفيديو';
+      final v = controller.value;
+      position.value = v.position;
+      duration.value = v.duration;
+      isPlaying.value = v.isPlaying;
+      if (v.hasError) {
+        unawaited(_onPlaybackError());
+        return;
       }
+      _wasPlaying = v.isPlaying;
+      if (v.isPlaying) _recoveryCount = 0;
     });
+    if (autoplay) {
+      await controller.play();
+    }
     update();
+  }
+
+  Future<void> _onPlaybackError() async {
+    if (_recovering) return;
+    if (isLoadingPlayer.value) {
+      playerError.value = 'خطأ في تشغيل الفيديو';
+      return;
+    }
+    if (_recoveryCount >= 2) {
+      playerError.value = 'تعذر تشغيل الفيديو — أعد المحاولة';
+      return;
+    }
+    _recovering = true;
+    _recoveryCount++;
+    final resume = _seekIntent > Duration.zero ? _seekIntent : position.value;
+    final autoplay = _wasPlaying;
+    playerError.value = null;
+    await _loadPlayer(resumeAt: resume, autoplay: autoplay);
   }
 
   Future<void> togglePlay() async {
@@ -140,16 +206,69 @@ class LectureController extends GetxController {
     if (c == null) return;
     if (c.value.isPlaying) {
       await c.pause();
-    } else {
-      await c.play();
+      return;
     }
+    if (_streamUrlStale) {
+      await _loadPlayer(resumeAt: position.value, autoplay: true);
+      return;
+    }
+    await c.play();
   }
 
   Future<void> seekTo(Duration d) async {
     await videoController?.seekTo(d);
   }
 
-  Future<void> retry() => _loadPlayer();
+  void beginScrub() {
+    isScrubbing.value = true;
+    scrubPosition.value = position.value;
+  }
+
+  void updateScrub(Duration d) {
+    scrubPosition.value = d;
+  }
+
+  Future<void> endScrub(Duration target) async {
+    isScrubbing.value = false;
+    scrubPosition.value = target;
+    _seekIntent = target;
+    position.value = target;
+    final c = videoController;
+    if (c == null) return;
+    final autoplay = _wasPlaying;
+    if (_streamUrlStale) {
+      await _loadPlayer(resumeAt: target, autoplay: autoplay);
+      return;
+    }
+    try {
+      await c.seekTo(target);
+      _seekIntent = Duration.zero;
+    } catch (_) {
+      await _loadPlayer(resumeAt: target, autoplay: autoplay);
+    }
+  }
+
+  Future<void> enterFullscreen() async {
+    if (isFullscreen.value) return;
+    isFullscreen.value = true;
+    await SystemChrome.setPreferredOrientations(const [
+      DeviceOrientation.landscapeLeft,
+      DeviceOrientation.landscapeRight,
+    ]);
+    await SystemChrome.setEnabledSystemUIMode(SystemUiMode.immersiveSticky);
+  }
+
+  Future<void> exitFullscreen() async {
+    if (!isFullscreen.value) return;
+    isFullscreen.value = false;
+    await SystemChrome.setPreferredOrientations(DeviceOrientation.values);
+    await SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
+  }
+
+  Future<void> retry() {
+    _recoveryCount = 0;
+    return _loadPlayer(resumeAt: position.value, autoplay: true);
+  }
 
   Future<void> openExternal() async {
     final lecture = currentLecture;
@@ -475,15 +594,7 @@ class _VideoSection extends StatelessWidget {
               padding: const EdgeInsets.fromLTRB(8, 4, 8, 8),
               child: Column(
                 children: [
-                  VideoProgressIndicator(
-                    controller,
-                    allowScrubbing: true,
-                    colors: const VideoProgressColors(
-                      playedColor: AppColors.primary,
-                      bufferedColor: Colors.white38,
-                      backgroundColor: Colors.white12,
-                    ),
-                  ),
+                  VideoSeekBar(ctrl: ctrl),
                   Row(
                     children: [
                       IconButton(
@@ -497,10 +608,25 @@ class _VideoSection extends StatelessWidget {
                         ),
                       ),
                       Text(
-                        '${ctrl.formatDuration(ctrl.position.value)} / ${ctrl.formatDuration(ctrl.duration.value)}',
-                        style: GoogleFonts.cairo(color: Colors.white70, fontSize: 12),
+                        '${ctrl.formatDuration(ctrl.isScrubbing.value ? ctrl.scrubPosition.value : ctrl.position.value)} / ${ctrl.formatDuration(ctrl.duration.value)}',
+                        style: GoogleFonts.cairo(
+                          color: ctrl.isScrubbing.value
+                              ? AppColors.primaryLight
+                              : Colors.white70,
+                          fontSize: 12,
+                        ),
                       ),
                       const Spacer(),
+                      IconButton(
+                        onPressed: () => Get.to<void>(
+                            () => VideoFullscreenPage(ctrl: ctrl)),
+                        icon: const Icon(Icons.fullscreen,
+                            color: Colors.white, size: 26),
+                        tooltip: 'ملء الشاشة',
+                        padding: const EdgeInsets.symmetric(horizontal: 4),
+                        constraints: const BoxConstraints(
+                            minWidth: 36, minHeight: 36),
+                      ),
                       if (ctrl.isOffline.value)
                         Padding(
                           padding: const EdgeInsets.only(left: 8),
@@ -516,5 +642,44 @@ class _VideoSection extends StatelessWidget {
         ),
       );
     });
+  }
+}
+
+class VideoSeekBar extends StatelessWidget {
+  final LectureController ctrl;
+
+  const VideoSeekBar({super.key, required this.ctrl});
+
+  @override
+  Widget build(BuildContext context) {
+    final maxMs = ctrl.duration.value.inMilliseconds;
+    final shownMs = (ctrl.isScrubbing.value
+            ? ctrl.scrubPosition.value
+            : ctrl.position.value)
+        .inMilliseconds;
+    final value =
+        maxMs > 0 ? shownMs.clamp(0, maxMs).toDouble() : 0.0;
+
+    return SliderTheme(
+      data: SliderTheme.of(context).copyWith(
+        trackHeight: 4,
+        thumbShape: const RoundSliderThumbShape(enabledThumbRadius: 7),
+        overlayShape: const RoundSliderOverlayShape(overlayRadius: 18),
+        activeTrackColor: AppColors.primary,
+        inactiveTrackColor: Colors.white24,
+        thumbColor: AppColors.primary,
+        overlayColor: AppColors.primary.withValues(alpha: 0.25),
+      ),
+      child: Slider(
+        value: value,
+        max: maxMs > 0 ? maxMs.toDouble() : 1,
+        onChanged:
+            maxMs > 0 ? (v) => ctrl.updateScrub(Duration(milliseconds: v.round())) : null,
+        onChangeStart: maxMs > 0 ? (_) => ctrl.beginScrub() : null,
+        onChangeEnd: maxMs > 0
+            ? (v) => ctrl.endScrub(Duration(milliseconds: v.round()))
+            : null,
+      ),
+    );
   }
 }
