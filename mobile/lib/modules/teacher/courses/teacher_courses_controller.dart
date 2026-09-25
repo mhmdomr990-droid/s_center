@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../../../data/providers/api_client.dart';
+import '../../../data/providers/api_exception.dart';
 import '../../../data/providers/catalog_provider.dart';
 import '../../../data/providers/teacher_provider.dart';
 import '../../../data/services/catalog_lookup.dart';
@@ -20,6 +21,7 @@ class TeacherCoursesController extends GetxController {
 
   final isLoading = true.obs;
   final isSaving = false.obs;
+  final uploadProgress = 0.0.obs;
   final courses = <CourseModel>[].obs;
   final specializations = <SpecializationModel>[].obs;
   final selectedSpecializationId = Rxn<int>();
@@ -137,33 +139,83 @@ class TeacherCoursesController extends GetxController {
     }
   }
 
-  Future<void> createLecture(int courseId, {required String title, required String type, String? url, String? content, int? sortOrder}) async {
+  Future<void> createLecture(int courseId,
+      {required String title, required String type, String? url, String? content, int? sortOrder, String? videoFilePath}) async {
     isSaving.value = true;
+    uploadProgress.value = 0;
     try {
-      await _teacherProvider.createLecture(courseId, title: title, type: type, url: url, content: content, sortOrder: sortOrder);
+      await _teacherProvider.createLecture(
+        courseId,
+        title: title,
+        type: type,
+        url: url,
+        content: content,
+        sortOrder: sortOrder,
+        videoFilePath: videoFilePath,
+        onSendProgress: videoFilePath != null
+            ? (sent, total) {
+                if (total > 0) uploadProgress.value = (sent / total).clamp(0.0, 1.0);
+              }
+            : null,
+      );
       Get.back();
-      Get.snackbar('نجاح', 'تم إضافة المحاضرة', backgroundColor: Color(0xFF43A047), colorText: Color(0xFFFFFFFF));
+      Get.snackbar(
+        'نجاح',
+        videoFilePath != null ? 'تم رفع الفيديو بنجاح ✓' : 'تم إضافة المحاضرة',
+        backgroundColor: Color(0xFF43A047),
+        colorText: Color(0xFFFFFFFF),
+      );
       loadCourseDetail(courseId);
     } catch (e) {
-      Get.snackbar('خطأ', 'فشل إضافة المحاضرة', backgroundColor: Color(0xFFE53935), colorText: Color(0xFFFFFFFF));
+      Get.snackbar(
+        'خطأ',
+        apiErrorMessage(e, fallback: videoFilePath != null ? 'فشل رفع الفيديو' : 'فشل إضافة المحاضرة'),
+        backgroundColor: Color(0xFFE53935),
+        colorText: Color(0xFFFFFFFF),
+      );
     } finally {
       isSaving.value = false;
+      uploadProgress.value = 0;
     }
   }
 
   Future<void> updateLecture(int lectureId, int courseId,
-      {required String title, required String type, String? url, String? content, int? sortOrder}) async {
+      {required String title, required String type, String? url, String? content, int? sortOrder, String? videoFilePath}) async {
     isSaving.value = true;
+    uploadProgress.value = 0;
     try {
-      await _teacherProvider.updateLecture(lectureId,
-          title: title, type: type, url: url, content: content, sortOrder: sortOrder);
+      await _teacherProvider.updateLecture(
+        lectureId,
+        title: title,
+        type: type,
+        url: url,
+        content: content,
+        sortOrder: sortOrder,
+        videoFilePath: videoFilePath,
+        onSendProgress: videoFilePath != null
+            ? (sent, total) {
+                if (total > 0) uploadProgress.value = (sent / total).clamp(0.0, 1.0);
+              }
+            : null,
+      );
       Get.back();
-      Get.snackbar('نجاح', 'تم تحديث المحاضرة', backgroundColor: Color(0xFF43A047), colorText: Color(0xFFFFFFFF));
+      Get.snackbar(
+        'نجاح',
+        videoFilePath != null ? 'تم رفع الفيديو بنجاح ✓' : 'تم تحديث المحاضرة',
+        backgroundColor: Color(0xFF43A047),
+        colorText: Color(0xFFFFFFFF),
+      );
       loadCourseDetail(courseId);
     } catch (e) {
-      Get.snackbar('خطأ', 'فشل تحديث المحاضرة', backgroundColor: Color(0xFFE53935), colorText: Color(0xFFFFFFFF));
+      Get.snackbar(
+        'خطأ',
+        apiErrorMessage(e, fallback: videoFilePath != null ? 'فشل رفع الفيديو' : 'فشل تحديث المحاضرة'),
+        backgroundColor: Color(0xFFE53935),
+        colorText: Color(0xFFFFFFFF),
+      );
     } finally {
       isSaving.value = false;
+      uploadProgress.value = 0;
     }
   }
 

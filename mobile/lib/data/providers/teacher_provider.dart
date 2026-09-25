@@ -26,7 +26,57 @@ class TeacherProvider {
     return _api.get('/teacher/courses/$courseId/lectures');
   }
 
-  Future<Response> createLecture(int courseId, {required String title, required String type, String? url, String? content, int? sortOrder}) {
+  static final _uploadOptions =
+      Options(receiveTimeout: const Duration(minutes: 30));
+
+  static String _fileName(String path) =>
+      path.split(RegExp(r'[/\\]')).last;
+
+  static DioMediaType _videoContentType(String path) {
+    switch (path.split('.').last.toLowerCase()) {
+      case 'webm':
+        return DioMediaType('video', 'webm');
+      case 'mov':
+        return DioMediaType('video', 'quicktime');
+      case 'mkv':
+        return DioMediaType('video', 'x-matroska');
+      default:
+        return DioMediaType('video', 'mp4');
+    }
+  }
+
+  static MultipartFile _videoFile(String path) => MultipartFile.fromFileSync(
+        path,
+        filename: _fileName(path),
+        contentType: _videoContentType(path),
+      );
+
+  Future<Response> createLecture(
+    int courseId, {
+    required String title,
+    required String type,
+    String? url,
+    String? content,
+    int? sortOrder,
+    String? videoFilePath,
+    void Function(int, int)? onSendProgress,
+  }) async {
+    if (videoFilePath != null) {
+      final form = FormData.fromMap({
+        'title': title,
+        'type': type,
+        if (url != null) 'url': url,
+        if (content != null) 'content': content,
+        if (sortOrder != null) 'sort_order': sortOrder.toString(),
+        'video': _videoFile(videoFilePath),
+      });
+      return _api.post(
+        '/teacher/courses/$courseId/lectures',
+        data: form,
+        onSendProgress: onSendProgress,
+        options: _uploadOptions,
+      );
+    }
     return _api.post('/teacher/courses/$courseId/lectures', data: {
       'title': title,
       'type': type,
@@ -36,7 +86,32 @@ class TeacherProvider {
     });
   }
 
-  Future<Response> updateLecture(int id, {String? title, String? type, String? url, String? content, int? sortOrder}) {
+  Future<Response> updateLecture(
+    int id, {
+    String? title,
+    String? type,
+    String? url,
+    String? content,
+    int? sortOrder,
+    String? videoFilePath,
+    void Function(int, int)? onSendProgress,
+  }) async {
+    if (videoFilePath != null) {
+      final form = FormData.fromMap({
+        if (title != null) 'title': title,
+        if (type != null) 'type': type,
+        if (url != null) 'url': url,
+        if (content != null) 'content': content,
+        if (sortOrder != null) 'sort_order': sortOrder.toString(),
+        'video': _videoFile(videoFilePath),
+      });
+      return _api.patch(
+        '/teacher/lectures/$id',
+        data: form,
+        onSendProgress: onSendProgress,
+        options: _uploadOptions,
+      );
+    }
     final data = <String, dynamic>{};
     if (title != null) data['title'] = title;
     if (type != null) data['type'] = type;

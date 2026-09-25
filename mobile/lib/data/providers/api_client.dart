@@ -42,12 +42,33 @@ class ApiClient {
     return _dio.get(path, queryParameters: queryParameters);
   }
 
-  Future<Response> post(String path, {dynamic data, Map<String, String>? headers}) {
-    return _dio.post(path, data: data, options: headers != null ? Options(headers: headers) : null);
+  Future<Response> post(
+    String path, {
+    dynamic data,
+    Map<String, String>? headers,
+    void Function(int, int)? onSendProgress,
+    Options? options,
+  }) {
+    return _dio.post(
+      path,
+      data: data,
+      options: options ?? (headers != null ? Options(headers: headers) : null),
+      onSendProgress: onSendProgress,
+    );
   }
 
-  Future<Response> patch(String path, {dynamic data}) {
-    return _dio.patch(path, data: data);
+  Future<Response> patch(
+    String path, {
+    dynamic data,
+    void Function(int, int)? onSendProgress,
+    Options? options,
+  }) {
+    return _dio.patch(
+      path,
+      data: data,
+      options: options,
+      onSendProgress: onSendProgress,
+    );
   }
 
   Future<Response> put(String path, {dynamic data}) {
