@@ -49,6 +49,7 @@ class TeacherCourseDetailPage extends StatelessWidget {
                 Container(
                   width: double.infinity,
                   padding: const EdgeInsets.all(20),
+                  clipBehavior: Clip.hardEdge,
                   decoration: BoxDecoration(
                     gradient: AppColors.cardGradient,
                     borderRadius: BorderRadius.circular(20),
@@ -58,19 +59,15 @@ class TeacherCourseDetailPage extends StatelessWidget {
                     children: [
                       Text(course.name, style: const TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.bold)),
                       const SizedBox(height: 8),
-                      Row(
+                      Wrap(
+                        spacing: 8,
+                        runSpacing: 8,
                         children: [
-                          if (course.specializationName.isNotEmpty) ...[
+                          if (course.specializationName.isNotEmpty)
                             _buildInfoChip(course.specializationName),
-                            const SizedBox(width: 8),
-                          ],
                           _buildInfoChip('${course.purchasesCount ?? 0} مشتري'),
-                          const SizedBox(width: 8),
                           _buildInfoChip('${course.price} SYP'),
-                          if (course.year > 0) ...[
-                            const SizedBox(width: 8),
-                            _buildInfoChip('السنة ${course.year}'),
-                          ],
+                          if (course.year > 0) _buildInfoChip('السنة ${course.year}'),
                         ],
                       ),
                     ],
