@@ -261,7 +261,8 @@ class LectureController extends GetxController {
   Future<void> exitFullscreen() async {
     if (!isFullscreen.value) return;
     isFullscreen.value = false;
-    await SystemChrome.setPreferredOrientations(DeviceOrientation.values);
+    await SystemChrome.setPreferredOrientations(
+        const [DeviceOrientation.portraitUp]);
     await SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
   }
 
