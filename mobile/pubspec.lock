@@ -866,6 +866,13 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "2.4.0"
+  video_compress:
+    dependency: "direct main"
+    description:
+      path: "third_party/video_compress"
+      relative: true
+    source: path
+    version: "3.1.4"
   video_player:
     dependency: "direct main"
     description:

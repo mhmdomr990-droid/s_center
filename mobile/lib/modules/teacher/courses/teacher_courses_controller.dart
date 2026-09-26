@@ -5,6 +5,7 @@ import '../../../data/providers/api_exception.dart';
 import '../../../data/providers/catalog_provider.dart';
 import '../../../data/providers/teacher_provider.dart';
 import '../../../data/services/catalog_lookup.dart';
+import '../../../data/services/video_compressor.dart';
 import '../../../data/models/course_model.dart';
 import '../../../data/models/lecture_model.dart';
 import '../../../data/models/specialization_model.dart';
@@ -22,6 +23,8 @@ class TeacherCoursesController extends GetxController {
   final isLoading = true.obs;
   final isSaving = false.obs;
   final uploadProgress = 0.0.obs;
+  final compressing = false.obs;
+  final compressProgress = 0.0.obs;
   final courses = <CourseModel>[].obs;
   final specializations = <SpecializationModel>[].obs;
   final selectedSpecializationId = Rxn<int>();
@@ -143,7 +146,18 @@ class TeacherCoursesController extends GetxController {
       {required String title, required String type, String? url, String? content, int? sortOrder, String? videoFilePath}) async {
     isSaving.value = true;
     uploadProgress.value = 0;
+    compressing.value = false;
+    compressProgress.value = 0;
+    var uploadPath = videoFilePath;
     try {
+      if (videoFilePath != null) {
+        compressing.value = true;
+        uploadPath = await VideoCompressor.compressForUpload(
+              videoFilePath,
+              onProgress: (p) => compressProgress.value = p,
+            ) ??
+            videoFilePath;
+      }
       await _teacherProvider.createLecture(
         courseId,
         title: title,
@@ -151,8 +165,8 @@ class TeacherCoursesController extends GetxController {
         url: url,
         content: content,
         sortOrder: sortOrder,
-        videoFilePath: videoFilePath,
-        onSendProgress: videoFilePath != null
+        videoFilePath: uploadPath,
+        onSendProgress: uploadPath != null
             ? (sent, total) {
                 if (total > 0) uploadProgress.value = (sent / total).clamp(0.0, 1.0);
               }
@@ -176,6 +190,9 @@ class TeacherCoursesController extends GetxController {
     } finally {
       isSaving.value = false;
       uploadProgress.value = 0;
+      compressing.value = false;
+      compressProgress.value = 0;
+      if (videoFilePath != null) await VideoCompressor.deleteCache();
     }
   }
 
@@ -183,7 +200,18 @@ class TeacherCoursesController extends GetxController {
       {required String title, required String type, String? url, String? content, int? sortOrder, String? videoFilePath}) async {
     isSaving.value = true;
     uploadProgress.value = 0;
+    compressing.value = false;
+    compressProgress.value = 0;
+    var uploadPath = videoFilePath;
     try {
+      if (videoFilePath != null) {
+        compressing.value = true;
+        uploadPath = await VideoCompressor.compressForUpload(
+              videoFilePath,
+              onProgress: (p) => compressProgress.value = p,
+            ) ??
+            videoFilePath;
+      }
       await _teacherProvider.updateLecture(
         lectureId,
         title: title,
@@ -191,8 +219,8 @@ class TeacherCoursesController extends GetxController {
         url: url,
         content: content,
         sortOrder: sortOrder,
-        videoFilePath: videoFilePath,
-        onSendProgress: videoFilePath != null
+        videoFilePath: uploadPath,
+        onSendProgress: uploadPath != null
             ? (sent, total) {
                 if (total > 0) uploadProgress.value = (sent / total).clamp(0.0, 1.0);
               }
@@ -216,6 +244,9 @@ class TeacherCoursesController extends GetxController {
     } finally {
       isSaving.value = false;
       uploadProgress.value = 0;
+      compressing.value = false;
+      compressProgress.value = 0;
+      if (videoFilePath != null) await VideoCompressor.deleteCache();
     }
   }
 

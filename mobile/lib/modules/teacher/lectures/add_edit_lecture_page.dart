@@ -121,11 +121,31 @@ class AddEditLecturePage extends StatelessWidget {
             GetBuilder<TeacherCoursesController>(
               builder: (ctrl) {
                 return Obx(() {
+                  final compressing = ctrl.compressing.value;
+                  final compressProgress = ctrl.compressProgress.value;
                   final uploading = ctrl.uploadProgress.value;
                   return Column(
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
-                      if (uploading > 0) ...[
+                      if (compressing) ...[
+                        ClipRRect(
+                          borderRadius: BorderRadius.circular(8),
+                          child: LinearProgressIndicator(
+                            value: compressProgress > 0 ? compressProgress : null,
+                            minHeight: 8,
+                            backgroundColor: AppColors.courseCard,
+                          ),
+                        ),
+                        const SizedBox(height: 8),
+                        Text(
+                          compressProgress > 0
+                              ? 'جاري ضغط الفيديو... ${(compressProgress * 100).toStringAsFixed(0)}%'
+                              : 'جاري ضغط الفيديو...',
+                          textAlign: TextAlign.center,
+                          style: TextStyle(fontSize: 13, color: AppColors.textSecondary),
+                        ),
+                        const SizedBox(height: 16),
+                      ] else if (uploading > 0) ...[
                         ClipRRect(
                           borderRadius: BorderRadius.circular(8),
                           child: LinearProgressIndicator(

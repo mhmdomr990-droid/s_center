@@ -28,6 +28,8 @@ dependencies:
   path_provider: ^2.1.6
   screen_security: ^1.1.2
   file_picker: ^11.0.3
+  video_compress:
+    path: third_party/video_compress
 
 dev_dependencies:
   flutter_test:
