@@ -125,12 +125,22 @@ class LectureController extends GetxController {
     isLoadingPlayer.value = true;
     try {
       if (_downloads.isDownloaded(lecture.id)) {
-        final file = await _downloads.decryptToTemp(lecture.id);
-        _tempPlayLectureId = lecture.id;
-        isOffline.value = true;
-        await _initController(VideoPlayerController.file(file),
-            resumeAt: resumeAt, autoplay: autoplay);
-        return;
+        try {
+          final file = await _downloads.decryptToTemp(lecture.id);
+          _tempPlayLectureId = lecture.id;
+          isOffline.value = true;
+          await _initController(VideoPlayerController.file(file),
+              resumeAt: resumeAt, autoplay: autoplay);
+          return;
+        } catch (e) {
+          // Stale/corrupt local copy (e.g., lost AES key) — remove it and
+          // fall back to online streaming instead of failing permanently.
+          debugPrint('DECRYPT_FAIL id=${lecture.id}: $e — removing stale copy');
+          await _downloads.deleteTempPlayFile(lecture.id);
+          await _downloads.removeDownload(lecture.id);
+          isOffline.value = false;
+          _tempPlayLectureId = -1;
+        }
       }
 
       final resp = await _media.getStreamUrl(lecture.id);
@@ -140,6 +150,7 @@ class LectureController extends GetxController {
       await _initController(VideoPlayerController.networkUrl(Uri.parse(url)),
           resumeAt: resumeAt, autoplay: autoplay);
     } catch (e) {
+      debugPrint('LOAD_ERR ${e.runtimeType}: $e');
       playerError.value = apiErrorMessage(e, fallback: 'تعذر تشغيل الفيديو');
     } finally {
       isLoadingPlayer.value = false;

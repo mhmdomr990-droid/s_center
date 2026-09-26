@@ -161,13 +161,34 @@ class DownloadManager extends GetxController {
   }
 
   Future<enc.Key> _aesKey() async {
-    final existing = await _secure.read(key: _keyStorageKey);
-    if (existing != null && existing.isNotEmpty) {
-      final bytes = base64Decode(existing);
+    // The key lives in SharedPreferences — the SAME file as the download
+    // records — so their lifetimes can never diverge (a key loss would
+    // otherwise make every stored download permanently undecryptable).
+    final prefs = await SharedPreferences.getInstance();
+    final stored = prefs.getString(_keyStorageKey);
+    if (stored != null && stored.isNotEmpty) {
+      final bytes = base64Decode(stored);
       if (bytes.length == 32) return enc.Key(Uint8List.fromList(bytes));
     }
+
+    // Migrate from flutter_secure_storage (its storage format has changed
+    // across plugin versions, which orphaned previously stored values).
+    String? legacy;
+    try {
+      legacy = await _secure.read(key: _keyStorageKey);
+    } catch (_) {
+      legacy = null;
+    }
+    if (legacy != null && legacy.isNotEmpty) {
+      final bytes = base64Decode(legacy);
+      if (bytes.length == 32) {
+        await prefs.setString(_keyStorageKey, legacy);
+        return enc.Key(Uint8List.fromList(bytes));
+      }
+    }
+
     final key = enc.Key.fromSecureRandom(32);
-    await _secure.write(key: _keyStorageKey, value: base64Encode(key.bytes));
+    await prefs.setString(_keyStorageKey, base64Encode(key.bytes));
     return key;
   }
 
