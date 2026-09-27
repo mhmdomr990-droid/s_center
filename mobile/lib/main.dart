@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:get/get.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'app/theme/app_theme.dart';
 import 'app/theme/theme_controller.dart';
 import 'app/routes/app_pages.dart';
@@ -18,6 +19,17 @@ void main() async {
 
   final storageService = StorageService();
   final deviceService = DeviceService();
+
+  // TODO(ip-field): مؤقت — تحميل عنوان الخادم المحفوظ قبل بناء العميل،
+  // حتى يعمل من أول لحظة (الدخول التلقائي من الـ splash). يُحذف لاحقاً
+  try {
+    final prefs = await SharedPreferences.getInstance();
+    final savedBase = prefs.getString(ApiClient.overrideKey);
+    if (savedBase != null && savedBase.isNotEmpty) {
+      ApiClient.baseUrl = savedBase;
+    }
+  } catch (_) {}
+
   final apiClient = ApiClient(storageService);
 
   final themeController = ThemeController(storageService);

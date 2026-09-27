@@ -1,6 +1,7 @@
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../../data/providers/api_client.dart';
 import '../../data/providers/api_exception.dart';
 import '../../data/providers/auth_provider.dart';
@@ -25,6 +26,66 @@ class AuthController extends GetxController {
 
   final loginUsernameCtrl = TextEditingController();
   final loginPasswordCtrl = TextEditingController();
+
+  // TODO(ip-field): مؤقت — حقل عنوان الخادم في شاشة الدخول. يُحذف لاحقاً
+  final ipCtrl = TextEditingController(text: _hostFromBaseUrl(ApiClient.baseUrl));
+
+  // استخراج host:port من العنوان الحالي لعرضه في الحقل
+  static String _hostFromBaseUrl(String base) {
+    final uri = Uri.tryParse(base);
+    if (uri == null || uri.host.isEmpty) return base;
+    return uri.hasPort ? '${uri.host}:${uri.port}' : uri.host;
+  }
+
+  // تطبيع ما يكتبه المستخدم إلى عنوان API كامل: http://host[:3000]/api
+  // مثال: "192.168.2.121" ⇐ "http://192.168.2.121:3000/api"
+  static String? _normalizeBase(String input) {
+    var v = input.trim();
+    if (v.isEmpty) return null;
+    if (!v.startsWith('http://') && !v.startsWith('https://')) {
+      v = 'http://$v';
+    }
+    if (v.endsWith('/')) v = v.substring(0, v.length - 1);
+    if (!v.endsWith('/api')) v = '$v/api';
+    var uri = Uri.tryParse(v);
+    if (uri == null || uri.host.isEmpty) return null;
+    if (uri.scheme != 'http' && uri.scheme != 'https') return null;
+    if (!uri.hasPort) {
+      uri = uri.replace(port: 3000);
+      v = uri.toString();
+    }
+    return v;
+  }
+
+  // TODO(ip-field): مؤقت — تطبيق عنوان الخادم المختار. يُحذف لاحقاً
+  // يرجع false عند إدخال عنوان غير صالح (لا يستمر الدخول)
+  Future<bool> _applyServerHost() async {
+    final host = ipCtrl.text.trim();
+    String? base;
+    if (host.isEmpty) {
+      base = ApiClient.defaultBaseUrl;
+    } else {
+      base = _normalizeBase(host);
+      if (base == null) {
+        Get.snackbar(
+            'خطأ', 'عنوان غير صالح — مثال: 192.168.2.121 أو 192.168.2.121:3000',
+            backgroundColor: Colors.red, colorText: Colors.white);
+        return false;
+      }
+    }
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      if (host.isEmpty) {
+        await prefs.remove(ApiClient.overrideKey);
+      } else {
+        await prefs.setString(ApiClient.overrideKey, base);
+      }
+    } catch (_) {}
+    _apiClient.applyBaseUrl(base);
+    // إعادة تعبئة الحقل بالصيغة المطبَّعة
+    ipCtrl.text = _hostFromBaseUrl(base);
+    return true;
+  }
   final registerUsernameCtrl = TextEditingController();
   final registerFullNameCtrl = TextEditingController();
   final registerPasswordCtrl = TextEditingController();
@@ -40,6 +101,7 @@ class AuthController extends GetxController {
   void onClose() {
     loginUsernameCtrl.dispose();
     loginPasswordCtrl.dispose();
+    ipCtrl.dispose(); // TODO(ip-field): مؤقت — يُحذف مع الحقل لاحقاً
     registerUsernameCtrl.dispose();
     registerFullNameCtrl.dispose();
     registerPasswordCtrl.dispose();
@@ -48,6 +110,9 @@ class AuthController extends GetxController {
   }
 
   Future<void> login() async {
+    // TODO(ip-field): مؤقت — تطبيق عنوان الخادم قبل أي طلب. يُحذف لاحقاً
+    if (!await _applyServerHost()) return;
+
     if (loginUsernameCtrl.text.isEmpty || loginPasswordCtrl.text.isEmpty) {
       Get.snackbar('خطأ', 'أدخل اسم المستخدم وكلمة المرور', backgroundColor: Colors.red, colorText: Colors.white);
       return;

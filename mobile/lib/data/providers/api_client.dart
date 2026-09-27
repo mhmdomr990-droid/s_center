@@ -2,10 +2,19 @@ import 'package:dio/dio.dart';
 import '../services/storage_service.dart';
 
 class ApiClient {
-  static const String baseUrl = String.fromEnvironment(
+  // TODO(ip-field): مؤقت — عنوان البناء الثابت. يبقى وحده بعد حذف الحقل
+  static const String defaultBaseUrl = String.fromEnvironment(
     'API_BASE',
     defaultValue: 'http://192.168.1.11:3000/api',
   );
+
+  // TODO(ip-field): مؤقت — العنوان الفعلي القابل للتغيير وقت التشغيل.
+  // عند الحذف: يُستبدل استخدام هذا الـ field بـ defaultBaseUrl مباشرة
+  static String baseUrl = defaultBaseUrl;
+
+  // TODO(ip-field): مؤقت — مفتاح حفظ العنوان المختار في SharedPreferences
+  static const String overrideKey = 'api_base_url_v1';
+
   static const Duration timeout = Duration(seconds: 30);
 
   late final Dio _dio;
@@ -37,6 +46,13 @@ class ApiClient {
   }
 
   Dio get dio => _dio;
+
+  // TODO(ip-field): مؤقت — تطبيق عنوان جديد فوراً (الطلبات + روابط الوسائط
+  // لأن MediaProvider.origin يقرأ ApiClient.baseUrl ديناميكياً). يُحذف لاحقاً
+  void applyBaseUrl(String value) {
+    baseUrl = value;
+    _dio.options.baseUrl = value;
+  }
 
   Future<Response> get(String path, {Map<String, dynamic>? queryParameters}) {
     return _dio.get(path, queryParameters: queryParameters);
