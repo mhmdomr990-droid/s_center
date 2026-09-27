@@ -2,6 +2,7 @@ import 'package:get/get.dart';
 import 'app_routes.dart';
 import '../transitions/slide_fade_transition.dart';
 
+import '../../modules/splash/splash_page.dart';
 import '../../modules/auth/login_page.dart';
 import '../../modules/auth/register_page.dart';
 import '../../modules/student/home/home_page.dart';
@@ -34,6 +35,7 @@ class AppPages {
       .toList();
 
   static final List<GetPage> _rawPages = [
+    GetPage(name: AppRoutes.splash, page: () => const SplashPage()),
     GetPage(name: AppRoutes.login, page: () => const LoginPage()),
     GetPage(name: AppRoutes.register, page: () => const RegisterPage()),
     GetPage(name: AppRoutes.studentHome, page: () => const HomePage(), binding: BindingsBuilder(() {
