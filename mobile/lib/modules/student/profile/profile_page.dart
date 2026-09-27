@@ -17,13 +17,6 @@ import 'profile_controller.dart';
 class ProfilePage extends StatelessWidget {
   const ProfilePage({super.key});
 
-  String _initials(String name) {
-    final parts = name.trim().split(RegExp(r'\s+'));
-    if (parts.isEmpty || parts.first.isEmpty) return '؟';
-    if (parts.length == 1) return parts.first.substring(0, 1);
-    return parts.first.substring(0, 1) + parts.last.substring(0, 1);
-  }
-
   @override
   Widget build(BuildContext context) {
     return GetBuilder<ProfileController>(
@@ -55,37 +48,16 @@ class ProfilePage extends StatelessWidget {
                     clipBehavior: Clip.antiAlias,
                     child: Row(
                       children: [
-                        if (user?.isTeacher == true)
-                          Container(
-                            width: 64,
-                            height: 64,
-                            alignment: Alignment.center,
-                            decoration: BoxDecoration(
-                              color: Colors.white.withValues(alpha: 0.2),
-                              shape: BoxShape.circle,
-                            ),
-                            child: const Icon(Icons.person, size: 36, color: Colors.white),
-                          )
-                        else
-                          Container(
-                            width: 64,
-                            height: 64,
-                            alignment: Alignment.center,
-                            decoration: BoxDecoration(
-                              color: Colors.white.withValues(alpha: 0.2),
-                              shape: BoxShape.circle,
-                            ),
-                            child: Text(
-                              _initials(user?.fullName.isNotEmpty == true
-                                  ? user!.fullName
-                                  : (user?.username ?? '')),
-                              style: GoogleFonts.cairo(
-                                fontSize: 24,
-                                fontWeight: FontWeight.bold,
-                                color: Colors.white,
-                              ),
-                            ),
+                        Container(
+                          width: 64,
+                          height: 64,
+                          alignment: Alignment.center,
+                          decoration: BoxDecoration(
+                            color: Colors.white.withValues(alpha: 0.2),
+                            shape: BoxShape.circle,
                           ),
+                          child: const Icon(Icons.person, size: 36, color: Colors.white),
+                        ),
                         const SizedBox(width: 16),
                         Expanded(
                           child: Column(
@@ -108,17 +80,12 @@ class ProfilePage extends StatelessWidget {
                                   if (user?.isTeacher == true) ...[
                                     const SizedBox(width: 8),
                                     const StatusPill(label: 'معلم', color: AppColors.primary),
+                                  ] else ...[
+                                    const SizedBox(width: 8),
+                                    const StatusPill(label: 'طالب', color: AppColors.primary),
                                   ],
                                 ],
                               ),
-                              if (user?.isTeacher != true) ...[
-                                const SizedBox(height: 4),
-                                Text(
-                                  '@${user?.username ?? ''}',
-                                  style: AppTextStyles.bodySmall
-                                      .copyWith(color: Colors.white70),
-                                ),
-                              ],
                               if (user?.isTeacher == true) ...[
                                 const SizedBox(height: 8),
                                 Row(
