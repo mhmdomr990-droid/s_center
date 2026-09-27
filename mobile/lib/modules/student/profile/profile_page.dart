@@ -79,10 +79,10 @@ class ProfilePage extends StatelessWidget {
                                   ),
                                   if (user?.isTeacher == true) ...[
                                     const SizedBox(width: 8),
-                                    const StatusPill(label: 'معلم', color: AppColors.primary),
+                                    const StatusPill(label: 'معلم', color: AppColors.primary, filled: true),
                                   ] else ...[
                                     const SizedBox(width: 8),
-                                    const StatusPill(label: 'طالب', color: AppColors.primary),
+                                    const StatusPill(label: 'طالب', color: AppColors.primary, filled: true),
                                   ],
                                 ],
                               ),
