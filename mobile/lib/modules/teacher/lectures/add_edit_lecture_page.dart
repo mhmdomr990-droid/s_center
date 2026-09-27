@@ -83,9 +83,9 @@ class _AddEditLecturePageState extends State<AddEditLecturePage> {
   @override
   void dispose() {
     _draftTimer?.cancel();
-    // أي تغييرات معلقة تُحفظ لحظة الخروج — إلا أثناء إرسال ناجح
+    // أي تغييرات معلقة تُحفظ لحظة الخروج — إلا أثناء/بعد إرسال ناجح
     // (عندها تُمسح المسودة من الكونترولر ولا نُعيد كتابتها هنا)
-    if (!isEdit && !_restoring && !_submitting) {
+    if (!isEdit && !_restoring && !_submitting && !_submitted) {
       unawaited(_saveDraft());
     }
     titleCtrl.dispose();
@@ -115,7 +115,8 @@ class _AddEditLecturePageState extends State<AddEditLecturePage> {
   }
 
   Future<void> _saveDraft() async {
-    if (isEdit || _restoring) return;
+    // أثناء/بعد الإرسال لا تُكتب المسودة (النجاح يحذفها في الكونترولر)
+    if (isEdit || _restoring || _submitting || _submitted) return;
     // البناء متزامن قبل أي await — ليبقى آمناً عند استدعاؤه من dispose
     final payload = jsonEncode({
       'title': titleCtrl.text,
@@ -375,6 +376,8 @@ class _AddEditLecturePageState extends State<AddEditLecturePage> {
                   ? selectedPdfName.value
                   : null),
         );
+        // نجاح ⇐ الحفظ النهائي للمسودة ممنوع (حُذفت من الكونترولر)
+        _submitted = ok;
       }
     } finally {
       // فشل ⇐ الصفحة باقية ⇐ استئناف حفظ المسودة تلقائياً
