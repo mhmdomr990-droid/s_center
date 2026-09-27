@@ -269,7 +269,7 @@ class DownloadManager extends GetxController {
     }
   }
 
-  Future<File> decryptToTemp(int lectureId) async {
+  Future<File> decryptToTemp(int lectureId, {String ext = 'mp4'}) async {
     if (!_offlineSupported) {
       throw UnsupportedError('غير مدعوم على هذه المنصة');
     }
@@ -285,15 +285,35 @@ class DownloadManager extends GetxController {
       throw StateError('missing_file');
     }
     final tmp = await _tempDir();
-    final out = File('${tmp.path}/play_$lectureId.mp4');
+    final out = File('${tmp.path}/play_$lectureId.$ext');
     await _decryptFile(encFile, out);
     return out;
   }
 
-  Future<void> deleteTempPlayFile(int lectureId) async {
+  Future<void> deleteTempPlayFile(int lectureId, {String ext = 'mp4'}) async {
     try {
       final tmp = await _tempDir();
-      final f = File('${tmp.path}/play_$lectureId.mp4');
+      final f = File('${tmp.path}/play_$lectureId.$ext');
+      if (await f.exists()) await f.delete();
+    } catch (_) {}
+  }
+
+  // جلب ملف محاضرة مضيف (مثل PDF) إلى ملف مؤقت لعرضه — بلا حفظ دائم.
+  Future<File> fetchToTemp(int lectureId, {String ext = 'pdf'}) async {
+    if (!_offlineSupported) {
+      throw UnsupportedError('غير مدعوم على هذه المنصة');
+    }
+    final resp = await _media.getStreamUrl(lectureId);
+    final path = resp.data['data']['url'] as String;
+    final tmp = await _tempDir();
+    final out = File('${tmp.path}/stream_$lectureId.$ext');
+    await _mediaDio.download(MediaProvider.absolute(path), out.path);
+    return out;
+  }
+
+  Future<void> deleteTempPath(String path) async {
+    try {
+      final f = File(path);
       if (await f.exists()) await f.delete();
     } catch (_) {}
   }

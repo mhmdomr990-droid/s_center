@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:get/get.dart';
@@ -15,7 +16,9 @@ import '../../../data/providers/api_exception.dart';
 import '../../../data/providers/media_provider.dart';
 import '../../../data/services/download_manager.dart';
 import '../../../data/services/screen_guard.dart';
+import '../../../widgets/download_lecture_button.dart';
 import '../../../widgets/gradient_app_bar.dart';
+import '../../../widgets/pdf_viewer_page.dart';
 import 'video_fullscreen_page.dart';
 
 class LectureController extends GetxController {
@@ -35,6 +38,8 @@ class LectureController extends GetxController {
   VideoPlayerController? videoController;
   DownloadManager get _downloads => Get.find<DownloadManager>();
   MediaProvider get _media => MediaProvider(Get.find<ApiClient>());
+
+  final pdfOpening = false.obs;
 
   int _tempPlayLectureId = -1;
   DateTime? _streamUrlFetchedAt;
@@ -81,15 +86,60 @@ class LectureController extends GetxController {
     if (hasNext) currentIndex.value++;
   }
 
-  Future<void> openPdf(String? url) async {
-    if (url == null || url.isEmpty) {
-      Get.snackbar('خطأ', 'رابط الملف غير متاح',
-          backgroundColor: AppColors.error, colorText: Colors.white);
+  Future<void> openPdf(LectureModel lecture) async {
+    final url = lecture.url;
+    // PDF برابط خارجي — يُفتح بالمتصفح كما كان دائماً
+    if (url != null && url.isNotEmpty && !url.startsWith('/')) {
+      final uri = Uri.parse(url);
+      if (await canLaunchUrl(uri)) {
+        await launchUrl(uri, mode: LaunchMode.externalApplication);
+      }
       return;
     }
-    final uri = Uri.parse(url);
-    if (await canLaunchUrl(uri)) {
-      await launchUrl(uri, mode: LaunchMode.externalApplication);
+    if (kIsWeb) {
+      if (url != null && url.isNotEmpty) {
+        final uri = Uri.parse(MediaProvider.absolute(url));
+        if (await canLaunchUrl(uri)) {
+          await launchUrl(uri, mode: LaunchMode.externalApplication);
+        }
+      } else {
+        Get.snackbar('خطأ', 'رابط الملف غير متاح',
+            backgroundColor: AppColors.error, colorText: Colors.white);
+      }
+      return;
+    }
+    if (pdfOpening.value) return;
+    pdfOpening.value = true;
+    String? tempPath;
+    try {
+      if (_downloads.isDownloaded(lecture.id)) {
+        try {
+          final file = await _downloads.decryptToTemp(lecture.id, ext: 'pdf');
+          tempPath = file.path;
+        } catch (e) {
+          // نسخة محلية تالفة (فقدان المفتاح مثلاً) — تُحذف ونرجع للجلب أونلاين
+          debugPrint('DECRYPT_FAIL pdf id=${lecture.id}: $e — removing stale copy');
+          await _downloads.deleteTempPlayFile(lecture.id, ext: 'pdf');
+          await _downloads.removeDownload(lecture.id);
+        }
+      }
+      if (tempPath == null) {
+        final file = await _downloads.fetchToTemp(lecture.id, ext: 'pdf');
+        tempPath = file.path;
+      }
+      final path = tempPath;
+      await Get.to<void>(
+        () => PdfViewerPage(filePath: path, title: lecture.title),
+      );
+    } catch (e) {
+      Get.snackbar('خطأ', apiErrorMessage(e, fallback: 'تعذر فتح ملف PDF'),
+          backgroundColor: AppColors.error, colorText: Colors.white);
+    } finally {
+      final path = tempPath;
+      if (path != null) {
+        await _downloads.deleteTempPath(path);
+      }
+      pdfOpening.value = false;
     }
   }
 
@@ -377,28 +427,63 @@ class LectureViewPage extends StatelessWidget {
               const SizedBox(height: 20),
               if (lecture.isVideo) _VideoSection(ctrl: ctrl),
               if (!lecture.isVideo && lecture.isPdf)
-                GestureDetector(
-                  onTap: () => ctrl.openPdf(lecture.url),
-                  child: Container(
-                    width: double.infinity,
-                    padding: const EdgeInsets.all(32),
-                    decoration: BoxDecoration(
-                      color: AppColors.courseCard,
-                      borderRadius: BorderRadius.circular(16),
-                      border: Border.all(color: AppColors.cardBorder),
-                    ),
-                    child: Column(
-                      children: [
-                        const Icon(Icons.picture_as_pdf,
-                            size: 64, color: AppColors.error),
-                        const SizedBox(height: 12),
-                        Text('اضغط لفتح ملف PDF',
-                            style: AppTextStyles.bodyLarge
-                                .copyWith(color: AppColors.primary)),
+                Obx(() {
+                  final opening = ctrl.pdfOpening.value;
+                  return Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      GestureDetector(
+                        onTap: opening ? null : () => ctrl.openPdf(lecture),
+                        child: Container(
+                          width: double.infinity,
+                          padding: const EdgeInsets.all(32),
+                          decoration: BoxDecoration(
+                            color: AppColors.courseCard,
+                            borderRadius: BorderRadius.circular(16),
+                            border: Border.all(color: AppColors.cardBorder),
+                          ),
+                          child: Column(
+                            children: [
+                              const Icon(Icons.picture_as_pdf,
+                                  size: 64, color: AppColors.error),
+                              const SizedBox(height: 12),
+                              if (opening) ...[
+                                const SizedBox(
+                                  width: 22,
+                                  height: 22,
+                                  child: CircularProgressIndicator(
+                                      strokeWidth: 2.5,
+                                      color: AppColors.primary),
+                                ),
+                                const SizedBox(height: 10),
+                                Text('جاري التجهيز...',
+                                    style: AppTextStyles.bodyMedium
+                                        .copyWith(
+                                            color: AppColors.textSecondary)),
+                              ] else
+                                Text('اضغط لفتح ملف PDF',
+                                    style: AppTextStyles.bodyLarge
+                                        .copyWith(color: AppColors.primary)),
+                            ],
+                          ),
+                        ),
+                      ),
+                      if (lecture.isPdfHosted && !kIsWeb) ...[
+                        const SizedBox(height: 6),
+                        Row(
+                          children: [
+                            DownloadLectureButton(lectureId: lecture.id),
+                            const SizedBox(width: 4),
+                            Text('تحميل بدون إنترنت (مشفّر)',
+                                style: TextStyle(
+                                    fontSize: 12,
+                                    color: AppColors.textSecondary)),
+                          ],
+                        ),
                       ],
-                    ),
-                  ),
-                )
+                    ],
+                  );
+                })
               else if (!lecture.isVideo && lecture.isText && lecture.content != null)
                 Container(
                   width: double.infinity,

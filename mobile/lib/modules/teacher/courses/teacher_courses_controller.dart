@@ -150,7 +150,7 @@ class TeacherCoursesController extends GetxController {
     compressProgress.value = 0;
     var uploadPath = videoFilePath;
     try {
-      if (videoFilePath != null) {
+      if (videoFilePath != null && type == 'VIDEO') {
         compressing.value = true;
         uploadPath = await VideoCompressor.compressForUpload(
               videoFilePath,
@@ -204,7 +204,7 @@ class TeacherCoursesController extends GetxController {
     compressProgress.value = 0;
     var uploadPath = videoFilePath;
     try {
-      if (videoFilePath != null) {
+      if (videoFilePath != null && type == 'VIDEO') {
         compressing.value = true;
         uploadPath = await VideoCompressor.compressForUpload(
               videoFilePath,

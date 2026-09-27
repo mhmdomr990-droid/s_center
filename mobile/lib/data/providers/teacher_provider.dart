@@ -40,6 +40,8 @@ class TeacherProvider {
         return DioMediaType('video', 'quicktime');
       case 'mkv':
         return DioMediaType('video', 'x-matroska');
+      case 'pdf':
+        return DioMediaType('application', 'pdf');
       default:
         return DioMediaType('video', 'mp4');
     }

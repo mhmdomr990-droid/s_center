@@ -299,14 +299,16 @@ class CourseDetailPage extends StatelessWidget {
                 else
                   ...ctrl.lectures.asMap().entries.map((entry) {
                     final lecture = entry.value;
-                    final canDownload = lecture.isVideo &&
+                    final hasFile =
+                        lecture.isVideo || lecture.isPdfHosted;
+                    final canDownload = hasFile &&
                         (ctrl.isPurchased(courseId) || course.isPurchased);
                     return LectureTile(
                       index: entry.key + 1,
                       title: lecture.title,
                       type: lecture.type,
                       isNew: _isNewLecture(lecture.createdAt),
-                      trailing: lecture.isVideo
+                      trailing: hasFile
                           ? DownloadLectureButton(
                               lectureId: lecture.id,
                               enabled: canDownload,

@@ -54,6 +54,39 @@ class AddEditLecturePage extends StatelessWidget {
       selectedVideoSize.value = file.size.toDouble();
     }
 
+    final selectedPdfPath = Rxn<String>();
+    final selectedPdfSize = 0.0.obs;
+    const maxPdfBytes = 2048 * 1024 * 1024;
+
+    Future<void> pickPdf() async {
+      final result = await FilePicker.pickFiles(
+        type: FileType.custom,
+        allowedExtensions: ['pdf'],
+        allowMultiple: false,
+      );
+      final file = result?.files.single;
+      final path = file?.path;
+      if (file == null || path == null) return;
+      if (path.split('.').last.toLowerCase() != 'pdf') {
+        Get.snackbar('خطأ', 'الصيغة المسموحة: pdf',
+            backgroundColor: AppColors.error, colorText: Colors.white);
+        return;
+      }
+      if (file.size > maxPdfBytes) {
+        Get.snackbar('خطأ', 'حجم الملف يتجاوز الحد الأقصى 2048MB',
+            backgroundColor: AppColors.error, colorText: Colors.white);
+        return;
+      }
+      selectedPdfPath.value = path;
+      selectedPdfSize.value = file.size.toDouble();
+      urlCtrl.clear();
+    }
+
+    // كتابة رابط تُلغي اختيار الملف (لا يُرسل الاثنان معاً)
+    urlCtrl.addListener(() {
+      if (urlCtrl.text.trim().isNotEmpty) selectedPdfPath.value = null;
+    });
+
     return Scaffold(
       backgroundColor: AppColors.background,
       appBar: GradientAppBar(title: isEdit ? 'تعديل محاضرة' : 'إضافة محاضرة'),
@@ -90,10 +123,22 @@ class AddEditLecturePage extends StatelessWidget {
                 );
               }
               if (selectedType.value == 'PDF') {
-                return CustomTextField(
-                  labelText: 'رابط PDF',
-                  prefixIcon: Icons.link,
-                  controller: urlCtrl,
+                return Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    _buildPdfPicker(
+                      selectedPath: selectedPdfPath,
+                      selectedSize: selectedPdfSize,
+                      lecture: lecture,
+                      onPick: pickPdf,
+                    ),
+                    const SizedBox(height: 10),
+                    CustomTextField(
+                      labelText: 'أو رابط PDF (بدون رفع ملف)',
+                      prefixIcon: Icons.link,
+                      controller: urlCtrl,
+                    ),
+                  ],
                 );
               }
               return const SizedBox();
@@ -172,8 +217,14 @@ class AddEditLecturePage extends StatelessWidget {
                           }
                           final sortOrder = int.tryParse(sortCtrl.text.trim());
                           if (selectedType.value == 'PDF') {
-                            if (urlCtrl.text.isEmpty) {
-                              Get.snackbar('خطأ', 'أدخل رابط PDF', backgroundColor: AppColors.error, colorText: Colors.white);
+                            final hasFile = selectedPdfPath.value != null;
+                            final hasUrl = urlCtrl.text.trim().isNotEmpty;
+                            final hasStoredFile = isEdit &&
+                                lecture.isPdf &&
+                                (lecture.url == null || lecture.url!.isEmpty);
+                            if (!hasFile && !hasUrl && !hasStoredFile) {
+                              Get.snackbar('خطأ', 'ارفع ملف PDF أو أدخل رابط الملف',
+                                  backgroundColor: AppColors.error, colorText: Colors.white);
                               return;
                             }
                           }
@@ -207,7 +258,10 @@ class AddEditLecturePage extends StatelessWidget {
                               sortOrder: sortOrder,
                               videoFilePath: selectedType.value == 'VIDEO'
                                   ? selectedVideoPath.value
-                                  : null,
+                                  : (selectedType.value == 'PDF' &&
+                                          urlCtrl.text.trim().isEmpty
+                                      ? selectedPdfPath.value
+                                      : null),
                             );
                           } else {
                             ctrl.createLecture(
@@ -219,7 +273,10 @@ class AddEditLecturePage extends StatelessWidget {
                               sortOrder: sortOrder,
                               videoFilePath: selectedType.value == 'VIDEO'
                                   ? selectedVideoPath.value
-                                  : null,
+                                  : (selectedType.value == 'PDF' &&
+                                          urlCtrl.text.trim().isEmpty
+                                      ? selectedPdfPath.value
+                                      : null),
                             );
                           }
                         },
@@ -285,6 +342,88 @@ class AddEditLecturePage extends StatelessWidget {
         child: Row(
           children: [
             const Icon(Icons.movie, color: AppColors.primary),
+            const SizedBox(width: 10),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    name,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(
+                        fontWeight: FontWeight.w600, color: AppColors.textPrimary),
+                  ),
+                  Text(
+                    '${(selectedSize.value / (1024 * 1024)).toStringAsFixed(1)} MB • جاهز للرفع',
+                    style: TextStyle(
+                        fontSize: 12, color: AppColors.textSecondary),
+                  ),
+                ],
+              ),
+            ),
+            IconButton(
+              icon: Icon(Icons.close, color: AppColors.textSecondary),
+              onPressed: () {
+                selectedPath.value = null;
+                selectedSize.value = 0;
+              },
+            ),
+          ],
+        ),
+      );
+    });
+  }
+
+  Widget _buildPdfPicker({
+    required Rxn<String> selectedPath,
+    required RxDouble selectedSize,
+    required LectureModel? lecture,
+    required VoidCallback onPick,
+  }) {
+    final existingFileKept = lecture != null &&
+        lecture.isPdf &&
+        (lecture.url == null || lecture.url!.isEmpty);
+    return Obx(() {
+      final path = selectedPath.value;
+      if (path == null) {
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            SizedBox(
+              width: double.infinity,
+              child: OutlinedButton.icon(
+                onPressed: onPick,
+                icon: const Icon(Icons.upload_file),
+                label: const Text('اختر ملف PDF'),
+                style: OutlinedButton.styleFrom(
+                  padding: const EdgeInsets.symmetric(vertical: 14),
+                  side: const BorderSide(color: AppColors.primary),
+                  foregroundColor: AppColors.primary,
+                ),
+              ),
+            ),
+            const SizedBox(height: 6),
+            Text(
+              existingFileKept
+                  ? '✓ الملف الحالي محفوظ — يمكنك اختيار ملف جديد للاستبدال'
+                  : 'الصيغة المسموحة: pdf — حتى 2048MB',
+              style: TextStyle(fontSize: 12, color: AppColors.textSecondary),
+            ),
+          ],
+        );
+      }
+      final name = path.split(RegExp(r'[/\\]')).last;
+      return Container(
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+        decoration: BoxDecoration(
+          color: AppColors.courseCard,
+          borderRadius: BorderRadius.circular(10),
+          border: Border.all(color: AppColors.primary),
+        ),
+        child: Row(
+          children: [
+            const Icon(Icons.picture_as_pdf, color: AppColors.error),
             const SizedBox(width: 10),
             Expanded(
               child: Column(

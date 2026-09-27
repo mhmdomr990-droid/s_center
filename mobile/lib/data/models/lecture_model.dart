@@ -45,6 +45,13 @@ class LectureModel {
   bool get isPdf => type == 'PDF';
   bool get isText => type == 'TEXT';
 
+  // ملف PDF مرفوع على الخادم (لا رابط خارجي): المسار يبدأ بـ / أو لا يوجد رابط
+  bool get isPdfHosted {
+    if (!isPdf) return false;
+    final u = url;
+    return u == null || u.isEmpty || u.startsWith('/');
+  }
+
   String get typeIcon {
     switch (type) {
       case 'VIDEO':
