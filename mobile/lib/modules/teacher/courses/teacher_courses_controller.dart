@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../../../data/providers/api_client.dart';
@@ -143,14 +144,14 @@ class TeacherCoursesController extends GetxController {
   }
 
   Future<void> createLecture(int courseId,
-      {required String title, required String type, String? url, String? content, int? sortOrder, String? videoFilePath}) async {
+      {required String title, required String type, String? url, String? content, int? sortOrder, String? videoFilePath, Uint8List? fileBytes, String? fileName}) async {
     isSaving.value = true;
     uploadProgress.value = 0;
     compressing.value = false;
     compressProgress.value = 0;
     var uploadPath = videoFilePath;
     try {
-      if (videoFilePath != null && type == 'VIDEO') {
+      if (videoFilePath != null && type == 'VIDEO' && !kIsWeb) {
         compressing.value = true;
         uploadPath = await VideoCompressor.compressForUpload(
               videoFilePath,
@@ -166,6 +167,8 @@ class TeacherCoursesController extends GetxController {
         content: content,
         sortOrder: sortOrder,
         videoFilePath: uploadPath,
+        fileBytes: fileBytes,
+        fileName: fileName,
         onSendProgress: uploadPath != null
             ? (sent, total) {
                 if (total > 0) uploadProgress.value = (sent / total).clamp(0.0, 1.0);
@@ -175,7 +178,7 @@ class TeacherCoursesController extends GetxController {
       Get.back();
       Get.snackbar(
         'نجاح',
-        videoFilePath != null ? 'تم رفع الفيديو بنجاح ✓' : 'تم إضافة المحاضرة',
+        videoFilePath != null ? 'تم رفع الملف بنجاح ✓' : 'تم إضافة المحاضرة',
         backgroundColor: Color(0xFF43A047),
         colorText: Color(0xFFFFFFFF),
       );
@@ -183,7 +186,7 @@ class TeacherCoursesController extends GetxController {
     } catch (e) {
       Get.snackbar(
         'خطأ',
-        apiErrorMessage(e, fallback: videoFilePath != null ? 'فشل رفع الفيديو' : 'فشل إضافة المحاضرة'),
+        apiErrorMessage(e, fallback: videoFilePath != null ? 'فشل رفع الملف' : 'فشل إضافة المحاضرة'),
         backgroundColor: Color(0xFFE53935),
         colorText: Color(0xFFFFFFFF),
       );
@@ -197,14 +200,14 @@ class TeacherCoursesController extends GetxController {
   }
 
   Future<void> updateLecture(int lectureId, int courseId,
-      {required String title, required String type, String? url, String? content, int? sortOrder, String? videoFilePath}) async {
+      {required String title, required String type, String? url, String? content, int? sortOrder, String? videoFilePath, Uint8List? fileBytes, String? fileName}) async {
     isSaving.value = true;
     uploadProgress.value = 0;
     compressing.value = false;
     compressProgress.value = 0;
     var uploadPath = videoFilePath;
     try {
-      if (videoFilePath != null && type == 'VIDEO') {
+      if (videoFilePath != null && type == 'VIDEO' && !kIsWeb) {
         compressing.value = true;
         uploadPath = await VideoCompressor.compressForUpload(
               videoFilePath,
@@ -220,6 +223,8 @@ class TeacherCoursesController extends GetxController {
         content: content,
         sortOrder: sortOrder,
         videoFilePath: uploadPath,
+        fileBytes: fileBytes,
+        fileName: fileName,
         onSendProgress: uploadPath != null
             ? (sent, total) {
                 if (total > 0) uploadProgress.value = (sent / total).clamp(0.0, 1.0);
@@ -229,7 +234,7 @@ class TeacherCoursesController extends GetxController {
       Get.back();
       Get.snackbar(
         'نجاح',
-        videoFilePath != null ? 'تم رفع الفيديو بنجاح ✓' : 'تم تحديث المحاضرة',
+        videoFilePath != null ? 'تم رفع الملف بنجاح ✓' : 'تم تحديث المحاضرة',
         backgroundColor: Color(0xFF43A047),
         colorText: Color(0xFFFFFFFF),
       );
@@ -237,7 +242,7 @@ class TeacherCoursesController extends GetxController {
     } catch (e) {
       Get.snackbar(
         'خطأ',
-        apiErrorMessage(e, fallback: videoFilePath != null ? 'فشل رفع الفيديو' : 'فشل تحديث المحاضرة'),
+        apiErrorMessage(e, fallback: videoFilePath != null ? 'فشل رفع الملف' : 'فشل تحديث المحاضرة'),
         backgroundColor: Color(0xFFE53935),
         colorText: Color(0xFFFFFFFF),
       );

@@ -1,3 +1,5 @@
+import 'dart:typed_data';
+
 import 'package:dio/dio.dart';
 import 'api_client.dart';
 
@@ -47,11 +49,20 @@ class TeacherProvider {
     }
   }
 
-  static MultipartFile _videoFile(String path) => MultipartFile.fromFileSync(
-        path,
-        filename: _fileName(path),
-        contentType: _videoContentType(path),
-      );
+  // على الويب تمرّ البايتات مباشرة (dart:io غير متاح) — على الموبايل من مسار الملف
+  static MultipartFile _videoFile(String? path,
+          {Uint8List? bytes, String? name}) =>
+      bytes != null && name != null
+          ? MultipartFile.fromBytes(
+              bytes,
+              filename: name,
+              contentType: _videoContentType(name),
+            )
+          : MultipartFile.fromFileSync(
+              path!,
+              filename: _fileName(path),
+              contentType: _videoContentType(path),
+            );
 
   Future<Response> createLecture(
     int courseId, {
@@ -61,6 +72,8 @@ class TeacherProvider {
     String? content,
     int? sortOrder,
     String? videoFilePath,
+    Uint8List? fileBytes,
+    String? fileName,
     void Function(int, int)? onSendProgress,
   }) async {
     if (videoFilePath != null) {
@@ -70,7 +83,7 @@ class TeacherProvider {
         if (url != null) 'url': url,
         if (content != null) 'content': content,
         if (sortOrder != null) 'sort_order': sortOrder.toString(),
-        'video': _videoFile(videoFilePath),
+        'video': _videoFile(videoFilePath, bytes: fileBytes, name: fileName),
       });
       return _api.post(
         '/teacher/courses/$courseId/lectures',
@@ -96,6 +109,8 @@ class TeacherProvider {
     String? content,
     int? sortOrder,
     String? videoFilePath,
+    Uint8List? fileBytes,
+    String? fileName,
     void Function(int, int)? onSendProgress,
   }) async {
     if (videoFilePath != null) {
@@ -105,7 +120,7 @@ class TeacherProvider {
         if (url != null) 'url': url,
         if (content != null) 'content': content,
         if (sortOrder != null) 'sort_order': sortOrder.toString(),
-        'video': _videoFile(videoFilePath),
+        'video': _videoFile(videoFilePath, bytes: fileBytes, name: fileName),
       });
       return _api.patch(
         '/teacher/lectures/$id',

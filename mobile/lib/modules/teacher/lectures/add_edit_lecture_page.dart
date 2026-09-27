@@ -1,4 +1,5 @@
 import 'package:file_picker/file_picker.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../../../app/theme/app_colors.dart';
@@ -27,6 +28,8 @@ class AddEditLecturePage extends StatelessWidget {
 
     final selectedVideoPath = Rxn<String>();
     final selectedVideoSize = 0.0.obs;
+    final selectedVideoBytes = Rxn<Uint8List>();
+    final selectedVideoName = Rxn<String>();
 
     const allowedVideoExts = ['mp4', 'webm', 'mov', 'mkv'];
     const maxVideoBytes = 2048 * 1024 * 1024;
@@ -35,11 +38,11 @@ class AddEditLecturePage extends StatelessWidget {
       final result = await FilePicker.pickFiles(
         type: FileType.video,
         allowMultiple: false,
+        withData: kIsWeb, // على الويب تُطلب البايتات (لا مسار ملف)
       );
       final file = result?.files.single;
-      final path = file?.path;
-      if (file == null || path == null) return;
-      final ext = path.split('.').last.toLowerCase();
+      if (file == null) return;
+      final ext = file.name.split('.').last.toLowerCase();
       if (!allowedVideoExts.contains(ext)) {
         Get.snackbar('خطأ', 'الصيغ المسموحة: mp4، webm، mov، mkv',
             backgroundColor: AppColors.error, colorText: Colors.white);
@@ -50,12 +53,16 @@ class AddEditLecturePage extends StatelessWidget {
             backgroundColor: AppColors.error, colorText: Colors.white);
         return;
       }
-      selectedVideoPath.value = path;
+      selectedVideoPath.value = file.path;
       selectedVideoSize.value = file.size.toDouble();
+      selectedVideoBytes.value = kIsWeb ? file.bytes : null;
+      selectedVideoName.value = file.name;
     }
 
     final selectedPdfPath = Rxn<String>();
     final selectedPdfSize = 0.0.obs;
+    final selectedPdfBytes = Rxn<Uint8List>();
+    final selectedPdfName = Rxn<String>();
     const maxPdfBytes = 2048 * 1024 * 1024;
 
     Future<void> pickPdf() async {
@@ -63,11 +70,12 @@ class AddEditLecturePage extends StatelessWidget {
         type: FileType.custom,
         allowedExtensions: ['pdf'],
         allowMultiple: false,
+        withData: kIsWeb, // على الويب تُطلب البايتات (لا مسار ملف)
       );
       final file = result?.files.single;
-      final path = file?.path;
-      if (file == null || path == null) return;
-      if (path.split('.').last.toLowerCase() != 'pdf') {
+      if (file == null) return;
+      // الفحص من اسم الملف الحقيقي — path على الويب ليس مساراً (data URL)
+      if (file.name.split('.').last.toLowerCase() != 'pdf') {
         Get.snackbar('خطأ', 'الصيغة المسموحة: pdf',
             backgroundColor: AppColors.error, colorText: Colors.white);
         return;
@@ -77,14 +85,20 @@ class AddEditLecturePage extends StatelessWidget {
             backgroundColor: AppColors.error, colorText: Colors.white);
         return;
       }
-      selectedPdfPath.value = path;
+      selectedPdfPath.value = file.path;
       selectedPdfSize.value = file.size.toDouble();
+      selectedPdfBytes.value = kIsWeb ? file.bytes : null;
+      selectedPdfName.value = file.name;
       urlCtrl.clear();
     }
 
     // كتابة رابط تُلغي اختيار الملف (لا يُرسل الاثنان معاً)
     urlCtrl.addListener(() {
-      if (urlCtrl.text.trim().isNotEmpty) selectedPdfPath.value = null;
+      if (urlCtrl.text.trim().isNotEmpty) {
+        selectedPdfPath.value = null;
+        selectedPdfBytes.value = null;
+        selectedPdfName.value = null;
+      }
     });
 
     return Scaffold(
@@ -118,6 +132,8 @@ class AddEditLecturePage extends StatelessWidget {
                 return _buildVideoPicker(
                   selectedPath: selectedVideoPath,
                   selectedSize: selectedVideoSize,
+                  selectedBytes: selectedVideoBytes,
+                  selectedName: selectedVideoName,
                   lecture: lecture,
                   onPick: pickVideo,
                 );
@@ -129,6 +145,8 @@ class AddEditLecturePage extends StatelessWidget {
                     _buildPdfPicker(
                       selectedPath: selectedPdfPath,
                       selectedSize: selectedPdfSize,
+                      selectedBytes: selectedPdfBytes,
+                      selectedName: selectedPdfName,
                       lecture: lecture,
                       onPick: pickPdf,
                     ),
@@ -262,6 +280,18 @@ class AddEditLecturePage extends StatelessWidget {
                                           urlCtrl.text.trim().isEmpty
                                       ? selectedPdfPath.value
                                       : null),
+                              fileBytes: selectedType.value == 'VIDEO'
+                                  ? selectedVideoBytes.value
+                                  : (selectedType.value == 'PDF' &&
+                                          urlCtrl.text.trim().isEmpty
+                                      ? selectedPdfBytes.value
+                                      : null),
+                              fileName: selectedType.value == 'VIDEO'
+                                  ? selectedVideoName.value
+                                  : (selectedType.value == 'PDF' &&
+                                          urlCtrl.text.trim().isEmpty
+                                      ? selectedPdfName.value
+                                      : null),
                             );
                           } else {
                             ctrl.createLecture(
@@ -276,6 +306,18 @@ class AddEditLecturePage extends StatelessWidget {
                                   : (selectedType.value == 'PDF' &&
                                           urlCtrl.text.trim().isEmpty
                                       ? selectedPdfPath.value
+                                      : null),
+                              fileBytes: selectedType.value == 'VIDEO'
+                                  ? selectedVideoBytes.value
+                                  : (selectedType.value == 'PDF' &&
+                                          urlCtrl.text.trim().isEmpty
+                                      ? selectedPdfBytes.value
+                                      : null),
+                              fileName: selectedType.value == 'VIDEO'
+                                  ? selectedVideoName.value
+                                  : (selectedType.value == 'PDF' &&
+                                          urlCtrl.text.trim().isEmpty
+                                      ? selectedPdfName.value
                                       : null),
                             );
                           }
@@ -296,6 +338,8 @@ class AddEditLecturePage extends StatelessWidget {
   Widget _buildVideoPicker({
     required Rxn<String> selectedPath,
     required RxDouble selectedSize,
+    required Rxn<Uint8List> selectedBytes,
+    required Rxn<String> selectedName,
     required LectureModel? lecture,
     required VoidCallback onPick,
   }) {
@@ -331,7 +375,7 @@ class AddEditLecturePage extends StatelessWidget {
           ],
         );
       }
-      final name = path.split(RegExp(r'[/\\]')).last;
+      final name = selectedName.value ?? path.split(RegExp(r'[/\\]')).last;
       return Container(
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
         decoration: BoxDecoration(
@@ -367,6 +411,8 @@ class AddEditLecturePage extends StatelessWidget {
               onPressed: () {
                 selectedPath.value = null;
                 selectedSize.value = 0;
+                selectedBytes.value = null;
+                selectedName.value = null;
               },
             ),
           ],
@@ -378,6 +424,8 @@ class AddEditLecturePage extends StatelessWidget {
   Widget _buildPdfPicker({
     required Rxn<String> selectedPath,
     required RxDouble selectedSize,
+    required Rxn<Uint8List> selectedBytes,
+    required Rxn<String> selectedName,
     required LectureModel? lecture,
     required VoidCallback onPick,
   }) {
@@ -413,7 +461,7 @@ class AddEditLecturePage extends StatelessWidget {
           ],
         );
       }
-      final name = path.split(RegExp(r'[/\\]')).last;
+      final name = selectedName.value ?? path.split(RegExp(r'[/\\]')).last;
       return Container(
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
         decoration: BoxDecoration(
@@ -449,6 +497,8 @@ class AddEditLecturePage extends StatelessWidget {
               onPressed: () {
                 selectedPath.value = null;
                 selectedSize.value = 0;
+                selectedBytes.value = null;
+                selectedName.value = null;
               },
             ),
           ],
