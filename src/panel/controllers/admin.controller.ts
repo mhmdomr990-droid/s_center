@@ -133,6 +133,12 @@ export async function toggleSpecializationAction(req: Request, res: Response) {
   return res.redirect('/panel/admin/specializations');
 }
 
+export async function deleteSpecializationAction(req: Request, res: Response) {
+  await archiveSpecialization(Number(req.params.id));
+  setFlash(res, 'success', 'تم حذف التخصص (أصبح مخفيًا)');
+  return res.redirect('/panel/admin/specializations');
+}
+
 export async function coursesPage(req: Request, res: Response) {
   const [coursesAll, specializations, teachers, common] = await Promise.all([
     listCourses(),
@@ -186,6 +192,12 @@ export async function toggleCourseAction(req: Request, res: Response) {
   return res.redirect('/panel/admin/courses');
 }
 
+export async function deleteCourseAction(req: Request, res: Response) {
+  await archiveCourse(Number(req.params.id));
+  setFlash(res, 'success', 'تم حذف الكورس (أصبح مخفيًا)');
+  return res.redirect('/panel/admin/courses');
+}
+
 export async function lecturesPage(req: Request, res: Response) {
   const [courses, lecturesAll, common] = await Promise.all([listCourses(), listLectures(), loadAdminCommon()]);
   const selectedCourseId = req.query.courseId ? Number(req.query.courseId) : undefined;
@@ -217,6 +229,12 @@ export async function updateLectureAction(req: Request, res: Response) {
 export async function hideLectureAction(req: Request, res: Response) {
   await archiveLecture(Number(req.params.id));
   setFlash(res, 'success', 'تم إخفاء المحاضرة');
+  return res.redirect('/panel/admin/lectures');
+}
+
+export async function deleteLectureAction(req: Request, res: Response) {
+  await archiveLecture(Number(req.params.id));
+  setFlash(res, 'success', 'تم حذف المحاضرة (أصبحت مخفية)');
   return res.redirect('/panel/admin/lectures');
 }
 

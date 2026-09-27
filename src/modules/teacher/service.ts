@@ -1,4 +1,5 @@
 import { AppDataSource } from '../../config/data-source';
+import path from 'path';
 import { Course } from '../../entities/Course';
 import { Lecture } from '../../entities/Lecture';
 import { Purchase } from '../../entities/Purchase';
@@ -183,6 +184,8 @@ export async function createLectureForTeacher(
   const course = await assertOwnedCourse(courseId, teacherId);
   const repository = AppDataSource.getRepository(Lecture);
   const isVideo = input.type === LectureType.VIDEO;
+  const isPdf = input.type === LectureType.PDF;
+  const uploadedExtension = file ? path.extname(file.originalname || '').toLowerCase() : '';
   const normalizedUrl = normalizeOptionalText(input.url);
   const normalizedContent = normalizeOptionalText(input.content);
 
@@ -193,8 +196,18 @@ export async function createLectureForTeacher(
     if (!file) {
       throw new AppError(400, 'Video file is required');
     }
+    if (uploadedExtension === '.pdf') {
+      throw new AppError(400, 'PDF files are not valid for VIDEO lectures');
+    }
+  } else if (isPdf) {
+    if (file && uploadedExtension !== '.pdf') {
+      throw new AppError(400, 'PDF lectures must upload a PDF file');
+    }
+    if (!file && !normalizedUrl) {
+      throw new AppError(400, 'PDF lecture requires a PDF file or URL');
+    }
   } else if (file) {
-    throw new AppError(400, 'Video uploads are only allowed for VIDEO lectures');
+    throw new AppError(400, 'File uploads are only allowed for VIDEO or PDF lectures');
   }
 
   let uploadedFilename: string | null = file?.filename ?? null;
@@ -206,12 +219,12 @@ export async function createLectureForTeacher(
       createdBy: { id: teacherId } as User,
       title: input.title,
       type: input.type,
-      url: isVideo ? null : normalizedUrl ?? null,
-      storageFilename: isVideo ? videoMetadata?.storageFilename ?? null : null,
-      fileSize: isVideo ? videoMetadata?.fileSize ?? null : null,
+      url: isVideo ? null : (isPdf ? (file ? null : normalizedUrl ?? null) : normalizedUrl ?? null),
+      storageFilename: (isVideo || isPdf) ? videoMetadata?.storageFilename ?? null : null,
+      fileSize: (isVideo || isPdf) ? videoMetadata?.fileSize ?? null : null,
       durationSeconds: isVideo ? videoMetadata?.durationSeconds ?? null : null,
       uploadStatus: LectureUploadStatus.READY,
-      content: isVideo ? null : normalizedContent ?? null,
+      content: (isVideo || isPdf) ? null : normalizedContent ?? null,
       isPublished: true,
       sortOrder: input.sort_order ?? 0,
     });
@@ -236,18 +249,29 @@ export async function updateTeacherLecture(
   const repository = AppDataSource.getRepository(Lecture);
   const lecture = await assertOwnedLecture(lectureId, teacherId);
   const nextType = input.type ?? lecture.type;
+  const nextIsVideo = nextType === LectureType.VIDEO;
+  const nextIsPdf = nextType === LectureType.PDF;
+  const uploadedExtension = file ? path.extname(file.originalname || '').toLowerCase() : '';
   const oldVideoFilename = lecture.storageFilename;
-  const replacingVideo = nextType === LectureType.VIDEO && !!file;
-  const removingVideo = lecture.type === LectureType.VIDEO && nextType !== LectureType.VIDEO;
+  const replacingStoredFile = !!file;
+  const removingStoredFile = !!lecture.storageFilename && !nextIsVideo && !nextIsPdf;
 
-  if (file && nextType !== LectureType.VIDEO) {
-    throw new AppError(400, 'Video uploads are only allowed for VIDEO lectures');
+  if (file && nextIsVideo && uploadedExtension === '.pdf') {
+    throw new AppError(400, 'PDF files are not valid for VIDEO lectures');
+  }
+
+  if (file && nextIsPdf && uploadedExtension !== '.pdf') {
+    throw new AppError(400, 'PDF lectures must upload a PDF file');
+  }
+
+  if (file && !nextIsVideo && !nextIsPdf) {
+    throw new AppError(400, 'File uploads are only allowed for VIDEO or PDF lectures');
   }
 
   const normalizedUrl = input.url === undefined ? undefined : normalizeOptionalText(input.url);
   const normalizedContent = input.content === undefined ? undefined : normalizeOptionalText(input.content);
 
-  if (nextType === LectureType.VIDEO) {
+  if (nextIsVideo) {
     if (normalizedUrl) {
       throw new AppError(400, 'Video lectures must not include an external URL');
     }
@@ -256,25 +280,38 @@ export async function updateTeacherLecture(
     }
   }
 
+  if (nextIsPdf && !file && !lecture.storageFilename && !normalizedUrl && !lecture.url) {
+    throw new AppError(400, 'PDF lecture requires a PDF file or URL');
+  }
+
   if (input.title !== undefined) lecture.title = input.title;
   if (input.type !== undefined) lecture.type = nextType;
-  if (nextType === LectureType.VIDEO) {
+  if (nextIsVideo) {
     lecture.url = null;
     lecture.content = null;
+  } else if (nextIsPdf) {
+    lecture.content = null;
+    if (input.url !== undefined) lecture.url = normalizedUrl ?? null;
   } else {
     if (input.url !== undefined) lecture.url = normalizedUrl ?? null;
     if (input.content !== undefined) lecture.content = normalizedContent ?? null;
   }
   if (input.sort_order !== undefined) lecture.sortOrder = input.sort_order;
 
-  if (nextType === LectureType.VIDEO) {
+  if (nextIsVideo || nextIsPdf) {
     if (file) {
       const videoMetadata = await readUploadedVideoMetadata(file);
       lecture.storageFilename = videoMetadata.storageFilename;
       lecture.fileSize = videoMetadata.fileSize;
-      lecture.durationSeconds = videoMetadata.durationSeconds;
+      lecture.durationSeconds = nextIsVideo ? videoMetadata.durationSeconds : null;
       lecture.uploadStatus = LectureUploadStatus.READY;
+      if (nextIsPdf) {
+        lecture.url = null;
+      }
     } else {
+      if (nextIsPdf) {
+        lecture.durationSeconds = null;
+      }
       lecture.uploadStatus = LectureUploadStatus.READY;
     }
   } else {
@@ -289,7 +326,7 @@ export async function updateTeacherLecture(
   try {
     const saved = await repository.save(lecture);
     uploadedFilename = null;
-    if ((replacingVideo || removingVideo) && oldVideoFilename && oldVideoFilename !== saved.storageFilename) {
+    if ((replacingStoredFile || removingStoredFile) && oldVideoFilename && oldVideoFilename !== saved.storageFilename) {
       await deleteStoredVideoFile(oldVideoFilename);
     }
     return mapLecture(saved);

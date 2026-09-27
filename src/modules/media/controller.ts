@@ -32,8 +32,8 @@ async function findLectureOrThrow(lectureId: number) {
 }
 
 async function assertCanIssueStreamToken(user: User, lecture: Lecture) {
-  if (lecture.type !== LectureType.VIDEO || lecture.uploadStatus !== 'READY' || !lecture.storageFilename) {
-    throw new AppError(400, 'Video not available');
+  if (![LectureType.VIDEO, LectureType.PDF].includes(lecture.type) || lecture.uploadStatus !== 'READY' || !lecture.storageFilename) {
+    throw new AppError(400, 'Media file not available');
   }
 
   if (user.role === UserRole.STUDENT) {

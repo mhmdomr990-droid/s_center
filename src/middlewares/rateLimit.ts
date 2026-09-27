@@ -1,5 +1,7 @@
 import { ipKeyGenerator, rateLimit } from 'express-rate-limit';
 
+const isTestEnv = process.env.NODE_ENV === 'test';
+
 function getUserOrIpKey(req: unknown) {
   const userId = (req as { user?: { id?: number } }).user?.id;
   if (userId !== undefined && userId !== null) {
@@ -18,7 +20,7 @@ export const generalRateLimit = rateLimit({
 
 export const authRateLimit = rateLimit({
   windowMs: 15 * 60 * 1000,
-  limit: 50,
+  limit: isTestEnv ? 10_000 : 50,
   standardHeaders: true,
   legacyHeaders: false,
 });

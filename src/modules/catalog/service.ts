@@ -6,6 +6,7 @@ import { Specialization } from '../../entities/Specialization';
 import { LectureType, UserRole } from '../../entities/enums';
 import { User } from '../../entities/User';
 import { AppError } from '../../utils/AppError';
+import { createSignedMediaToken } from '../../services/media';
 
 function isPurchasedCourse(purchasedCourseIds: Set<number>, courseId: number) {
   return purchasedCourseIds.has(courseId);
@@ -84,7 +85,18 @@ export async function listLectures(user: User, courseId: number) {
       id: lecture.id,
       title: lecture.title,
       type: lecture.type,
-      url: lecture.type === LectureType.VIDEO ? null : lecture.url,
+      url:
+        lecture.type === LectureType.VIDEO
+          ? null
+          : lecture.type === LectureType.PDF && lecture.storageFilename
+            ? `/media/play/${createSignedMediaToken({
+              lectureId: lecture.id,
+              userId: user.id,
+              purpose: 'stream',
+              role: user.role,
+              expiresInMinutes: 30,
+            })}`
+            : lecture.url,
       content: lecture.content,
       is_published: lecture.isPublished,
       sort_order: lecture.sortOrder,

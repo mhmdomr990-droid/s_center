@@ -1,0 +1,331 @@
+{
+  "generated_at": "2026-09-24T08:01:50.517Z",
+  "actions": [
+    {
+      "role": "ADMIN",
+      "page": "specific-flow",
+      "action": "Auth incorrect credentials rejected",
+      "result": "PASS",
+      "errorDetail": "",
+      "screenshotPath": ""
+    },
+    {
+      "role": "ADMIN",
+      "page": "specific-flow",
+      "action": "Device lock rejects second device login",
+      "result": "PASS",
+      "errorDetail": "",
+      "screenshotPath": ""
+    },
+    {
+      "role": "ADMIN",
+      "page": "specific-flow",
+      "action": "Student A purchases course successfully",
+      "result": "PASS",
+      "errorDetail": "",
+      "screenshotPath": ""
+    },
+    {
+      "role": "ADMIN",
+      "page": "specific-flow",
+      "action": "Student B purchase rejected with insufficient balance",
+      "result": "PASS",
+      "errorDetail": "",
+      "screenshotPath": ""
+    },
+    {
+      "role": "ADMIN",
+      "page": "specific-flow",
+      "action": "Student topup request is created",
+      "result": "PASS",
+      "errorDetail": "",
+      "screenshotPath": ""
+    },
+    {
+      "role": "ADMIN",
+      "page": "specific-flow",
+      "action": "Admin reassigns course to teacher B",
+      "result": "PASS",
+      "errorDetail": "",
+      "screenshotPath": ""
+    },
+    {
+      "role": "ADMIN",
+      "page": "specific-flow",
+      "action": "Teacher earnings remain with teacher A immediately after reassignment",
+      "result": "PASS",
+      "errorDetail": "",
+      "screenshotPath": ""
+    },
+    {
+      "role": "ADMIN",
+      "page": "specific-flow",
+      "action": "Admin approves topup request",
+      "result": "PASS",
+      "errorDetail": "",
+      "screenshotPath": ""
+    },
+    {
+      "role": "ADMIN",
+      "page": "specific-flow",
+      "action": "Student B can purchase after approved topup",
+      "result": "PASS",
+      "errorDetail": "",
+      "screenshotPath": ""
+    },
+    {
+      "role": "ADMIN",
+      "page": "specific-flow",
+      "action": "Teacher reassignment historical earnings are preserved after new purchase",
+      "result": "PASS",
+      "errorDetail": "",
+      "screenshotPath": ""
+    },
+    {
+      "role": "ADMIN",
+      "page": "specific-flow",
+      "action": "Teacher payout records and over-limit rejection work",
+      "result": "PASS",
+      "errorDetail": "",
+      "screenshotPath": ""
+    },
+    {
+      "role": "ADMIN",
+      "page": "specific-flow",
+      "action": "Teacher B cannot access teacher A resources",
+      "result": "PASS",
+      "errorDetail": "",
+      "screenshotPath": ""
+    },
+    {
+      "role": "ADMIN",
+      "page": "specific-flow",
+      "action": "Teacher cannot reach admin API routes",
+      "result": "PASS",
+      "errorDetail": "",
+      "screenshotPath": ""
+    },
+    {
+      "role": "ADMIN",
+      "page": "specific-flow",
+      "action": "Teacher responses do not leak student identity fields",
+      "result": "PASS",
+      "errorDetail": "",
+      "screenshotPath": ""
+    },
+    {
+      "role": "ADMIN",
+      "page": "specific-flow",
+      "action": "Student stream URL returns partial content and video can seek",
+      "result": "PASS",
+      "errorDetail": "",
+      "screenshotPath": ""
+    },
+    {
+      "role": "ADMIN",
+      "page": "specific-flow",
+      "action": "Student download URL can be fetched",
+      "result": "PASS",
+      "errorDetail": "",
+      "screenshotPath": ""
+    },
+    {
+      "role": "ADMIN",
+      "page": "specific-flow",
+      "action": "Profile change-password and logout-all invalidate old token",
+      "result": "PASS",
+      "errorDetail": "",
+      "screenshotPath": ""
+    },
+    {
+      "role": "ADMIN",
+      "page": "specific-flow",
+      "action": "Admin audit log page probe",
+      "result": "PASS",
+      "errorDetail": "",
+      "screenshotPath": ""
+    },
+    {
+      "role": "ADMIN",
+      "page": "specific-flow",
+      "action": "Admin refund endpoint probe",
+      "result": "PASS",
+      "errorDetail": "",
+      "screenshotPath": ""
+    },
+    {
+      "role": "ADMIN",
+      "page": "http://127.0.0.1:3000/panel/admin/overview",
+      "action": "◐ [html > body > div.panel-shell > aside.panel-sidebar > div.panel-brand:nth-of-type(1) > button.polish-theme-toggle] (confirm)",
+      "result": "PASS",
+      "errorDetail": "ok (confirm)",
+      "screenshotPath": ""
+    },
+    {
+      "role": "ADMIN",
+      "page": "http://127.0.0.1:3000/panel/admin/overview",
+      "action": "نظرة عامة [html > body > div.panel-shell > aside.panel-sidebar > nav.panel-nav > a:nth-of-type(1)] (confirm)",
+      "result": "PASS",
+      "errorDetail": "ok (confirm)",
+      "screenshotPath": ""
+    },
+    {
+      "role": "ADMIN",
+      "page": "http://127.0.0.1:3000/panel/admin/overview",
+      "action": "التخصصات [html > body > div.panel-shell > aside.panel-sidebar > nav.panel-nav > a:nth-of-type(2)] (confirm)",
+      "result": "PASS",
+      "errorDetail": "ok (confirm)",
+      "screenshotPath": ""
+    },
+    {
+      "role": "ADMIN",
+      "page": "http://127.0.0.1:3000/panel/admin/specializations",
+      "action": "☀ [html > body > div.panel-shell > aside.panel-sidebar > div.panel-brand:nth-of-type(1) > button.polish-theme-toggle] (confirm)",
+      "result": "PASS",
+      "errorDetail": "ok (confirm)",
+      "screenshotPath": ""
+    },
+    {
+      "role": "ADMIN",
+      "page": "http://127.0.0.1:3000/panel/admin/specializations",
+      "action": "نظرة عامة [html > body > div.panel-shell > aside.panel-sidebar > nav.panel-nav > a:nth-of-type(1)] (confirm)",
+      "result": "PASS",
+      "errorDetail": "ok (confirm)",
+      "screenshotPath": ""
+    },
+    {
+      "role": "ADMIN",
+      "page": "http://127.0.0.1:3000/panel/admin/specializations",
+      "action": "التخصصات [html > body > div.panel-shell > aside.panel-sidebar > nav.panel-nav > a:nth-of-type(2)] (confirm)",
+      "result": "PASS",
+      "errorDetail": "ok (confirm)",
+      "screenshotPath": ""
+    },
+    {
+      "role": "TEACHER",
+      "page": "http://127.0.0.1:3000/panel/teacher/courses",
+      "action": "◐ [html > body > div.panel-shell > aside.panel-sidebar > div.panel-brand:nth-of-type(1) > button.polish-theme-toggle] (confirm)",
+      "result": "PASS",
+      "errorDetail": "ok (confirm)",
+      "screenshotPath": ""
+    },
+    {
+      "role": "TEACHER",
+      "page": "http://127.0.0.1:3000/panel/teacher/courses",
+      "action": "كورساتي [html > body > div.panel-shell > aside.panel-sidebar > nav.panel-nav > a:nth-of-type(1)] (confirm)",
+      "result": "PASS",
+      "errorDetail": "ok (confirm)",
+      "screenshotPath": ""
+    },
+    {
+      "role": "TEACHER",
+      "page": "http://127.0.0.1:3000/panel/teacher/courses",
+      "action": "المحاضرات [html > body > div.panel-shell > aside.panel-sidebar > nav.panel-nav > a:nth-of-type(2)] (confirm)",
+      "result": "PASS",
+      "errorDetail": "ok (confirm)",
+      "screenshotPath": ""
+    },
+    {
+      "role": "TEACHER",
+      "page": "http://127.0.0.1:3000/panel/teacher/lectures",
+      "action": "☀ [html > body > div.panel-shell > aside.panel-sidebar > div.panel-brand:nth-of-type(1) > button.polish-theme-toggle] (confirm)",
+      "result": "PASS",
+      "errorDetail": "ok (confirm)",
+      "screenshotPath": ""
+    },
+    {
+      "role": "TEACHER",
+      "page": "http://127.0.0.1:3000/panel/teacher/lectures",
+      "action": "كورساتي [html > body > div.panel-shell > aside.panel-sidebar > nav.panel-nav > a:nth-of-type(1)] (confirm)",
+      "result": "PASS",
+      "errorDetail": "ok (confirm)",
+      "screenshotPath": ""
+    },
+    {
+      "role": "TEACHER",
+      "page": "http://127.0.0.1:3000/panel/teacher/lectures",
+      "action": "المحاضرات [html > body > div.panel-shell > aside.panel-sidebar > nav.panel-nav > a:nth-of-type(2)] (confirm)",
+      "result": "PASS",
+      "errorDetail": "ok (confirm)",
+      "screenshotPath": ""
+    },
+    {
+      "role": "STUDENT",
+      "page": "http://127.0.0.1:3000/student/index.html",
+      "action": "◐ [html > body > div.student-shell > nav.student-nav > div.student-nav-inner > button.polish-theme-toggle] (confirm)",
+      "result": "PASS",
+      "errorDetail": "ok (confirm)",
+      "screenshotPath": ""
+    },
+    {
+      "role": "STUDENT",
+      "page": "http://127.0.0.1:3000/student/index.html",
+      "action": "⌂\nالرئيسية [body > div.student-shell > nav.student-nav > div.student-nav-inner > div.student-nav-links:nth-of-type(2) > a.student-nav-link:nth-of-type(1)] (confirm)",
+      "result": "PASS",
+      "errorDetail": "ok (confirm)",
+      "screenshotPath": ""
+    },
+    {
+      "role": "STUDENT",
+      "page": "http://127.0.0.1:3000/student/index.html",
+      "action": "$\nالمحفظة [body > div.student-shell > nav.student-nav > div.student-nav-inner > div.student-nav-links:nth-of-type(2) > a.student-nav-link:nth-of-type(2)] (confirm)",
+      "result": "PASS",
+      "errorDetail": "ok (confirm)",
+      "screenshotPath": ""
+    },
+    {
+      "role": "STUDENT",
+      "page": "http://127.0.0.1:3000/student/wallet.html",
+      "action": "☀ [html > body > div.student-shell > nav.student-nav > div.student-nav-inner > button.polish-theme-toggle] (confirm)",
+      "result": "PASS",
+      "errorDetail": "ok (confirm)",
+      "screenshotPath": ""
+    },
+    {
+      "role": "STUDENT",
+      "page": "http://127.0.0.1:3000/student/wallet.html",
+      "action": "⌂\nالرئيسية [body > div.student-shell > nav.student-nav > div.student-nav-inner > div.student-nav-links:nth-of-type(2) > a.student-nav-link:nth-of-type(1)] (confirm)",
+      "result": "PASS",
+      "errorDetail": "ok (confirm)",
+      "screenshotPath": ""
+    },
+    {
+      "role": "STUDENT",
+      "page": "http://127.0.0.1:3000/student/wallet.html",
+      "action": "$\nالمحفظة [body > div.student-shell > nav.student-nav > div.student-nav-inner > div.student-nav-links:nth-of-type(2) > a.student-nav-link:nth-of-type(2)] (confirm)",
+      "result": "PASS",
+      "errorDetail": "ok (confirm)",
+      "screenshotPath": ""
+    },
+    {
+      "role": "ADMIN",
+      "page": "specific-flow",
+      "action": "Teacher cannot reach /panel/admin/*",
+      "result": "PASS",
+      "errorDetail": "",
+      "screenshotPath": ""
+    }
+  ],
+  "issues": [
+    {
+      "severity": "HIGH",
+      "role": "ADMIN",
+      "page": "/api/admin/purchases/:id/refund",
+      "reproSteps": "Call refund endpoint for a valid admin token",
+      "expected": "Refund operation should exist and update balance/access atomically",
+      "actual": "Refund endpoint is missing (404).",
+      "rootCause": "Refund workflow is not implemented in admin API/service.",
+      "fix": "Implement refund service transaction, route/controller, and panel action in test-safe data scope."
+    },
+    {
+      "severity": "MEDIUM",
+      "role": "ADMIN",
+      "page": "/panel/admin/audit-logs",
+      "reproSteps": "Open audit log page from admin session",
+      "expected": "Audit log UI page should exist and render",
+      "actual": "Route unavailable or redirects unexpectedly (status 404)",
+      "rootCause": "No panel route/view is implemented for audit log browsing.",
+      "fix": "Add admin panel route/controller/view for audit logs and wire it in sidebar."
+    }
+  ]
+}

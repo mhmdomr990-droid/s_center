@@ -49,6 +49,10 @@
                 <input type="hidden" name="next_is_published" value="<%= item.is_published ? 'false' : 'true' %>">
                 <button class="panel-btn <%= item.is_published ? 'panel-btn-secondary' : 'panel-btn-primary' %>" type="submit" data-confirm="هل تريد <%= item.is_published ? 'إخفاء' : 'نشر' %> هذا التخصص؟"><%= item.is_published ? 'إخفاء' : 'نشر' %></button>
               </form>
+              <form method="post" action="/panel/admin/specializations/<%= item.id %>/delete" style="display:inline;">
+                <input type="hidden" name="csrf_token" value="<%= csrfToken %>">
+                <button class="panel-btn panel-btn-danger" type="submit" data-confirm="هل تريد حذف هذا التخصص؟">حذف</button>
+              </form>
             </div>
           </td>
         </tr>

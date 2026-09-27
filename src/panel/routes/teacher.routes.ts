@@ -8,7 +8,7 @@ import { asyncHandler } from '../../utils/asyncHandler';
 import { panelFlash } from '../middlewares/flash';
 import { panelAuth } from '../middlewares/panelAuth';
 import { teacherCourseIdParamSchema, teacherLectureCreateSchema, teacherLectureIdParamSchema, teacherLectureUpdateSchema } from '../schemas/teacher.schema';
-import { coursesPage, createLectureAction, earningsPage, hideLectureAction, lecturesPage, rootTeacherRedirect, updateLectureAction } from '../controllers/teacher.controller';
+import { coursesPage, createLectureAction, deleteLectureAction, earningsPage, hideLectureAction, lecturesPage, rootTeacherRedirect, updateLectureAction } from '../controllers/teacher.controller';
 
 export const panelTeacherRoutes = Router();
 
@@ -21,3 +21,4 @@ panelTeacherRoutes.get('/earnings', asyncHandler(earningsPage));
 panelTeacherRoutes.post('/courses/:id/lectures', lectureVideoUpload.single('video'), validate({ params: teacherCourseIdParamSchema, body: teacherLectureCreateSchema }), asyncHandler(createLectureAction));
 panelTeacherRoutes.post('/lectures/:id', lectureVideoUpload.single('video'), validate({ params: teacherLectureIdParamSchema, body: teacherLectureUpdateSchema }), asyncHandler(updateLectureAction));
 panelTeacherRoutes.post('/lectures/:id/hide', validate({ params: teacherLectureIdParamSchema }), asyncHandler(hideLectureAction));
+panelTeacherRoutes.post('/lectures/:id/delete', validate({ params: teacherLectureIdParamSchema }), asyncHandler(deleteLectureAction));

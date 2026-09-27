@@ -10,6 +10,8 @@
     "seed:admin": "npm run build && node dist/seed-admin.js",
     "copy:panel-assets": "node scripts/copy-panel-assets.mjs",
     "test:smoke": "ts-node scripts/smoke-test.ts",
+    "test:e2e": "playwright test -c tests/e2e/playwright.config.ts",
+    "test:e2e:headed": "playwright test -c tests/e2e/playwright.config.ts --headed",
     "postinstall": "node scripts/copy-panel-assets.mjs"
   },
   "dependencies": {
@@ -30,6 +32,7 @@
     "zod": "^3.24.1"
   },
   "devDependencies": {
+    "@playwright/test": "^1.63.0",
     "@types/bcrypt": "^5.0.2",
     "@types/cors": "^2.8.17",
     "@types/express": "^5.0.0",

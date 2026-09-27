@@ -67,6 +67,16 @@ export async function hideLectureAction(req: Request, res: Response) {
   return res.redirect('/panel/teacher/lectures');
 }
 
+export async function deleteLectureAction(req: Request, res: Response) {
+  await archiveTeacherLecture(req.user!.id, Number(req.params.id));
+  setFlash(res, 'success', 'تم حذف المحاضرة (أصبحت مخفية)');
+  const courseId = Number(req.query.courseId ?? req.body.course_id);
+  if (Number.isFinite(courseId) && courseId > 0) {
+    return res.redirect(`/panel/teacher/lectures?courseId=${courseId}`);
+  }
+  return res.redirect('/panel/teacher/lectures');
+}
+
 export async function earningsPage(req: Request, res: Response) {
   const stats = await getTeacherStats(req.user!.id);
   const payouts = await listTeacherPayouts(req.user!.id);

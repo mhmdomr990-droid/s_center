@@ -35,11 +35,12 @@ export interface StoredVideoFile {
   path: string;
 }
 
-const ALLOWED_VIDEO_MIME_TYPES: Record<string, string[]> = {
+const ALLOWED_LECTURE_MIME_TYPES: Record<string, string[]> = {
   '.mp4': ['video/mp4', 'application/mp4'],
   '.webm': ['video/webm'],
   '.mov': ['video/quicktime'],
   '.mkv': ['video/x-matroska', 'video/x-mkv'],
+  '.pdf': ['application/pdf'],
 };
 
 function base64Url(input: string | Buffer) {
@@ -69,7 +70,7 @@ export async function ensureVideoStorageDirectory() {
 
 export function getAllowedVideoExtension(file: Pick<StoredVideoFile, 'originalname' | 'mimetype'>) {
   const extension = path.extname(file.originalname || '').toLowerCase();
-  const allowedMimeTypes = ALLOWED_VIDEO_MIME_TYPES[extension];
+  const allowedMimeTypes = ALLOWED_LECTURE_MIME_TYPES[extension];
 
   if (!allowedMimeTypes) {
     return null;
@@ -85,7 +86,7 @@ export function getAllowedVideoExtension(file: Pick<StoredVideoFile, 'originalna
 export function assertValidVideoUpload(file: Pick<StoredVideoFile, 'originalname' | 'mimetype'>) {
   const extension = getAllowedVideoExtension(file);
   if (!extension) {
-    throw new AppError(400, 'Only mp4, webm, mov, and mkv video files are allowed');
+    throw new AppError(400, 'Only mp4, webm, mov, mkv, and pdf files are allowed');
   }
 
   return extension;
@@ -149,6 +150,8 @@ export function getVideoContentType(filename: string) {
       return 'video/quicktime';
     case '.mkv':
       return 'video/x-matroska';
+    case '.pdf':
+      return 'application/pdf';
     default:
       return 'application/octet-stream';
   }
@@ -230,7 +233,7 @@ export async function loadLectureMediaContext(payload: MediaTokenPayload) {
     relations: { course: { specialization: true, teacher: true } },
   });
 
-  if (!lecture || lecture.type !== LectureType.VIDEO || lecture.uploadStatus !== LectureUploadStatus.READY || !lecture.storageFilename) {
+  if (!lecture || ![LectureType.VIDEO, LectureType.PDF].includes(lecture.type) || lecture.uploadStatus !== LectureUploadStatus.READY || !lecture.storageFilename) {
     throw new AppError(404, 'Media not found');
   }
 

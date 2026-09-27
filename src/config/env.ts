@@ -10,6 +10,7 @@ const envSchema = z.object({
   DB_USER: z.string().min(1),
   DB_PASSWORD: z.string().default(''),
   DB_NAME: z.string().min(1),
+  DB_NAME_TEST: z.string().min(1).optional(),
   DB_SYNC: z
     .string()
     .default('false')
@@ -46,6 +47,7 @@ if (corsOrigins.length === 0) {
 
 export const env = {
   ...parsed.data,
+  DB_NAME: parsed.data.NODE_ENV === 'test' && parsed.data.DB_NAME_TEST ? parsed.data.DB_NAME_TEST : parsed.data.DB_NAME,
   STAFF_JWT_EXPIRES_IN: parsed.data.STAFF_JWT_EXPIRES_IN || parsed.data.JWT_EXPIRES_IN,
   VIDEO_STORAGE_PATH: parsed.data.VIDEO_STORAGE_PATH || 'storage/videos',
   VIDEO_SIGNING_SECRET: parsed.data.VIDEO_SIGNING_SECRET || parsed.data.JWT_SECRET,

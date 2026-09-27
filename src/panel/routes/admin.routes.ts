@@ -51,6 +51,9 @@ import {
 	teacherPayoutsPage,
 	teachersPage,
 	topupsPage,
+	deleteCourseAction,
+	deleteLectureAction,
+	deleteSpecializationAction,
 	toggleCourseAction,
 	toggleSpecializationAction,
 	toggleUserActiveAction,
@@ -88,16 +91,19 @@ panelAdminRoutes.get('/specializations', asyncHandler(specializationsPage));
 panelAdminRoutes.post('/specializations', validate({ body: specializationCreateSchema }), asyncHandler(createSpecializationAction));
 panelAdminRoutes.post('/specializations/:id', validate({ params: adminIdParamSchema, body: specializationUpdateSchema }), asyncHandler(updateSpecializationAction));
 panelAdminRoutes.post('/specializations/:id/toggle', validate({ params: adminIdParamSchema, body: togglePublishSchema }), asyncHandler(toggleSpecializationAction));
+panelAdminRoutes.post('/specializations/:id/delete', validate({ params: adminIdParamSchema }), asyncHandler(deleteSpecializationAction));
 
 panelAdminRoutes.get('/courses', asyncHandler(coursesPage));
 panelAdminRoutes.post('/courses', validate({ body: courseCreateSchema }), asyncHandler(createCourseAction));
 panelAdminRoutes.post('/courses/:id', validate({ params: adminIdParamSchema, body: courseUpdateSchema }), asyncHandler(updateCourseAction));
 panelAdminRoutes.post('/courses/:id/toggle', validate({ params: adminIdParamSchema, body: togglePublishSchema }), asyncHandler(toggleCourseAction));
+panelAdminRoutes.post('/courses/:id/delete', validate({ params: adminIdParamSchema }), asyncHandler(deleteCourseAction));
 
 panelAdminRoutes.get('/lectures', asyncHandler(lecturesPage));
 panelAdminRoutes.post('/lectures', lectureVideoUpload.single('video'), validate({ body: lectureCreateSchema }), asyncHandler(createLectureAction));
 panelAdminRoutes.post('/lectures/:id', lectureVideoUpload.single('video'), validate({ params: adminIdParamSchema, body: lectureUpdateSchema }), asyncHandler(updateLectureAction));
 panelAdminRoutes.post('/lectures/:id/hide', validate({ params: adminIdParamSchema }), asyncHandler(hideLectureAction));
+panelAdminRoutes.post('/lectures/:id/delete', validate({ params: adminIdParamSchema }), asyncHandler(deleteLectureAction));
 
 panelAdminRoutes.get('/topups', validate({ query: topupRequestsQuerySchema }), asyncHandler(topupsPage));
 panelAdminRoutes.post('/topups/:id/approve', validate({ params: adminIdParamSchema }), asyncHandler(approveTopupAction));
