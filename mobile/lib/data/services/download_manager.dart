@@ -85,16 +85,27 @@ class DownloadManager extends GetxController {
       final raw = prefs.getString(_prefsKey);
       if (raw != null && raw.isNotEmpty) {
         final list = jsonDecode(raw) as List<dynamic>;
-        records.clear();
+        final parsed = <int, DownloadRecord>{};
         for (final item in list) {
-          final rec = DownloadRecord.fromJson(Map<String, dynamic>.from(item as Map));
-          if (!rec.isExpired) {
-            records[rec.lectureId] = rec;
+          try {
+            final rec = DownloadRecord.fromJson(
+                Map<String, dynamic>.from(item as Map));
+            if (!rec.isExpired) {
+              parsed[rec.lectureId] = rec;
+            }
+          } catch (_) {
+            // سجل واحد تالف لا يُسقط البقية — يتخطى ويُبلَّغ فقط
+            debugPrint('DOWNLOAD_REC_BAD $item');
           }
         }
+        records
+          ..clear()
+          ..addAll(parsed);
       }
-    } catch (_) {
-      records.clear();
+    } catch (e) {
+      // لا نمسح الذاكرة عند فشل القراءة — والملف لا يُعاد كتابته إلا
+      // بعد عملية صريحة (تحميل/حذف)، فلا يضيع سجل سليم بسبب خطأ قراءة
+      debugPrint('DOWNLOADS_LOAD_ERR $e');
     } finally {
       ready.value = true;
     }
@@ -129,14 +140,20 @@ class DownloadManager extends GetxController {
     final dir = await _downloadsDir();
     final keep = <Map<String, dynamic>>[];
     for (final item in list) {
-      final rec = DownloadRecord.fromJson(Map<String, dynamic>.from(item as Map));
-      if (rec.isExpired) {
-        try {
-          final f = File('${dir.path}/${rec.file}');
-          if (await f.exists()) await f.delete();
-        } catch (_) {}
-      } else {
-        keep.add(rec.toJson());
+      try {
+        final rec = DownloadRecord.fromJson(
+            Map<String, dynamic>.from(item as Map));
+        if (rec.isExpired) {
+          try {
+            final f = File('${dir.path}/${rec.file}');
+            if (await f.exists()) await f.delete();
+          } catch (_) {}
+        } else {
+          keep.add(rec.toJson());
+        }
+      } catch (_) {
+        // سجل غير قابل للقراءة — نُبقيه كما هو بدل حذفه
+        keep.add(Map<String, dynamic>.from(item as Map));
       }
     }
     await prefs.setString(_prefsKey, jsonEncode(keep));

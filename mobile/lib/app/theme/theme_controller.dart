@@ -15,7 +15,7 @@ class ThemeController extends GetxController {
 
   Future<void> loadSaved() async {
     final saved = await _storage.getThemeMode();
-    final dark = saved != 'light';
+    final dark = saved == 'dark'; // الافتراضي فاتح عند غياب المفتاح
     AppColors.setDarkMode(dark);
     themeMode.value = dark ? ThemeMode.dark : ThemeMode.light;
     _applySystemChrome(dark);

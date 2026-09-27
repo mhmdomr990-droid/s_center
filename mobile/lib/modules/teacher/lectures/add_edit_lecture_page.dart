@@ -1,7 +1,12 @@
+import 'dart:async';
+import 'dart:convert';
+import 'dart:io';
+
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../../../app/theme/app_colors.dart';
 import '../../../app/theme/app_text_styles.dart';
 import '../../../data/models/lecture_model.dart';
@@ -10,100 +15,379 @@ import '../../../widgets/custom_text_field.dart';
 import '../../../widgets/gradient_app_bar.dart';
 import '../courses/teacher_courses_controller.dart';
 
-class AddEditLecturePage extends StatelessWidget {
+class AddEditLecturePage extends StatefulWidget {
   const AddEditLecturePage({super.key});
 
   @override
-  Widget build(BuildContext context) {
+  State<AddEditLecturePage> createState() => _AddEditLecturePageState();
+}
+
+class _AddEditLecturePageState extends State<AddEditLecturePage> {
+  late final int courseId;
+  late final LectureModel? lecture;
+  late final bool isEdit;
+
+  late final TextEditingController titleCtrl;
+  late final TextEditingController urlCtrl;
+  late final TextEditingController contentCtrl;
+  late final TextEditingController sortCtrl;
+  late final RxString selectedType;
+
+  final selectedVideoPath = Rxn<String>();
+  final selectedVideoSize = 0.0.obs;
+  final selectedVideoBytes = Rxn<Uint8List>();
+  final selectedVideoName = Rxn<String>();
+
+  final selectedPdfPath = Rxn<String>();
+  final selectedPdfSize = 0.0.obs;
+  final selectedPdfBytes = Rxn<Uint8List>();
+  final selectedPdfName = Rxn<String>();
+
+  static const allowedVideoExts = ['mp4', 'webm', 'mov', 'mkv'];
+  static const maxVideoBytes = 2048 * 1024 * 1024;
+  static const maxPdfBytes = 2048 * 1024 * 1024;
+
+  Timer? _draftTimer;
+  bool _restoring = false;
+  bool _submitting = false;
+  bool _submitted = false;
+
+  String get _draftKey =>
+      '${TeacherCoursesController.draftKeyPrefix}$courseId';
+
+  @override
+  void initState() {
+    super.initState();
     final args = Get.arguments as Map<String, dynamic>;
-    final courseId = args['courseId'] as int;
-    final lecture = args['lecture'] as LectureModel?;
-    final isEdit = lecture != null;
+    courseId = args['courseId'] as int;
+    lecture = args['lecture'] as LectureModel?;
+    isEdit = lecture != null;
 
-    final titleCtrl = TextEditingController(text: lecture?.title ?? '');
-    final urlCtrl = TextEditingController(text: lecture?.url ?? '');
-    final contentCtrl = TextEditingController(text: lecture?.content ?? '');
-    final sortCtrl = TextEditingController(text: (lecture?.sortOrder ?? 0).toString());
-    final selectedType = (lecture?.type ?? 'VIDEO').obs;
+    titleCtrl = TextEditingController(text: lecture?.title ?? '');
+    urlCtrl = TextEditingController(text: lecture?.url ?? '');
+    contentCtrl = TextEditingController(text: lecture?.content ?? '');
+    sortCtrl =
+        TextEditingController(text: (lecture?.sortOrder ?? 0).toString());
+    selectedType = (lecture?.type ?? 'VIDEO').obs;
 
-    final selectedVideoPath = Rxn<String>();
-    final selectedVideoSize = 0.0.obs;
-    final selectedVideoBytes = Rxn<Uint8List>();
-    final selectedVideoName = Rxn<String>();
-
-    const allowedVideoExts = ['mp4', 'webm', 'mov', 'mkv'];
-    const maxVideoBytes = 2048 * 1024 * 1024;
-
-    Future<void> pickVideo() async {
-      final result = await FilePicker.pickFiles(
-        type: FileType.video,
-        allowMultiple: false,
-        withData: kIsWeb, // على الويب تُطلب البايتات (لا مسار ملف)
-      );
-      final file = result?.files.single;
-      if (file == null) return;
-      final ext = file.name.split('.').last.toLowerCase();
-      if (!allowedVideoExts.contains(ext)) {
-        Get.snackbar('خطأ', 'الصيغ المسموحة: mp4، webm، mov، mkv',
-            backgroundColor: AppColors.error, colorText: Colors.white);
-        return;
-      }
-      if (file.size > maxVideoBytes) {
-        Get.snackbar('خطأ', 'حجم الملف يتجاوز الحد الأقصى 2048MB',
-            backgroundColor: AppColors.error, colorText: Colors.white);
-        return;
-      }
-      selectedVideoPath.value = file.path;
-      selectedVideoSize.value = file.size.toDouble();
-      selectedVideoBytes.value = kIsWeb ? file.bytes : null;
-      selectedVideoName.value = file.name;
+    if (!isEdit) {
+      _restoreDraft();
     }
 
-    final selectedPdfPath = Rxn<String>();
-    final selectedPdfSize = 0.0.obs;
-    final selectedPdfBytes = Rxn<Uint8List>();
-    final selectedPdfName = Rxn<String>();
-    const maxPdfBytes = 2048 * 1024 * 1024;
+    urlCtrl.addListener(_onUrlChanged);
+    titleCtrl.addListener(_scheduleDraftSave);
+    contentCtrl.addListener(_scheduleDraftSave);
+    sortCtrl.addListener(_scheduleDraftSave);
+  }
 
-    Future<void> pickPdf() async {
-      final result = await FilePicker.pickFiles(
-        type: FileType.custom,
-        allowedExtensions: ['pdf'],
-        allowMultiple: false,
-        withData: kIsWeb, // على الويب تُطلب البايتات (لا مسار ملف)
-      );
-      final file = result?.files.single;
-      if (file == null) return;
-      // الفحص من اسم الملف الحقيقي — path على الويب ليس مساراً (data URL)
-      if (file.name.split('.').last.toLowerCase() != 'pdf') {
-        Get.snackbar('خطأ', 'الصيغة المسموحة: pdf',
-            backgroundColor: AppColors.error, colorText: Colors.white);
-        return;
-      }
-      if (file.size > maxPdfBytes) {
-        Get.snackbar('خطأ', 'حجم الملف يتجاوز الحد الأقصى 2048MB',
-            backgroundColor: AppColors.error, colorText: Colors.white);
-        return;
-      }
-      selectedPdfPath.value = file.path;
-      selectedPdfSize.value = file.size.toDouble();
-      selectedPdfBytes.value = kIsWeb ? file.bytes : null;
-      selectedPdfName.value = file.name;
-      urlCtrl.clear();
+  @override
+  void dispose() {
+    _draftTimer?.cancel();
+    // أي تغييرات معلقة تُحفظ لحظة الخروج — إلا أثناء إرسال ناجح
+    // (عندها تُمسح المسودة من الكونترولر ولا نُعيد كتابتها هنا)
+    if (!isEdit && !_restoring && !_submitting) {
+      unawaited(_saveDraft());
     }
+    titleCtrl.dispose();
+    urlCtrl.dispose();
+    contentCtrl.dispose();
+    sortCtrl.dispose();
+    super.dispose();
+  }
 
+  // ---------- مسودة الاستمارة (تُحفظ تلقائياً وتُسترجع بعد الإغلاق) ----------
+
+  void _onUrlChanged() {
+    if (_restoring) return;
     // كتابة رابط تُلغي اختيار الملف (لا يُرسل الاثنان معاً)
-    urlCtrl.addListener(() {
-      if (urlCtrl.text.trim().isNotEmpty) {
-        selectedPdfPath.value = null;
-        selectedPdfBytes.value = null;
-        selectedPdfName.value = null;
-      }
-    });
+    if (urlCtrl.text.trim().isNotEmpty) {
+      selectedPdfPath.value = null;
+      selectedPdfBytes.value = null;
+      selectedPdfName.value = null;
+    }
+    _scheduleDraftSave();
+  }
 
+  void _scheduleDraftSave() {
+    if (_restoring || isEdit) return;
+    _draftTimer?.cancel();
+    _draftTimer = Timer(const Duration(milliseconds: 500), _saveDraft);
+  }
+
+  Future<void> _saveDraft() async {
+    if (isEdit || _restoring) return;
+    // البناء متزامن قبل أي await — ليبقى آمناً عند استدعاؤه من dispose
+    final payload = jsonEncode({
+      'title': titleCtrl.text,
+      'url': urlCtrl.text,
+      'content': contentCtrl.text,
+      'sort': sortCtrl.text,
+      'type': selectedType.value,
+      // على الويب path هو data URL ضخم — لا يُخزَّن ولا يُسترجع
+      'video_path': kIsWeb ? null : selectedVideoPath.value,
+      'video_name': selectedVideoName.value,
+      'video_size': selectedVideoSize.value,
+      'pdf_path': kIsWeb ? null : selectedPdfPath.value,
+      'pdf_name': selectedPdfName.value,
+      'pdf_size': selectedPdfSize.value,
+    });
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setString(_draftKey, payload);
+    } catch (_) {}
+  }
+
+  Future<void> _restoreDraft() async {
+    _restoring = true;
+    var hasContent = false;
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final raw = prefs.getString(_draftKey);
+      if (raw == null || raw.isEmpty) return;
+      final d = jsonDecode(raw) as Map<String, dynamic>;
+
+      final t = (d['title'] as String?) ?? '';
+      final u = (d['url'] as String?) ?? '';
+      final c = (d['content'] as String?) ?? '';
+      final s = (d['sort'] as String?) ?? '0';
+      final ty = (d['type'] as String?) ?? 'VIDEO';
+
+      titleCtrl.text = t;
+      urlCtrl.text = u;
+      contentCtrl.text = c;
+      sortCtrl.text = s;
+      selectedType.value =
+          const ['VIDEO', 'PDF', 'TEXT'].contains(ty) ? ty : 'VIDEO';
+
+      final vp = d['video_path'] as String?;
+      if (vp != null && vp.isNotEmpty) {
+        if (!kIsWeb && File(vp).existsSync()) {
+          selectedVideoPath.value = vp;
+          selectedVideoName.value = d['video_name'] as String?;
+          selectedVideoSize.value =
+              (d['video_size'] as num?)?.toDouble() ?? 0;
+        } else if (d['video_name'] != null) {
+          _notifyMissingFile();
+        }
+      }
+      final pp = d['pdf_path'] as String?;
+      if (pp != null && pp.isNotEmpty) {
+        if (!kIsWeb && File(pp).existsSync()) {
+          selectedPdfPath.value = pp;
+          selectedPdfName.value = d['pdf_name'] as String?;
+          selectedPdfSize.value = (d['pdf_size'] as num?)?.toDouble() ?? 0;
+        } else if (d['pdf_name'] != null) {
+          _notifyMissingFile();
+        }
+      }
+
+      hasContent = t.isNotEmpty ||
+          u.isNotEmpty ||
+          c.isNotEmpty ||
+          s != '0' ||
+          ty != 'VIDEO' ||
+          selectedVideoPath.value != null ||
+          selectedPdfPath.value != null;
+    } catch (_) {
+      // مسودة تالفة — نتجاهلها ولا نكسر الصفحة
+    } finally {
+      _restoring = false;
+    }
+    if (hasContent && mounted) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!mounted) return;
+        Get.snackbar(
+          'مسودة',
+          'تم استرجاع ما كتبته سابقاً',
+          backgroundColor: AppColors.primary,
+          colorText: Colors.white,
+          duration: const Duration(seconds: 2),
+        );
+      });
+    }
+  }
+
+  void _notifyMissingFile() {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      Get.snackbar(
+        'تنبيه',
+        'الملف المختار لم يعد متاحاً — أعد اختياره',
+        backgroundColor: AppColors.warning,
+        colorText: Colors.white,
+      );
+    });
+  }
+
+  // ---------- اختيار الملفات ----------
+
+  Future<void> pickVideo() async {
+    final result = await FilePicker.pickFiles(
+      type: FileType.video,
+      allowMultiple: false,
+      withData: kIsWeb, // على الويب تُطلب البايتات (لا مسار ملف)
+    );
+    final file = result?.files.single;
+    if (file == null) return;
+    final ext = file.name.split('.').last.toLowerCase();
+    if (!allowedVideoExts.contains(ext)) {
+      Get.snackbar('خطأ', 'الصيغ المسموحة: mp4، webm، mov، mkv',
+          backgroundColor: AppColors.error, colorText: Colors.white);
+      return;
+    }
+    if (file.size > maxVideoBytes) {
+      Get.snackbar('خطأ', 'حجم الملف يتجاوز الحد الأقصى 2048MB',
+          backgroundColor: AppColors.error, colorText: Colors.white);
+      return;
+    }
+    selectedVideoPath.value = file.path;
+    selectedVideoSize.value = file.size.toDouble();
+    selectedVideoBytes.value = kIsWeb ? file.bytes : null;
+    selectedVideoName.value = file.name;
+    _scheduleDraftSave();
+  }
+
+  Future<void> pickPdf() async {
+    final result = await FilePicker.pickFiles(
+      type: FileType.custom,
+      allowedExtensions: ['pdf'],
+      allowMultiple: false,
+      withData: kIsWeb, // على الويب تُطلب البايتات (لا مسار ملف)
+    );
+    final file = result?.files.single;
+    if (file == null) return;
+    // الفحص من اسم الملف الحقيقي — path على الويب ليس مساراً (data URL)
+    if (file.name.split('.').last.toLowerCase() != 'pdf') {
+      Get.snackbar('خطأ', 'الصيغة المسموحة: pdf',
+          backgroundColor: AppColors.error, colorText: Colors.white);
+      return;
+    }
+    if (file.size > maxPdfBytes) {
+      Get.snackbar('خطأ', 'حجم الملف يتجاوز الحد الأقصى 2048MB',
+          backgroundColor: AppColors.error, colorText: Colors.white);
+      return;
+    }
+    selectedPdfPath.value = file.path;
+    selectedPdfSize.value = file.size.toDouble();
+    selectedPdfBytes.value = kIsWeb ? file.bytes : null;
+    selectedPdfName.value = file.name;
+    urlCtrl.clear();
+    _scheduleDraftSave();
+  }
+
+  Future<void> _submit() async {
+    if (titleCtrl.text.isEmpty) {
+      Get.snackbar('خطأ', 'أدخل عنوان المحاضرة',
+          backgroundColor: AppColors.error, colorText: Colors.white);
+      return;
+    }
+    final sortOrder = int.tryParse(sortCtrl.text.trim());
+    if (selectedType.value == 'PDF') {
+      final hasFile = selectedPdfPath.value != null;
+      final hasUrl = urlCtrl.text.trim().isNotEmpty;
+      final hasStoredFile = isEdit &&
+          lecture!.isPdf &&
+          (lecture!.url == null || lecture!.url!.isEmpty);
+      if (!hasFile && !hasUrl && !hasStoredFile) {
+        Get.snackbar('خطأ', 'ارفع ملف PDF أو أدخل رابط الملف',
+            backgroundColor: AppColors.error, colorText: Colors.white);
+        return;
+      }
+    }
+    if (selectedType.value == 'VIDEO') {
+      if (selectedVideoPath.value == null) {
+        if (!isEdit) {
+          Get.snackbar('خطأ', 'اختر ملف الفيديو',
+              backgroundColor: AppColors.error, colorText: Colors.white);
+          return;
+        }
+        final hasExistingFile =
+            lecture!.url == null || lecture!.url!.isEmpty;
+        if (!hasExistingFile) {
+          Get.snackbar('خطأ', 'اختر ملف الفيديو لاستبدال الرابط',
+              backgroundColor: AppColors.error, colorText: Colors.white);
+          return;
+        }
+      }
+    }
+
+    _draftTimer?.cancel();
+    _submitting = true;
+    final ctrl = Get.find<TeacherCoursesController>();
+    try {
+      if (isEdit) {
+        await ctrl.updateLecture(
+          lecture!.id,
+          courseId,
+          title: titleCtrl.text.trim(),
+          type: selectedType.value,
+          url: selectedType.value == 'TEXT'
+              ? null
+              : (urlCtrl.text.isNotEmpty ? urlCtrl.text.trim() : null),
+          content: selectedType.value == 'TEXT'
+              ? (contentCtrl.text.isNotEmpty ? contentCtrl.text.trim() : null)
+              : null,
+          sortOrder: sortOrder,
+          videoFilePath: selectedType.value == 'VIDEO'
+              ? selectedVideoPath.value
+              : (selectedType.value == 'PDF' &&
+                      urlCtrl.text.trim().isEmpty
+                  ? selectedPdfPath.value
+                  : null),
+          fileBytes: selectedType.value == 'VIDEO'
+              ? selectedVideoBytes.value
+              : (selectedType.value == 'PDF' &&
+                      urlCtrl.text.trim().isEmpty
+                  ? selectedPdfBytes.value
+                  : null),
+          fileName: selectedType.value == 'VIDEO'
+              ? selectedVideoName.value
+              : (selectedType.value == 'PDF' &&
+                      urlCtrl.text.trim().isEmpty
+                  ? selectedPdfName.value
+                  : null),
+        );
+      } else {
+        final ok = await ctrl.createLecture(
+          courseId,
+          title: titleCtrl.text.trim(),
+          type: selectedType.value,
+          url: urlCtrl.text.isNotEmpty ? urlCtrl.text.trim() : null,
+          content:
+              contentCtrl.text.isNotEmpty ? contentCtrl.text.trim() : null,
+          sortOrder: sortOrder,
+          videoFilePath: selectedType.value == 'VIDEO'
+              ? selectedVideoPath.value
+              : (selectedType.value == 'PDF' &&
+                      urlCtrl.text.trim().isEmpty
+                  ? selectedPdfPath.value
+                  : null),
+          fileBytes: selectedType.value == 'VIDEO'
+              ? selectedVideoBytes.value
+              : (selectedType.value == 'PDF' &&
+                      urlCtrl.text.trim().isEmpty
+                  ? selectedPdfBytes.value
+                  : null),
+          fileName: selectedType.value == 'VIDEO'
+              ? selectedVideoName.value
+              : (selectedType.value == 'PDF' &&
+                      urlCtrl.text.trim().isEmpty
+                  ? selectedPdfName.value
+                  : null),
+        );
+      }
+    } finally {
+      // فشل ⇐ الصفحة باقية ⇐ استئناف حفظ المسودة تلقائياً
+      _submitting = false;
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: AppColors.background,
-      appBar: GradientAppBar(title: isEdit ? 'تعديل محاضرة' : 'إضافة محاضرة'),
+      appBar:
+          GradientAppBar(title: isEdit ? 'تعديل محاضرة' : 'إضافة محاضرة'),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16),
         child: Column(
@@ -118,24 +402,22 @@ class AddEditLecturePage extends StatelessWidget {
             Text('نوع المحاضرة', style: AppTextStyles.titleMedium),
             const SizedBox(height: 8),
             Obx(() => Row(
-              children: [
-                _buildTypeChip(selectedType, 'VIDEO', 'فيديو', Icons.videocam),
-                const SizedBox(width: 8),
-                _buildTypeChip(selectedType, 'PDF', 'PDF', Icons.picture_as_pdf),
-                const SizedBox(width: 8),
-                _buildTypeChip(selectedType, 'TEXT', 'نص', Icons.article),
-              ],
-            )),
+                  children: [
+                    _buildTypeChip(selectedType, 'VIDEO', 'فيديو',
+                        Icons.videocam),
+                    const SizedBox(width: 8),
+                    _buildTypeChip(selectedType, 'PDF', 'PDF',
+                        Icons.picture_as_pdf),
+                    const SizedBox(width: 8),
+                    _buildTypeChip(selectedType, 'TEXT', 'نص',
+                        Icons.article),
+                  ],
+                )),
             const SizedBox(height: 16),
             Obx(() {
               if (selectedType.value == 'VIDEO') {
                 return _buildVideoPicker(
-                  selectedPath: selectedVideoPath,
-                  selectedSize: selectedVideoSize,
-                  selectedBytes: selectedVideoBytes,
-                  selectedName: selectedVideoName,
                   lecture: lecture,
-                  onPick: pickVideo,
                 );
               }
               if (selectedType.value == 'PDF') {
@@ -143,12 +425,7 @@ class AddEditLecturePage extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     _buildPdfPicker(
-                      selectedPath: selectedPdfPath,
-                      selectedSize: selectedPdfSize,
-                      selectedBytes: selectedPdfBytes,
-                      selectedName: selectedPdfName,
                       lecture: lecture,
-                      onPick: pickPdf,
                     ),
                     const SizedBox(height: 10),
                     CustomTextField(
@@ -194,7 +471,9 @@ class AddEditLecturePage extends StatelessWidget {
                         ClipRRect(
                           borderRadius: BorderRadius.circular(8),
                           child: LinearProgressIndicator(
-                            value: compressProgress > 0 ? compressProgress : null,
+                            value: compressProgress > 0
+                                ? compressProgress
+                                : null,
                             minHeight: 8,
                             backgroundColor: AppColors.courseCard,
                           ),
@@ -205,7 +484,9 @@ class AddEditLecturePage extends StatelessWidget {
                               ? 'جاري ضغط الفيديو... ${(compressProgress * 100).toStringAsFixed(0)}%'
                               : 'جاري ضغط الفيديو...',
                           textAlign: TextAlign.center,
-                          style: TextStyle(fontSize: 13, color: AppColors.textSecondary),
+                          style: TextStyle(
+                              fontSize: 13,
+                              color: AppColors.textSecondary),
                         ),
                         const SizedBox(height: 16),
                       ] else if (uploading > 0) ...[
@@ -221,108 +502,19 @@ class AddEditLecturePage extends StatelessWidget {
                         Text(
                           'جاري الرفع... ${(uploading * 100).toStringAsFixed(0)}%',
                           textAlign: TextAlign.center,
-                          style: TextStyle(fontSize: 13, color: AppColors.textSecondary),
+                          style: TextStyle(
+                              fontSize: 13,
+                              color: AppColors.textSecondary),
                         ),
                         const SizedBox(height: 16),
                       ],
                       CustomButton(
-                        text: isEdit ? 'حفظ التغييرات' : 'إضافة المحاضرة',
+                        text:
+                            isEdit ? 'حفظ التغييرات' : 'إضافة المحاضرة',
                         isLoading: ctrl.isSaving.value,
-                        onPressed: () {
-                          if (titleCtrl.text.isEmpty) {
-                            Get.snackbar('خطأ', 'أدخل عنوان المحاضرة', backgroundColor: AppColors.error, colorText: Colors.white);
-                            return;
-                          }
-                          final sortOrder = int.tryParse(sortCtrl.text.trim());
-                          if (selectedType.value == 'PDF') {
-                            final hasFile = selectedPdfPath.value != null;
-                            final hasUrl = urlCtrl.text.trim().isNotEmpty;
-                            final hasStoredFile = isEdit &&
-                                lecture.isPdf &&
-                                (lecture.url == null || lecture.url!.isEmpty);
-                            if (!hasFile && !hasUrl && !hasStoredFile) {
-                              Get.snackbar('خطأ', 'ارفع ملف PDF أو أدخل رابط الملف',
-                                  backgroundColor: AppColors.error, colorText: Colors.white);
-                              return;
-                            }
-                          }
-                          if (selectedType.value == 'VIDEO') {
-                            if (selectedVideoPath.value == null) {
-                              if (!isEdit) {
-                                Get.snackbar('خطأ', 'اختر ملف الفيديو', backgroundColor: AppColors.error, colorText: Colors.white);
-                                return;
-                              }
-                              final hasExistingFile =
-                                  lecture.url == null || lecture.url!.isEmpty;
-                              if (!hasExistingFile) {
-                                Get.snackbar('خطأ', 'اختر ملف الفيديو لاستبدال الرابط',
-                                    backgroundColor: AppColors.error, colorText: Colors.white);
-                                return;
-                              }
-                            }
-                          }
-                          if (isEdit) {
-                            ctrl.updateLecture(
-                              lecture.id,
-                              courseId,
-                              title: titleCtrl.text.trim(),
-                              type: selectedType.value,
-                              url: selectedType.value == 'TEXT'
-                                  ? null
-                                  : (urlCtrl.text.isNotEmpty ? urlCtrl.text.trim() : null),
-                              content: selectedType.value == 'TEXT'
-                                  ? (contentCtrl.text.isNotEmpty ? contentCtrl.text.trim() : null)
-                                  : null,
-                              sortOrder: sortOrder,
-                              videoFilePath: selectedType.value == 'VIDEO'
-                                  ? selectedVideoPath.value
-                                  : (selectedType.value == 'PDF' &&
-                                          urlCtrl.text.trim().isEmpty
-                                      ? selectedPdfPath.value
-                                      : null),
-                              fileBytes: selectedType.value == 'VIDEO'
-                                  ? selectedVideoBytes.value
-                                  : (selectedType.value == 'PDF' &&
-                                          urlCtrl.text.trim().isEmpty
-                                      ? selectedPdfBytes.value
-                                      : null),
-                              fileName: selectedType.value == 'VIDEO'
-                                  ? selectedVideoName.value
-                                  : (selectedType.value == 'PDF' &&
-                                          urlCtrl.text.trim().isEmpty
-                                      ? selectedPdfName.value
-                                      : null),
-                            );
-                          } else {
-                            ctrl.createLecture(
-                              courseId,
-                              title: titleCtrl.text.trim(),
-                              type: selectedType.value,
-                              url: urlCtrl.text.isNotEmpty ? urlCtrl.text.trim() : null,
-                              content: contentCtrl.text.isNotEmpty ? contentCtrl.text.trim() : null,
-                              sortOrder: sortOrder,
-                              videoFilePath: selectedType.value == 'VIDEO'
-                                  ? selectedVideoPath.value
-                                  : (selectedType.value == 'PDF' &&
-                                          urlCtrl.text.trim().isEmpty
-                                      ? selectedPdfPath.value
-                                      : null),
-                              fileBytes: selectedType.value == 'VIDEO'
-                                  ? selectedVideoBytes.value
-                                  : (selectedType.value == 'PDF' &&
-                                          urlCtrl.text.trim().isEmpty
-                                      ? selectedPdfBytes.value
-                                      : null),
-                              fileName: selectedType.value == 'VIDEO'
-                                  ? selectedVideoName.value
-                                  : (selectedType.value == 'PDF' &&
-                                          urlCtrl.text.trim().isEmpty
-                                      ? selectedPdfName.value
-                                      : null),
-                            );
-                          }
-                        },
-                        icon: isEdit ? Icons.save_outlined : Icons.add,
+                        onPressed: _submit,
+                        icon:
+                            isEdit ? Icons.save_outlined : Icons.add,
                       ),
                     ],
                   );
@@ -335,19 +527,12 @@ class AddEditLecturePage extends StatelessWidget {
     );
   }
 
-  Widget _buildVideoPicker({
-    required Rxn<String> selectedPath,
-    required RxDouble selectedSize,
-    required Rxn<Uint8List> selectedBytes,
-    required Rxn<String> selectedName,
-    required LectureModel? lecture,
-    required VoidCallback onPick,
-  }) {
+  Widget _buildVideoPicker({required LectureModel? lecture}) {
     final existingFileKept = lecture != null &&
         lecture.isVideo &&
         (lecture.url == null || lecture.url!.isEmpty);
     return Obx(() {
-      final path = selectedPath.value;
+      final path = selectedVideoPath.value;
       if (path == null) {
         return Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -355,7 +540,7 @@ class AddEditLecturePage extends StatelessWidget {
             SizedBox(
               width: double.infinity,
               child: OutlinedButton.icon(
-                onPressed: onPick,
+                onPressed: pickVideo,
                 icon: const Icon(Icons.upload_file),
                 label: const Text('اختر ملف الفيديو'),
                 style: OutlinedButton.styleFrom(
@@ -370,12 +555,14 @@ class AddEditLecturePage extends StatelessWidget {
               existingFileKept
                   ? '✓ الفيديو الحالي محفوظ — يمكنك اختيار ملف جديد للاستبدال'
                   : 'الصيغ المسموحة: mp4، webm، mov، mkv — حتى 2048MB',
-              style: TextStyle(fontSize: 12, color: AppColors.textSecondary),
+              style: TextStyle(
+                  fontSize: 12, color: AppColors.textSecondary),
             ),
           ],
         );
       }
-      final name = selectedName.value ?? path.split(RegExp(r'[/\\]')).last;
+      final name =
+          selectedVideoName.value ?? path.split(RegExp(r'[/\\]')).last;
       return Container(
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
         decoration: BoxDecoration(
@@ -396,10 +583,11 @@ class AddEditLecturePage extends StatelessWidget {
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                     style: TextStyle(
-                        fontWeight: FontWeight.w600, color: AppColors.textPrimary),
+                        fontWeight: FontWeight.w600,
+                        color: AppColors.textPrimary),
                   ),
                   Text(
-                    '${(selectedSize.value / (1024 * 1024)).toStringAsFixed(1)} MB • جاهز للرفع',
+                    '${(selectedVideoSize.value / (1024 * 1024)).toStringAsFixed(1)} MB • جاهز للرفع',
                     style: TextStyle(
                         fontSize: 12, color: AppColors.textSecondary),
                   ),
@@ -407,12 +595,14 @@ class AddEditLecturePage extends StatelessWidget {
               ),
             ),
             IconButton(
-              icon: Icon(Icons.close, color: AppColors.textSecondary),
+              icon:
+                  Icon(Icons.close, color: AppColors.textSecondary),
               onPressed: () {
-                selectedPath.value = null;
-                selectedSize.value = 0;
-                selectedBytes.value = null;
-                selectedName.value = null;
+                selectedVideoPath.value = null;
+                selectedVideoSize.value = 0;
+                selectedVideoBytes.value = null;
+                selectedVideoName.value = null;
+                _scheduleDraftSave();
               },
             ),
           ],
@@ -421,19 +611,12 @@ class AddEditLecturePage extends StatelessWidget {
     });
   }
 
-  Widget _buildPdfPicker({
-    required Rxn<String> selectedPath,
-    required RxDouble selectedSize,
-    required Rxn<Uint8List> selectedBytes,
-    required Rxn<String> selectedName,
-    required LectureModel? lecture,
-    required VoidCallback onPick,
-  }) {
+  Widget _buildPdfPicker({required LectureModel? lecture}) {
     final existingFileKept = lecture != null &&
         lecture.isPdf &&
         (lecture.url == null || lecture.url!.isEmpty);
     return Obx(() {
-      final path = selectedPath.value;
+      final path = selectedPdfPath.value;
       if (path == null) {
         return Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -441,7 +624,7 @@ class AddEditLecturePage extends StatelessWidget {
             SizedBox(
               width: double.infinity,
               child: OutlinedButton.icon(
-                onPressed: onPick,
+                onPressed: pickPdf,
                 icon: const Icon(Icons.upload_file),
                 label: const Text('اختر ملف PDF'),
                 style: OutlinedButton.styleFrom(
@@ -456,12 +639,14 @@ class AddEditLecturePage extends StatelessWidget {
               existingFileKept
                   ? '✓ الملف الحالي محفوظ — يمكنك اختيار ملف جديد للاستبدال'
                   : 'الصيغة المسموحة: pdf — حتى 2048MB',
-              style: TextStyle(fontSize: 12, color: AppColors.textSecondary),
+              style: TextStyle(
+                  fontSize: 12, color: AppColors.textSecondary),
             ),
           ],
         );
       }
-      final name = selectedName.value ?? path.split(RegExp(r'[/\\]')).last;
+      final name =
+          selectedPdfName.value ?? path.split(RegExp(r'[/\\]')).last;
       return Container(
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
         decoration: BoxDecoration(
@@ -482,10 +667,11 @@ class AddEditLecturePage extends StatelessWidget {
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                     style: TextStyle(
-                        fontWeight: FontWeight.w600, color: AppColors.textPrimary),
+                        fontWeight: FontWeight.w600,
+                        color: AppColors.textPrimary),
                   ),
                   Text(
-                    '${(selectedSize.value / (1024 * 1024)).toStringAsFixed(1)} MB • جاهز للرفع',
+                    '${(selectedPdfSize.value / (1024 * 1024)).toStringAsFixed(1)} MB • جاهز للرفع',
                     style: TextStyle(
                         fontSize: 12, color: AppColors.textSecondary),
                   ),
@@ -493,12 +679,14 @@ class AddEditLecturePage extends StatelessWidget {
               ),
             ),
             IconButton(
-              icon: Icon(Icons.close, color: AppColors.textSecondary),
+              icon:
+                  Icon(Icons.close, color: AppColors.textSecondary),
               onPressed: () {
-                selectedPath.value = null;
-                selectedSize.value = 0;
-                selectedBytes.value = null;
-                selectedName.value = null;
+                selectedPdfPath.value = null;
+                selectedPdfSize.value = 0;
+                selectedPdfBytes.value = null;
+                selectedPdfName.value = null;
+                _scheduleDraftSave();
               },
             ),
           ],
@@ -507,16 +695,22 @@ class AddEditLecturePage extends StatelessWidget {
     });
   }
 
-  Widget _buildTypeChip(RxString selected, String value, String label, IconData icon) {
+  Widget _buildTypeChip(
+      RxString selected, String value, String label, IconData icon) {
     final isSelected = selected.value == value;
     return Expanded(
       child: GestureDetector(
-        onTap: () => selected.value = value,
+        onTap: () {
+          selected.value = value;
+          _scheduleDraftSave();
+        },
         child: AnimatedContainer(
           duration: const Duration(milliseconds: 200),
           padding: const EdgeInsets.symmetric(vertical: 12),
           decoration: BoxDecoration(
-            color: isSelected ? AppColors.primary.withValues(alpha: 0.1) : AppColors.courseCard,
+            color: isSelected
+                ? AppColors.primary.withValues(alpha: 0.1)
+                : AppColors.courseCard,
             borderRadius: BorderRadius.circular(10),
             border: Border.all(
               color: isSelected ? AppColors.primary : AppColors.cardBorder,
@@ -525,13 +719,20 @@ class AddEditLecturePage extends StatelessWidget {
           ),
           child: Column(
             children: [
-              Icon(icon, color: isSelected ? AppColors.primary : AppColors.textSecondary, size: 24),
+              Icon(icon,
+                  color: isSelected
+                      ? AppColors.primary
+                      : AppColors.textSecondary,
+                  size: 24),
               const SizedBox(height: 4),
-              Text(label, style: TextStyle(
-                color: isSelected ? AppColors.primary : AppColors.textPrimary,
-                fontWeight: FontWeight.w600,
-                fontSize: 13,
-              )),
+              Text(label,
+                  style: TextStyle(
+                    color: isSelected
+                        ? AppColors.primary
+                        : AppColors.textPrimary,
+                    fontWeight: FontWeight.w600,
+                    fontSize: 13,
+                  )),
             ],
           ),
         ),

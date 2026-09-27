@@ -1,6 +1,7 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../../../data/providers/api_client.dart';
 import '../../../data/providers/api_exception.dart';
 import '../../../data/providers/catalog_provider.dart';
@@ -20,6 +21,17 @@ class TeacherCoursesController extends GetxController {
         _catalogProvider = CatalogProvider(Get.find<ApiClient>());
 
   static const List<int> availableYears = [1, 2, 3, 4, 5];
+
+  /// بادئة مفتاح مسودة استمارة «إضافة محاضرة» (واحدة لكل مقرر)
+  static const String draftKeyPrefix = 'lecture_draft_v1_';
+
+  /// تُستدعى بعد نجاح الإنشاء لتفريغ المسودة المحفوظة لهذا المقرر
+  Future<void> _clearLectureDraft(int courseId) async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.remove('$draftKeyPrefix$courseId');
+    } catch (_) {}
+  }
 
   final isLoading = true.obs;
   final isSaving = false.obs;
@@ -143,7 +155,7 @@ class TeacherCoursesController extends GetxController {
     }
   }
 
-  Future<void> createLecture(int courseId,
+  Future<bool> createLecture(int courseId,
       {required String title, required String type, String? url, String? content, int? sortOrder, String? videoFilePath, Uint8List? fileBytes, String? fileName}) async {
     isSaving.value = true;
     uploadProgress.value = 0;
@@ -175,6 +187,7 @@ class TeacherCoursesController extends GetxController {
               }
             : null,
       );
+      await _clearLectureDraft(courseId);
       Get.back();
       Get.snackbar(
         'نجاح',
@@ -183,6 +196,7 @@ class TeacherCoursesController extends GetxController {
         colorText: Color(0xFFFFFFFF),
       );
       loadCourseDetail(courseId);
+      return true;
     } catch (e) {
       Get.snackbar(
         'خطأ',
@@ -190,6 +204,7 @@ class TeacherCoursesController extends GetxController {
         backgroundColor: Color(0xFFE53935),
         colorText: Color(0xFFFFFFFF),
       );
+      return false;
     } finally {
       isSaving.value = false;
       uploadProgress.value = 0;

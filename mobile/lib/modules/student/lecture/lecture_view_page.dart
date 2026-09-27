@@ -1,10 +1,12 @@
 import 'dart:async';
+import 'dart:convert';
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:get/get.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:video_player/video_player.dart';
 
@@ -21,7 +23,7 @@ import '../../../widgets/gradient_app_bar.dart';
 import '../../../widgets/pdf_viewer_page.dart';
 import 'video_fullscreen_page.dart';
 
-class LectureController extends GetxController {
+class LectureController extends GetxController with WidgetsBindingObserver {
   final currentIndex = 0.obs;
   late List<LectureModel> lectures;
 
@@ -48,6 +50,60 @@ class LectureController extends GetxController {
   int _recoveryCount = 0;
   Duration _seekIntent = Duration.zero;
 
+  // موضع المشاهدة لكل محاضرة — يُحفظ في SharedPreferences ليس عمداً على الإغلاق
+  static const _progressKey = 'lecture_progress_v1';
+  final Map<int, int> _progress = {};
+  bool _progressLoaded = false;
+  DateTime _lastProgressWrite = DateTime.fromMillisecondsSinceEpoch(0);
+
+  Future<void> _ensureProgressLoaded() async {
+    if (_progressLoaded) return;
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final raw = prefs.getString(_progressKey);
+      if (raw != null && raw.isNotEmpty) {
+        final map = jsonDecode(raw) as Map<String, dynamic>;
+        for (final entry in map.entries) {
+          final id = int.tryParse(entry.key);
+          final secs =
+              entry.value is num ? (entry.value as num).toInt() : null;
+          if (id != null && secs != null && secs > 0) _progress[id] = secs;
+        }
+      }
+    } catch (_) {}
+    _progressLoaded = true;
+  }
+
+  Future<void> _persistProgress({bool force = false}) async {
+    if (!_progressLoaded) return;
+    final now = DateTime.now();
+    if (!force &&
+        now.difference(_lastProgressWrite) < const Duration(seconds: 5)) {
+      return;
+    }
+    _lastProgressWrite = now;
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setString(
+        _progressKey,
+        jsonEncode(
+            {for (final e in _progress.entries) e.key.toString(): e.value}),
+      );
+    } catch (_) {}
+  }
+
+  void _noteProgress(int lectureId, Duration pos, Duration dur) {
+    if (dur > Duration.zero && pos >= dur * 0.95) {
+      // اكتمل فعلياً (≥95%) — لا حاجة لاستئنافه لاحقاً
+      _progress.remove(lectureId);
+    } else if (pos > Duration.zero) {
+      _progress[lectureId] = pos.inSeconds;
+    } else {
+      _progress.remove(lectureId);
+    }
+    unawaited(_persistProgress());
+  }
+
   bool get _streamUrlStale =>
       !isOffline.value &&
       _streamUrlFetchedAt != null &&
@@ -60,6 +116,8 @@ class LectureController extends GetxController {
     final args = Get.arguments as Map<String, dynamic>;
     lectures = args['lectures'] as List<LectureModel>;
     currentIndex.value = args['currentIndex'] as int;
+    WidgetsBinding.instance.addObserver(this);
+    unawaited(_ensureProgressLoaded());
     unawaited(ScreenGuard.instance.protect());
     ever<int>(currentIndex, (_) {
       _recoveryCount = 0;
@@ -70,8 +128,31 @@ class LectureController extends GetxController {
 
   @override
   void onClose() {
+    WidgetsBinding.instance.removeObserver(this);
+    try {
+      // لا نلمس المحفوظ إن لم يبدأ تشغيل فعلي (الموضع/المدة = صفر)
+      if (duration.value > Duration.zero) {
+        _noteProgress(currentLecture.id, position.value, duration.value);
+      }
+    } catch (_) {}
+    unawaited(_persistProgress(force: true));
     unawaited(_disposePlayer());
     super.onClose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.paused ||
+        state == AppLifecycleState.inactive ||
+        state == AppLifecycleState.detached) {
+      // التطبيق يُغلق/يُخفى — احفظ الموضع فوراً
+      try {
+        if (duration.value > Duration.zero) {
+          _noteProgress(currentLecture.id, position.value, duration.value);
+        }
+      } catch (_) {}
+      unawaited(_persistProgress(force: true));
+    }
   }
 
   LectureModel get currentLecture => lectures[currentIndex.value];
@@ -159,6 +240,8 @@ class LectureController extends GetxController {
 
   Future<void> _loadPlayer(
       {Duration resumeAt = Duration.zero, bool autoplay = false}) async {
+    // احفظ أي تقدّم سابق (آخر محاضرة) قبل إعادة الضبط
+    await _persistProgress(force: true);
     await _disposePlayer();
     playerError.value = null;
     isOffline.value = false;
@@ -171,6 +254,12 @@ class LectureController extends GetxController {
 
     final lecture = currentLecture;
     if (!lecture.isVideo) return;
+    if (resumeAt <= Duration.zero) {
+      // تحميل جديد — استأنف من آخر موضع محفوظ لهذه المحاضرة
+      await _ensureProgressLoaded();
+      final saved = _progress[lecture.id] ?? 0;
+      if (saved > 0) resumeAt = Duration(seconds: saved);
+    }
 
     isLoadingPlayer.value = true;
     try {
@@ -213,6 +302,8 @@ class LectureController extends GetxController {
 
   Future<void> _initController(VideoPlayerController controller,
       {Duration resumeAt = Duration.zero, bool autoplay = false}) async {
+    // المحاضرة التي يخصها هذا المشغّل — لا تُنسب حركات التقدّم لغيرها
+    final watchedLectureId = currentLecture.id;
     videoController = controller;
     await controller.initialize();
     if (resumeAt > Duration.zero) {
@@ -235,6 +326,7 @@ class LectureController extends GetxController {
         unawaited(_onPlaybackError());
         return;
       }
+      _noteProgress(watchedLectureId, v.position, v.duration);
       _wasPlaying = v.isPlaying;
       if (v.isPlaying) _recoveryCount = 0;
     });

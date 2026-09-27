@@ -71,7 +71,7 @@ class StorageService {
     final prefs = await SharedPreferences.getInstance();
     await prefs.remove(_tokenKey);
     await prefs.remove(_userKey);
-    await prefs.remove(_themeKey);
+    // الثيم (theme_mode_v2) يبقى عمدًا — تفضيل شخصي لا يُلغى بتسجيل الخروج
     try {
       await const FlutterSecureStorage().deleteAll();
     } catch (_) {}

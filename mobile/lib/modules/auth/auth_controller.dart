@@ -1,3 +1,4 @@
+import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../../data/providers/api_client.dart';
@@ -163,7 +164,27 @@ class AuthController extends GetxController {
         Get.offAll(() => const StudentShell());
       }
     } catch (e) {
-      await _storage.clearAll();
+      final status = e is DioException ? e.response?.statusCode : null;
+      if (status == 401 || status == 403) {
+        // التوكن غير صالح فعليًا — الجلسة تنتهي ونطلب تسجيل الدخول
+        await _storage.clearAll();
+        if (Get.currentRoute != AppRoutes.login) {
+          Get.offAllNamed(AppRoutes.login);
+        }
+        return;
+      }
+      // فشل شبكة أو سيرفر مؤقت — نُبقي الجلسة وندخل بالمستخدم المحفوظ محليًا
+      final cached = await _storage.getUser();
+      if (cached != null) {
+        user.value = cached;
+        if (cached.isTeacher) {
+          Get.offAll(() => const TeacherShell());
+        } else {
+          Get.offAll(() => const StudentShell());
+        }
+        return;
+      }
+      _authChecked = false;
       if (Get.currentRoute != AppRoutes.login) {
         Get.offAllNamed(AppRoutes.login);
       }
