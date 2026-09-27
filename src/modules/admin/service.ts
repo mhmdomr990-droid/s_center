@@ -673,6 +673,22 @@ export async function archiveLecture(id: number) {
   return mapLecture(await repository.save(lecture));
 }
 
+export async function deleteLecturePermanently(id: number) {
+  const repository = AppDataSource.getRepository(Lecture);
+  const lecture = await repository.findOne({ where: { id }, relations: { course: { specialization: true, teacher: true }, createdBy: true } });
+  if (!lecture) {
+    throw new AppError(404, 'Lecture not found');
+  }
+
+  const mapped = mapLecture(lecture);
+  const storedFilename = lecture.storageFilename;
+  await repository.remove(lecture);
+  if (storedFilename) {
+    await deleteStoredVideoFile(storedFilename);
+  }
+  return mapped;
+}
+
 export async function setLecturePublished(id: number, isPublished: boolean) {
   return updateLecture(id, { is_published: isPublished });
 }

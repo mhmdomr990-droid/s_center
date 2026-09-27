@@ -7,6 +7,7 @@ import {
   getTeacherMonthlyEarnings,
   archiveTeacherLecture,
   createLectureForTeacher,
+  deleteTeacherLecturePermanently,
   getTeacherStats,
   listCourseLectures,
   listMyCourses,
@@ -66,7 +67,7 @@ export const putTeacherLectureOrder = asyncHandler(async (req: Request, res: Res
 });
 
 export const deleteTeacherLecture = asyncHandler(async (req: Request, res: Response) => {
-  const data = await archiveTeacherLecture(req.user!.id, Number(req.params.id));
+  const data = await deleteTeacherLecturePermanently(req.user!.id, Number(req.params.id));
   res.status(200).json({ success: true, data });
 });
 

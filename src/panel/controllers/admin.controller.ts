@@ -9,6 +9,7 @@ import {
   archiveCourse,
   archiveLecture,
   archiveSpecialization,
+  deleteLecturePermanently,
   bySpecializationStats,
   createCourse,
   createLecture,
@@ -233,8 +234,8 @@ export async function hideLectureAction(req: Request, res: Response) {
 }
 
 export async function deleteLectureAction(req: Request, res: Response) {
-  await archiveLecture(Number(req.params.id));
-  setFlash(res, 'success', 'تم حذف المحاضرة (أصبحت مخفية)');
+  await deleteLecturePermanently(Number(req.params.id));
+  setFlash(res, 'success', 'تم حذف المحاضرة نهائيًا');
   return res.redirect('/panel/admin/lectures');
 }
 

@@ -345,6 +345,18 @@ export async function archiveTeacherLecture(teacherId: number, lectureId: number
   return mapLecture(await repository.save(lecture));
 }
 
+export async function deleteTeacherLecturePermanently(teacherId: number, lectureId: number) {
+  const repository = AppDataSource.getRepository(Lecture);
+  const lecture = await assertOwnedLecture(lectureId, teacherId);
+  const mapped = mapLecture(lecture);
+  const storedFilename = lecture.storageFilename;
+  await repository.remove(lecture);
+  if (storedFilename) {
+    await deleteStoredVideoFile(storedFilename);
+  }
+  return mapped;
+}
+
 export async function setTeacherLecturePublished(teacherId: number, lectureId: number, isPublished: boolean) {
   const repository = AppDataSource.getRepository(Lecture);
   const lecture = await assertOwnedLecture(lectureId, teacherId);

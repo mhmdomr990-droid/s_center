@@ -2,7 +2,7 @@ import type { Request, Response } from 'express';
 
 import { AppError } from '../../utils/AppError';
 import type { StoredVideoFile } from '../../services/media';
-import { archiveTeacherLecture, createLectureForTeacher, getTeacherStats, listCourseLectures, listMyCourses, listTeacherPayouts, updateTeacherLecture } from '../../modules/teacher/service';
+import { archiveTeacherLecture, createLectureForTeacher, deleteTeacherLecturePermanently, getTeacherStats, listCourseLectures, listMyCourses, listTeacherPayouts, updateTeacherLecture } from '../../modules/teacher/service';
 import { setFlash } from '../middlewares/flash';
 
 async function loadTeacherCommon(teacherId: number) {
@@ -68,8 +68,8 @@ export async function hideLectureAction(req: Request, res: Response) {
 }
 
 export async function deleteLectureAction(req: Request, res: Response) {
-  await archiveTeacherLecture(req.user!.id, Number(req.params.id));
-  setFlash(res, 'success', 'تم حذف المحاضرة (أصبحت مخفية)');
+  await deleteTeacherLecturePermanently(req.user!.id, Number(req.params.id));
+  setFlash(res, 'success', 'تم حذف المحاضرة نهائيًا');
   const courseId = Number(req.query.courseId ?? req.body.course_id);
   if (Number.isFinite(courseId) && courseId > 0) {
     return res.redirect(`/panel/teacher/lectures?courseId=${courseId}`);

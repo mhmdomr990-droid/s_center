@@ -14,6 +14,7 @@ import {
   archiveCourse,
   archiveLecture,
   archiveSpecialization,
+  deleteLecturePermanently,
   bySpecializationStats,
   createCourse,
   createLecture,
@@ -156,7 +157,7 @@ export const putAdminLectureOrder = asyncHandler(async (req: Request, res: Respo
 });
 
 export const deleteAdminLecture = asyncHandler(async (req: Request, res: Response) => {
-  const data = await archiveLecture(Number(req.params.id));
+  const data = await deleteLecturePermanently(Number(req.params.id));
   res.status(200).json({ success: true, data });
 });
 
