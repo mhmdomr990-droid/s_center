@@ -50,13 +50,13 @@ class TopupPage extends StatelessWidget {
                 const SizedBox(height: 16),
                 Text('طريقة الدفع', style: AppTextStyles.titleMedium),
                 const SizedBox(height: 8),
-                Row(
+                Obx(() => Row(
                   children: [
                     Expanded(child: _buildMethodChip(ctrl, 'SHAM_CASH', 'Sham Cash', Icons.account_balance_wallet_rounded)),
                     const SizedBox(width: 12),
                     Expanded(child: _buildMethodChip(ctrl, 'TRANSFER_OFFICE', 'تحويل مكتب', Icons.store_rounded)),
                   ],
-                ),
+                )),
                 const SizedBox(height: 16),
                 CustomTextField(
                   labelText: 'رقم المرجع',
