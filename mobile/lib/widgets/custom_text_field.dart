@@ -12,6 +12,7 @@ class CustomTextField extends StatelessWidget {
   final TextInputType? keyboardType;
   final int maxLines;
   final bool enabled;
+  final ValueChanged<String>? onChanged;
 
   const CustomTextField({
     super.key,
@@ -24,6 +25,7 @@ class CustomTextField extends StatelessWidget {
     this.keyboardType,
     this.maxLines = 1,
     this.enabled = true,
+    this.onChanged,
   });
 
   @override
@@ -35,6 +37,7 @@ class CustomTextField extends StatelessWidget {
       keyboardType: keyboardType,
       maxLines: maxLines,
       enabled: enabled,
+      onChanged: onChanged,
       style: GoogleFonts.cairo(fontSize: 15, color: AppColors.textPrimary),
       decoration: InputDecoration(
         labelText: labelText,

@@ -10,6 +10,7 @@ import '../../data/services/device_service.dart';
 import '../../data/models/user_model.dart';
 import '../../app/routes/app_routes.dart';
 import '../home_shell.dart';
+import '../admin/admin_shell.dart';
 
 class AuthController extends GetxController {
   final ApiClient _apiClient = Get.find<ApiClient>();
@@ -134,13 +135,12 @@ class AuthController extends GetxController {
       final token = data['token'] as String;
       final userData = UserModel.fromJson(data['user']);
 
-      final wantTeacher = loginRole.value == 'TEACHER';
-      if (wantTeacher != userData.isTeacher) {
+      const roleLabels = {'STUDENT': 'طالب', 'TEACHER': 'معلم', 'ADMIN': 'إداري'};
+      if (loginRole.value != userData.role) {
+        final accountRole = roleLabels[userData.role] ?? userData.role;
         Get.snackbar(
           'خطأ',
-          wantTeacher
-              ? 'هذا حساب طالب — اختر تبويب الطالب'
-              : 'هذا حساب معلم — اختر تبويب المعلم',
+          'هذا حساب $accountRole — اختر تبويب $accountRole',
           backgroundColor: Colors.red,
           colorText: Colors.white,
         );
@@ -151,7 +151,9 @@ class AuthController extends GetxController {
       await _storage.saveUser(userData);
       user.value = userData;
 
-      if (userData.isTeacher) {
+      if (userData.isAdmin) {
+        Get.offAll(() => const AdminShell());
+      } else if (userData.isTeacher) {
         Get.offAll(() => const TeacherShell());
       } else {
         Get.offAll(() => const StudentShell());
@@ -251,7 +253,9 @@ class AuthController extends GetxController {
       user.value = userData;
       await _storage.saveUser(userData);
 
-      if (userData.isTeacher) {
+      if (userData.isAdmin) {
+        Get.offAll(() => const AdminShell());
+      } else if (userData.isTeacher) {
         Get.offAll(() => const TeacherShell());
       } else {
         Get.offAll(() => const StudentShell());
@@ -270,7 +274,9 @@ class AuthController extends GetxController {
       final cached = await _storage.getUser();
       if (cached != null) {
         user.value = cached;
-        if (cached.isTeacher) {
+        if (cached.isAdmin) {
+          Get.offAll(() => const AdminShell());
+        } else if (cached.isTeacher) {
           Get.offAll(() => const TeacherShell());
         } else {
           Get.offAll(() => const StudentShell());

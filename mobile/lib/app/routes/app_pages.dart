@@ -25,6 +25,10 @@ import '../../modules/teacher/courses/teacher_courses_controller.dart';
 import '../../modules/teacher/lectures/add_edit_lecture_page.dart';
 import '../../modules/teacher/earnings/earnings_page.dart';
 import '../../modules/teacher/earnings/earnings_controller.dart';
+import '../../modules/admin/users/user_detail_page.dart';
+import '../../modules/admin/users/user_detail_controller.dart';
+import '../../modules/admin/teachers/teacher_detail_page.dart';
+import '../../modules/admin/teachers/teacher_detail_controller.dart';
 
 class AppPages {
   static final pages = _rawPages
@@ -73,6 +77,12 @@ class AppPages {
     })),
     GetPage(name: AppRoutes.earnings, page: () => const EarningsPage(), binding: BindingsBuilder(() {
       Get.lazyPut(() => EarningsController());
+    })),
+    GetPage(name: AppRoutes.adminUserDetail, page: () => const UserDetailPage(), binding: BindingsBuilder(() {
+      Get.lazyPut(() => UserDetailController());
+    })),
+    GetPage(name: AppRoutes.adminTeacherDetail, page: () => const TeacherDetailPage(), binding: BindingsBuilder(() {
+      Get.lazyPut(() => TeacherDetailController());
     })),
   ];
 }

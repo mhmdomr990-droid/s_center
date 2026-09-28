@@ -31,4 +31,5 @@ class UserModel {
 
   bool get isStudent => role == 'STUDENT';
   bool get isTeacher => role == 'TEACHER';
+  bool get isAdmin => role == 'ADMIN';
 }

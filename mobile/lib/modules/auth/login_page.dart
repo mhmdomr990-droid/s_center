@@ -34,22 +34,30 @@ class LoginPage extends StatelessWidget {
               ),
               const SizedBox(height: 20),
               Obx(() => Text(
-                    ctrl.loginRole.value == 'TEACHER' ? 'دخول المعلمين' : 'مرحباً بعودتك',
+                    ctrl.loginRole.value == 'TEACHER'
+                        ? 'دخول المعلمين'
+                        : ctrl.loginRole.value == 'ADMIN'
+                            ? 'دخول الإدارة'
+                            : 'مرحباً بعودتك',
                     style: AppTextStyles.headlineLarge,
                   )),
               const SizedBox(height: 8),
               Obx(() => Text(
                     ctrl.loginRole.value == 'TEACHER'
                         ? 'سجّل دخولك لإدارة دوراتك ومحاضراتك'
-                        : 'سجّل دخولك للوصول لدوراتك',
+                        : ctrl.loginRole.value == 'ADMIN'
+                            ? 'سجّل دخولك لإدارة الطلبات والمستخدمين'
+                            : 'سجّل دخولك للوصول لدوراتك',
                     style: AppTextStyles.bodyMedium.copyWith(color: AppColors.textSecondary),
                   )),
               const SizedBox(height: 24),
               Obx(() => Row(
                     children: [
                       _buildRoleTab(ctrl, 'STUDENT', 'طالب', Icons.school_outlined),
-                      const SizedBox(width: 12),
+                      const SizedBox(width: 10),
                       _buildRoleTab(ctrl, 'TEACHER', 'معلم', Icons.menu_book_outlined),
+                      const SizedBox(width: 10),
+                      _buildRoleTab(ctrl, 'ADMIN', 'إدارة', Icons.admin_panel_settings_outlined),
                     ],
                   )),
               const SizedBox(height: 24),
@@ -110,14 +118,18 @@ class LoginPage extends StatelessWidget {
               ),
               const SizedBox(height: 32),
               Obx(() => CustomButton(
-                    text: ctrl.loginRole.value == 'TEACHER' ? 'دخول المعلم' : 'تسجيل الدخول',
+                    text: ctrl.loginRole.value == 'TEACHER'
+                        ? 'دخول المعلم'
+                        : ctrl.loginRole.value == 'ADMIN'
+                            ? 'دخول الإدارة'
+                            : 'تسجيل الدخول',
                     isLoading: ctrl.isLoading.value,
                     onPressed: ctrl.login,
                     icon: Icons.login,
                   )),
               const SizedBox(height: 20),
               Obx(() {
-                if (ctrl.loginRole.value == 'TEACHER') return const SizedBox.shrink();
+                if (ctrl.loginRole.value != 'STUDENT') return const SizedBox.shrink();
                 return Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
