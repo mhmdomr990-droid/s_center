@@ -48,7 +48,9 @@ String apiErrorMessage(Object error, {String fallback = 'حدث خطأ، حاو�
       error.type == DioExceptionType.receiveTimeout ||
       error.type == DioExceptionType.connectionError ||
       error.type == DioExceptionType.unknown) {
-    return 'تعذر الاتصال بالخادم، تحقق من الشبكة';
+    final origin = error.requestOptions.uri.origin;
+    final where = origin.isEmpty ? '' : '\nالعنوان: $origin';
+    return 'تعذر الاتصال بالخادم، تحقق من الشبكة$where';
   }
 
   if (status != null && status >= 500) {
