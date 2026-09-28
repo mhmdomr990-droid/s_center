@@ -30,33 +30,39 @@ class AuthController extends GetxController {
   final loginPasswordCtrl = TextEditingController();
 
   // حقل عنوان الخادم في شاشتي الدخول والتسجيل — مصدر العنوان الوحيد
-  final ipCtrl = TextEditingController(text: _hostFromBaseUrl(ApiClient.baseUrl));
+  // يعرض العنوان المحفوظ كما هو حرفياً
+  final ipCtrl = TextEditingController(text: ApiClient.baseUrl);
 
-  // استخراج host:port من العنوان الحالي لعرضه في الحقل
-  static String _hostFromBaseUrl(String base) {
-    final uri = Uri.tryParse(base);
-    if (uri == null || uri.host.isEmpty) return base;
-    return uri.hasPort ? '${uri.host}:${uri.port}' : uri.host;
-  }
+  static final RegExp _ipv4 = RegExp(r'^\d{1,3}(\.\d{1,3}){3}$');
 
-  // تطبيع ما يكتبه المستخدم إلى عنوان API كامل: http://host[:3000]/api
-  // مثال: "192.168.2.121" ⇐ "http://192.168.2.121:3000/api"
+  // تطبيع ما يكتبه المستخدم — بالحد الأدنى ولا شيء غير ذلك:
+  // 1) يضيف http:// إن لم تكتب الصيغة
+  // 2) يضيف :3000 لـ IP/localhost فقط إن لم يكتب منفذاً (النطاقات لا تُمس)
+  // 3) يضيف /api إن لم ينتهِ بها
+  // وكل ما كتبه المستخدم يبقى كما هو (العملية لا دائرية عند إعادة الإرسال)
   static String? _normalizeBase(String input) {
     var v = input.trim();
     if (v.isEmpty) return null;
-    if (!v.startsWith('http://') && !v.startsWith('https://')) {
+    if (RegExp(r'\s').hasMatch(v)) return null; // نص حر بمسافات — ليس عنواناً
+    final lower = v.toLowerCase();
+    if (!lower.startsWith('http://') && !lower.startsWith('https://')) {
       v = 'http://$v';
     }
-    if (v.endsWith('/')) v = v.substring(0, v.length - 1);
-    if (!v.endsWith('/api')) v = '$v/api';
     var uri = Uri.tryParse(v);
     if (uri == null || uri.host.isEmpty) return null;
     if (uri.scheme != 'http' && uri.scheme != 'https') return null;
-    if (!uri.hasPort) {
+    // منفذ 3000 فقط لـ IP أو localhost حين لا يذكر المستخدم منفذاً
+    if (!uri.hasPort && (uri.host == 'localhost' || _ipv4.hasMatch(uri.host))) {
       uri = uri.replace(port: 3000);
-      v = uri.toString();
     }
-    return v;
+    if (!uri.path.endsWith('/api')) {
+      var p = uri.path;
+      while (p.endsWith('/')) {
+        p = p.substring(0, p.length - 1);
+      }
+      uri = uri.replace(path: '$p/api');
+    }
+    return uri.toString();
   }
 
   // تطبيق عنوان الخادم المختار — مصدره حقل ipCtrl دائماً.
@@ -64,14 +70,14 @@ class AuthController extends GetxController {
   Future<bool> _applyServerHost() async {
     final host = ipCtrl.text.trim();
     if (host.isEmpty) {
-      Get.snackbar('خطأ', 'أدخل عنوان الخادم (مثال: 192.168.1.10:3000)',
+      Get.snackbar('خطأ', 'أدخل عنوان الخادم — مثال: 10.42.0.1:3000 أو https://example.com',
           backgroundColor: Colors.red, colorText: Colors.white);
       return false;
     }
     final base = _normalizeBase(host);
     if (base == null) {
       Get.snackbar(
-          'خطأ', 'عنوان غير صالح — مثال: 192.168.1.10 أو 192.168.1.10:3000',
+          'خطأ', 'عنوان غير صالح — مثال: 192.168.1.10:3000 أو https://example.com',
           backgroundColor: Colors.red, colorText: Colors.white);
       return false;
     }
@@ -80,8 +86,6 @@ class AuthController extends GetxController {
       await prefs.setString(ApiClient.overrideKey, base);
     } catch (_) {}
     _apiClient.applyBaseUrl(base);
-    // إعادة تعبئة الحقل بالصيغة المطبَّعة
-    ipCtrl.text = _hostFromBaseUrl(base);
     return true;
   }
   final registerUsernameCtrl = TextEditingController();

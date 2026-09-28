@@ -88,7 +88,7 @@ class RegisterPage extends StatelessWidget {
                         )),
                         const SizedBox(height: 16),
                         CustomTextField(
-                          labelText: 'عنوان الخادم (IP)',
+                          labelText: 'عنوان الخادم',
                           prefixIcon: Icons.dns_outlined,
                           controller: ctrl.ipCtrl,
                           keyboardType: TextInputType.url,
