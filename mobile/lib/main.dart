@@ -55,8 +55,8 @@ void main() async {
   final storageService = StorageService();
   final deviceService = DeviceService();
 
-  // TODO(ip-field): مؤقت — تحميل عنوان الخادم المحفوظ قبل بناء العميل،
-  // حتى يعمل من أول لحظة (الدخول التلقائي من الـ splash). يُحذف لاحقاً
+  // تحميل العنوان الذي أدخله المستخدم مسبقاً (شاشة الدخول) قبل بناء العميل،
+  // حتى يعمل من أول لحظة (الدخول التلقائي من الـ splash)
   try {
     final prefs = await SharedPreferences.getInstance();
     final savedBase = prefs.getString(ApiClient.overrideKey);

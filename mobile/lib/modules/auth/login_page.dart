@@ -77,11 +77,9 @@ class LoginPage extends StatelessWidget {
                         onPressed: () => ctrl.obscurePassword.toggle(),
                       ),
                     )),
-                    // TODO(ip-field): مؤقت — حقل اختيار عنوان الخادم.
-                    // يُحذف لاحقاً ويُترك العنوان ثابتاً في الكود
                     const SizedBox(height: 16),
                     CustomTextField(
-                      labelText: 'عنوان الخادم (IP) — مؤقت',
+                      labelText: 'عنوان الخادم (IP)',
                       prefixIcon: Icons.dns_outlined,
                       controller: ctrl.ipCtrl,
                       keyboardType: TextInputType.url,

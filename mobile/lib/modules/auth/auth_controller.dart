@@ -27,7 +27,7 @@ class AuthController extends GetxController {
   final loginUsernameCtrl = TextEditingController();
   final loginPasswordCtrl = TextEditingController();
 
-  // TODO(ip-field): مؤقت — حقل عنوان الخادم في شاشة الدخول. يُحذف لاحقاً
+  // حقل عنوان الخادم في شاشتي الدخول والتسجيل — مصدر العنوان الوحيد
   final ipCtrl = TextEditingController(text: _hostFromBaseUrl(ApiClient.baseUrl));
 
   // استخراج host:port من العنوان الحالي لعرضه في الحقل
@@ -57,29 +57,25 @@ class AuthController extends GetxController {
     return v;
   }
 
-  // TODO(ip-field): مؤقت — تطبيق عنوان الخادم المختار. يُحذف لاحقاً
-  // يرجع false عند إدخال عنوان غير صالح (لا يستمر الدخول)
+  // تطبيق عنوان الخادم المختار — مصدره حقل ipCtrl دائماً.
+  // يرجع false عند حقل فارغ أو عنوان غير صالح (لا يستمر الدخول/التسجيل)
   Future<bool> _applyServerHost() async {
     final host = ipCtrl.text.trim();
-    String? base;
     if (host.isEmpty) {
-      base = ApiClient.defaultBaseUrl;
-    } else {
-      base = _normalizeBase(host);
-      if (base == null) {
-        Get.snackbar(
-            'خطأ', 'عنوان غير صالح — مثال: 192.168.2.121 أو 192.168.2.121:3000',
-            backgroundColor: Colors.red, colorText: Colors.white);
-        return false;
-      }
+      Get.snackbar('خطأ', 'أدخل عنوان الخادم (مثال: 192.168.1.10:3000)',
+          backgroundColor: Colors.red, colorText: Colors.white);
+      return false;
+    }
+    final base = _normalizeBase(host);
+    if (base == null) {
+      Get.snackbar(
+          'خطأ', 'عنوان غير صالح — مثال: 192.168.1.10 أو 192.168.1.10:3000',
+          backgroundColor: Colors.red, colorText: Colors.white);
+      return false;
     }
     try {
       final prefs = await SharedPreferences.getInstance();
-      if (host.isEmpty) {
-        await prefs.remove(ApiClient.overrideKey);
-      } else {
-        await prefs.setString(ApiClient.overrideKey, base);
-      }
+      await prefs.setString(ApiClient.overrideKey, base);
     } catch (_) {}
     _apiClient.applyBaseUrl(base);
     // إعادة تعبئة الحقل بالصيغة المطبَّعة
@@ -101,7 +97,7 @@ class AuthController extends GetxController {
   void onClose() {
     loginUsernameCtrl.dispose();
     loginPasswordCtrl.dispose();
-    ipCtrl.dispose(); // TODO(ip-field): مؤقت — يُحذف مع الحقل لاحقاً
+    ipCtrl.dispose();
     registerUsernameCtrl.dispose();
     registerFullNameCtrl.dispose();
     registerPasswordCtrl.dispose();
@@ -110,7 +106,7 @@ class AuthController extends GetxController {
   }
 
   Future<void> login() async {
-    // TODO(ip-field): مؤقت — تطبيق عنوان الخادم قبل أي طلب. يُحذف لاحقاً
+    // تطبيق عنوان الخادم قبل أي طلب — حقل فارغ يمنع الدخول
     if (!await _applyServerHost()) return;
 
     if (loginUsernameCtrl.text.isEmpty || loginPasswordCtrl.text.isEmpty) {
@@ -161,6 +157,9 @@ class AuthController extends GetxController {
   }
 
   Future<void> register() async {
+    // تطبيق عنوان الخادم (حقل شاشة التسجيل) قبل أي طلب
+    if (!await _applyServerHost()) return;
+
     if (registerUsernameCtrl.text.isEmpty ||
         registerFullNameCtrl.text.isEmpty ||
         registerPasswordCtrl.text.isEmpty) {
@@ -211,6 +210,14 @@ class AuthController extends GetxController {
 
     final hasToken = await _storage.hasToken();
     if (!hasToken) {
+      if (Get.currentRoute != AppRoutes.login) {
+        Get.offAllNamed(AppRoutes.login);
+      }
+      return;
+    }
+
+    // لا عنوان خادم بعد (تثبيت جديد أو مسح البيانات) — نذهب للشاشة لإدخاله
+    if (ApiClient.baseUrl.isEmpty) {
       if (Get.currentRoute != AppRoutes.login) {
         Get.offAllNamed(AppRoutes.login);
       }
