@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../../../data/providers/admin_provider.dart';
 import '../../../data/providers/api_client.dart';
+import 'courses_controller.dart';
 
 class SpecializationsController extends GetxController {
   final AdminProvider _provider;
@@ -49,6 +50,7 @@ class SpecializationsController extends GetxController {
       await _provider.createSpecialization(name: name);
       Get.snackbar('تم', 'تمت إضافة التخصص', backgroundColor: Colors.green, colorText: Colors.white);
       await load();
+      _refreshCoursesMeta();
     } catch (_) {
       Get.snackbar('خطأ', 'فشل إضافة التخصص', backgroundColor: Colors.red, colorText: Colors.white);
     } finally {
@@ -68,6 +70,7 @@ class SpecializationsController extends GetxController {
       await _provider.updateSpecialization(item['id'] as int, name: name);
       Get.snackbar('تم', 'تم تعديل التخصص', backgroundColor: Colors.green, colorText: Colors.white);
       await load();
+      _refreshCoursesMeta();
     } catch (_) {
       Get.snackbar('خطأ', 'فشل تعديل التخصص', backgroundColor: Colors.red, colorText: Colors.white);
     } finally {
@@ -81,6 +84,7 @@ class SpecializationsController extends GetxController {
       await _provider.setSpecializationPublished(
           item['id'] as int, isPublished: !(item['is_published'] ?? true));
       await load();
+      _refreshCoursesMeta();
     } catch (_) {
       Get.snackbar('خطأ', 'فشل تغيير حالة النشر', backgroundColor: Colors.red, colorText: Colors.white);
     } finally {
@@ -110,11 +114,18 @@ class SpecializationsController extends GetxController {
       await _provider.deleteSpecialization(item['id'] as int);
       Get.snackbar('تم', 'تم حذف التخصص', backgroundColor: Colors.green, colorText: Colors.white);
       await load();
+      _refreshCoursesMeta();
     } catch (_) {
       Get.snackbar('خطأ', 'لا يمكن حذف التخصص (قد يكون مرتبطاً بدورات)',
           backgroundColor: Colors.red, colorText: Colors.white);
     } finally {
       busy.value = false;
+    }
+  }
+
+  void _refreshCoursesMeta() {
+    if (Get.isRegistered<CoursesController>()) {
+      Get.find<CoursesController>().loadMeta();
     }
   }
 

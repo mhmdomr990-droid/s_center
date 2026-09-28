@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../../../data/providers/admin_provider.dart';
 import '../../../data/providers/api_client.dart';
+import 'lectures_controller.dart';
 
 class CoursesController extends GetxController {
   final AdminProvider _provider;
@@ -43,8 +44,14 @@ class CoursesController extends GetxController {
   Future<void> loadMeta() async {
     try {
       final specResponse = await _provider.specializations();
-      specializations.assignAll(List<Map<String, dynamic>>.from(
-          (specResponse.data['data'] as List).map((e) => Map<String, dynamic>.from(e))));
+      final specs = List<Map<String, dynamic>>.from(
+          (specResponse.data['data'] as List).map((e) => Map<String, dynamic>.from(e)));
+      specializations.assignAll(specs);
+      final selected = selectedSpecId.value;
+      if (selected != null && !specs.any((s) => s['id'] == selected)) {
+        selectedSpecId.value = null;
+        load();
+      }
     } catch (_) {}
     try {
       final teacherResponse = await _provider.teachers();
@@ -107,12 +114,19 @@ class CoursesController extends GetxController {
     }
   }
 
+  void _refreshLecturesCourses() {
+    if (Get.isRegistered<LecturesController>()) {
+      Get.find<LecturesController>().loadCourses();
+    }
+  }
+
   Future<void> createCourse(Map<String, dynamic> body) async {
     busy.value = true;
     try {
       await _provider.createCourse(body);
       Get.snackbar('تم', 'تم إنشاء الدورة', backgroundColor: Colors.green, colorText: Colors.white);
       await load();
+      _refreshLecturesCourses();
     } catch (_) {
       Get.snackbar('خطأ', 'فشل إنشاء الدورة — تحقق من البيانات',
           backgroundColor: Colors.red, colorText: Colors.white);
@@ -127,6 +141,7 @@ class CoursesController extends GetxController {
       await _provider.updateCourse(id, body);
       Get.snackbar('تم', 'تم تحديث الدورة', backgroundColor: Colors.green, colorText: Colors.white);
       await load();
+      _refreshLecturesCourses();
     } catch (_) {
       Get.snackbar('خطأ', 'فشل تحديث الدورة', backgroundColor: Colors.red, colorText: Colors.white);
     } finally {
@@ -169,6 +184,7 @@ class CoursesController extends GetxController {
       await _provider.deleteCourse(item['id'] as int);
       Get.snackbar('تم', 'تم حذف الدورة', backgroundColor: Colors.green, colorText: Colors.white);
       await load();
+      _refreshLecturesCourses();
     } catch (_) {
       Get.snackbar('خطأ', 'فشل حذف الدورة', backgroundColor: Colors.red, colorText: Colors.white);
     } finally {
