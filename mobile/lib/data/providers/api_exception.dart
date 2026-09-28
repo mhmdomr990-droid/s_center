@@ -50,7 +50,12 @@ String apiErrorMessage(Object error, {String fallback = 'حدث خطأ، حاو�
       error.type == DioExceptionType.unknown) {
     final origin = error.requestOptions.uri.origin;
     final where = origin.isEmpty ? '' : '\nالعنوان: $origin';
-    return 'تعذر الاتصال بالخادم، تحقق من الشبكة$where';
+    var cause = error.error?.toString() ?? '';
+    if (cause.length > 160) cause = cause.substring(0, 160);
+    final why = cause.isEmpty ? '' : '\nالسبب: $cause';
+    final hint = _netHint(cause);
+    final hintLine = hint.isEmpty ? '' : '\n$hint';
+    return 'تعذر الاتصال بالخادم، تحقق من الشبكة$where$why\nالنوع: ${error.type.name}$hintLine';
   }
 
   if (status != null && status >= 500) {
@@ -58,4 +63,40 @@ String apiErrorMessage(Object error, {String fallback = 'حدث خطأ، حاو�
   }
 
   return fallback;
+}
+
+// تفسير عربي مباشر لسبب فشل الشبكة من نظام التشغيل
+String _netHint(String cause) {
+  final errno = RegExp(r'errno = (\d+)').firstMatch(cause)?.group(1);
+  switch (errno) {
+    case '13':
+      return 'الفحص: التطبيق لا يملك إذن الوصول للإنترنت — ثبّت APK جديدة';
+    case '1':
+      return 'الفحص: النظام منع الوصول (EPERM)';
+    case '101':
+      return 'الفحص: الجهاز خارج الشبكة (ENETUNREACH)';
+    case '113':
+      return 'الفحص: لا يمكن الوصول لعنوان الخادم (EHOSTUNREACH)';
+    case '111':
+      return 'الفحص: منفذ الخادم مغلق أو عنوان خاطئ (Connection refused)';
+    case '110':
+      return 'الفحص: انتهت المهلة — حجب أو شبكة غير متصلة (timeout)';
+    case '104':
+      return 'الفحص: انقطع الاتصال أثناء الاستجابة (ECONNRESET)';
+    case '102':
+      return 'الفحص: الاتصال أُلغي من الشبكة (ECONNABORTED)';
+  }
+  if (cause.contains('Connection refused')) {
+    return 'الفحص: منفذ الخادم مغلق أو عنوان خاطئ (Connection refused)';
+  }
+  if (cause.contains('Failed host lookup') || cause.contains('Name or service')) {
+    return 'الفحص: فشل تحويل العنوان (DNS) — تأكد من كتابة IP بأرقام إنجليزية';
+  }
+  if (cause.contains('timeout') || cause.contains('Timeout')) {
+    return 'الفحص: انتهت المهلة — ربما حجب من الجهاز أو الشبكة';
+  }
+  if (cause.contains('Cleartext')) {
+    return 'الفحص: النظام يمنع HTTP غير المشفر — ثبّت APK هذه';
+  }
+  return '';
 }

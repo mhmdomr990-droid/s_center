@@ -84,6 +84,27 @@ class LoginPage extends StatelessWidget {
                       controller: ctrl.ipCtrl,
                       keyboardType: TextInputType.url,
                     ),
+                    // شريط دائم لآخر خطأ — يبقى حتى إعادة المحاولة/إعادة التشغيل
+                    Obx(() {
+                      if (ctrl.lastError.value.isEmpty) {
+                        return const SizedBox.shrink();
+                      }
+                      return Container(
+                        width: double.infinity,
+                        margin: const EdgeInsets.only(top: 16),
+                        padding: const EdgeInsets.all(12),
+                        decoration: BoxDecoration(
+                          color: Colors.red.withValues(alpha: 0.08),
+                          borderRadius: BorderRadius.circular(10),
+                          border: Border.all(color: Colors.red.withValues(alpha: 0.4)),
+                        ),
+                        child: Text(
+                          ctrl.lastError.value,
+                          style: const TextStyle(
+                              fontSize: 13, color: Colors.red, height: 1.5),
+                        ),
+                      );
+                    }),
                   ],
                 ),
               ),

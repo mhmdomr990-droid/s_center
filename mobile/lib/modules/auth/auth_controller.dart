@@ -22,6 +22,8 @@ class AuthController extends GetxController {
   final obscureConfirmPassword = true.obs;
   final loginRole = 'STUDENT'.obs;
   final user = Rxn<UserModel>();
+  // آخر رسالة خطأ دخول — تبقى معروضة في الشاشة حتى بعد اختفاء النافذة
+  final lastError = ''.obs;
   bool _authChecked = false;
 
   final loginUsernameCtrl = TextEditingController();
@@ -115,6 +117,7 @@ class AuthController extends GetxController {
     }
 
     isLoading.value = true;
+    lastError.value = '';
     try {
       final deviceId = await _deviceService.getDeviceId();
       final response = await _authProvider.login(
@@ -150,7 +153,21 @@ class AuthController extends GetxController {
         Get.offAll(() => const StudentShell());
       }
     } catch (e) {
-      Get.snackbar('خطأ', apiErrorMessage(e), backgroundColor: Colors.red, colorText: Colors.white);
+      final msg = apiErrorMessage(e);
+      lastError.value = msg;
+      Get.dialog<void>(
+        AlertDialog(
+          title: const Text('تفاصيل فشل الاتصال'),
+          content: SelectableText(msg, style: const TextStyle(height: 1.5)),
+          actions: [
+            TextButton(
+              onPressed: () => Get.back(),
+              child: const Text('حسناً'),
+            ),
+          ],
+        ),
+        barrierDismissible: true,
+      );
     } finally {
       isLoading.value = false;
     }
