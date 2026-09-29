@@ -20,12 +20,20 @@ class DownloadRecord {
   final String file;
   final DateTime downloadedAt;
   final DateTime expiresAt;
+  final String? title;
+  final String? courseName;
+  final String? lectureType;
+  final int? sizeBytes;
 
   DownloadRecord({
     required this.lectureId,
     required this.file,
     required this.downloadedAt,
     required this.expiresAt,
+    this.title,
+    this.courseName,
+    this.lectureType,
+    this.sizeBytes,
   });
 
   factory DownloadRecord.fromJson(Map<String, dynamic> json) {
@@ -34,6 +42,10 @@ class DownloadRecord {
       file: json['file'] as String,
       downloadedAt: DateTime.parse(json['downloaded_at'] as String),
       expiresAt: DateTime.parse(json['expires_at'] as String),
+      title: json['title'] as String?,
+      courseName: json['course_name'] as String?,
+      lectureType: json['lecture_type'] as String?,
+      sizeBytes: (json['size_bytes'] as num?)?.toInt(),
     );
   }
 
@@ -43,6 +55,10 @@ class DownloadRecord {
       'file': file,
       'downloaded_at': downloadedAt.toIso8601String(),
       'expires_at': expiresAt.toIso8601String(),
+      'title': title,
+      'course_name': courseName,
+      'lecture_type': lectureType,
+      'size_bytes': sizeBytes,
     };
   }
 
@@ -209,7 +225,8 @@ class DownloadManager extends GetxController {
     return key;
   }
 
-  Future<void> downloadLecture(int lectureId) async {
+  Future<void> downloadLecture(int lectureId,
+      {String? title, String? courseName, String? type}) async {
     if (!_offlineSupported) {
       throw UnsupportedError('التحميل متاح على تطبيق أندرويد فقط');
     }
@@ -248,11 +265,21 @@ class DownloadManager extends GetxController {
       if (await rawFile.exists()) await rawFile.delete();
 
       final now = DateTime.now();
+      int? sizeBytes;
+      try {
+        sizeBytes = await encFile.length();
+      } catch (_) {
+        sizeBytes = null;
+      }
       final rec = DownloadRecord(
         lectureId: lectureId,
         file: '$lectureId.enc',
         downloadedAt: now,
         expiresAt: now.add(Duration(days: ttlDays)),
+        title: title,
+        courseName: courseName,
+        lectureType: type,
+        sizeBytes: sizeBytes,
       );
       records[lectureId] = rec;
       await _save();

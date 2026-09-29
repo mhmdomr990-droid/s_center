@@ -7,11 +7,17 @@ import '../data/services/download_manager.dart';
 class DownloadLectureButton extends StatefulWidget {
   final int lectureId;
   final bool enabled;
+  final String? title;
+  final String? courseName;
+  final String? type;
 
   const DownloadLectureButton({
     super.key,
     required this.lectureId,
     this.enabled = true,
+    this.title,
+    this.courseName,
+    this.type,
   });
 
   @override
@@ -53,7 +59,8 @@ class _DownloadLectureButtonState extends State<DownloadLectureButton> {
 
     setState(() => _busy = true);
     try {
-      await _dm.downloadLecture(widget.lectureId);
+      await _dm.downloadLecture(widget.lectureId,
+          title: widget.title, courseName: widget.courseName, type: widget.type);
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(

@@ -564,7 +564,11 @@ class LectureViewPage extends StatelessWidget {
                         const SizedBox(height: 6),
                         Row(
                           children: [
-                            DownloadLectureButton(lectureId: lecture.id),
+                            DownloadLectureButton(
+                                lectureId: lecture.id,
+                                title: lecture.title,
+                                courseName: lecture.courseName,
+                                type: lecture.type),
                             const SizedBox(width: 4),
                             Text('تحميل بدون إنترنت (مشفّر)',
                                 style: TextStyle(

@@ -10,6 +10,7 @@ import '../../../widgets/gradient_app_bar.dart';
 import '../../../widgets/download_lecture_button.dart';
 import '../../../widgets/lecture_tile.dart';
 import '../../../widgets/loading_shimmer.dart';
+import '../../../widgets/offline_banner.dart';
 import '../../../widgets/section_header.dart';
 import '../../../utils/format.dart';
 import '../../../data/models/course_model.dart';
@@ -135,6 +136,8 @@ class CourseDetailPage extends StatelessWidget {
             return ListView(
               padding: const EdgeInsets.all(16),
               children: [
+                if (ctrl.detailOffline.value)
+                  const OfflineBanner(margin: EdgeInsets.zero),
                 Container(
                   width: double.infinity,
                   padding: const EdgeInsets.all(20),
@@ -312,6 +315,9 @@ class CourseDetailPage extends StatelessWidget {
                           ? DownloadLectureButton(
                               lectureId: lecture.id,
                               enabled: canDownload,
+                              title: lecture.title,
+                              courseName: course.name,
+                              type: lecture.type,
                             )
                           : null,
                       onTap: () => Get.toNamed(AppRoutes.lectureView, arguments: {

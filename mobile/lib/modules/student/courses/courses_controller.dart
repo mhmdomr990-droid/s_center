@@ -9,6 +9,7 @@ import '../../../data/providers/purchase_provider.dart';
 import '../../../data/models/specialization_model.dart';
 import '../../../data/models/course_model.dart';
 import '../../../data/models/lecture_model.dart';
+import '../../../data/services/offline_cache.dart';
 import '../notifications/notifications_controller.dart';
 
 class CoursesController extends GetxController {
@@ -32,6 +33,8 @@ class CoursesController extends GetxController {
   final selectedYear = Rxn<int>();
   final currentCourse = Rxn<CourseModel>();
   final purchasedIds = <int>{}.obs;
+  final offlineFallback = false.obs;
+  final detailOffline = false.obs;
 
   Map<int, String> _specNames = {};
 
@@ -87,9 +90,27 @@ class CoursesController extends GetxController {
       }
 
       courses.value = _parseCourses(results[1].data['data']);
+      if (specData is List && results[1].data['data'] is List) {
+        unawaited(OfflineCache.saveCatalog(
+            specData, results[1].data['data'] as List));
+      }
+      offlineFallback.value = false;
     } catch (e) {
-      Get.snackbar('خطأ', apiErrorMessage(e, fallback: 'فشل تحميل الكتالوج'),
-          backgroundColor: Color(0xFFE53935), colorText: Color(0xFFFFFFFF));
+      final cached = await OfflineCache.loadCatalog();
+      if (cached != null && cached['specializations'] is List && cached['courses'] is List) {
+        specializations.value = (cached['specializations'] as List)
+            .map<SpecializationModel>(
+                (e) => SpecializationModel.fromJson(Map<String, dynamic>.from(e as Map)))
+            .toList();
+        _specNames = {for (final s in specializations) s.id: s.name};
+        courses.value = _parseCourses(cached['courses']);
+        offlineFallback.value = true;
+        Get.snackbar('غير متصل', 'عُرضت آخر بيانات محفوظة',
+            backgroundColor: const Color(0xFFFFA000), colorText: Color(0xFFFFFFFF));
+      } else {
+        Get.snackbar('خطأ', apiErrorMessage(e, fallback: 'فشل تحميل الكتالوج'),
+            backgroundColor: Color(0xFFE53935), colorText: Color(0xFFFFFFFF));
+      }
     } finally {
       isLoading.value = false;
     }
@@ -103,9 +124,24 @@ class CoursesController extends GetxController {
         year: selectedYear.value,
       );
       courses.value = _parseCourses(response.data['data']);
+      offlineFallback.value = false;
     } catch (e) {
-      Get.snackbar('خطأ', apiErrorMessage(e, fallback: 'فشل تطبيق الفلتر'),
-          backgroundColor: Color(0xFFE53935), colorText: Color(0xFFFFFFFF));
+      final cached = await OfflineCache.loadCatalog();
+      if (cached != null && cached['courses'] is List) {
+        courses.value = _parseCourses(cached['courses']).where((c) {
+          final okSpec = selectedSpecializationId.value == null ||
+              c.specializationId == selectedSpecializationId.value;
+          final okYear =
+              selectedYear.value == null || c.year == selectedYear.value;
+          return okSpec && okYear;
+        }).toList();
+        offlineFallback.value = true;
+        Get.snackbar('غير متصل', 'عُرضت نتائج محفوظة من آخر اتصال',
+            backgroundColor: const Color(0xFFFFA000), colorText: Color(0xFFFFFFFF));
+      } else {
+        Get.snackbar('خطأ', apiErrorMessage(e, fallback: 'فشل تطبيق الفلتر'),
+            backgroundColor: Color(0xFFE53935), colorText: Color(0xFFFFFFFF));
+      }
     } finally {
       isLoading.value = false;
     }
@@ -123,6 +159,22 @@ class CoursesController extends GetxController {
     applyFilters();
   }
 
+  Map<String, dynamic> _courseJson(CourseModel c) => {
+        'id': c.id,
+        'specialization_id': c.specializationId,
+        'specialization_name': c.specializationName,
+        'teacher_id': c.teacherId,
+        'teacher_full_name': c.teacherName,
+        'teacher_percent': c.teacherPercent,
+        'year': c.year,
+        'name': c.name,
+        'description': c.description,
+        'price': c.price,
+        'is_published': c.isPublished,
+        'sort_order': c.sortOrder,
+        'purchased': c.isPurchased,
+      };
+
   Future<void> loadCourseDetail(int courseId, {CourseModel? course}) async {
     if (course != null) {
       currentCourse.value = course;
@@ -138,11 +190,32 @@ class CoursesController extends GetxController {
       final lectureData = response.data['data'];
       if (lectureData is List) {
         lectures.value = lectureData.map<LectureModel>((e) => LectureModel.fromJson(e)).toList();
+        final c = currentCourse.value;
+        if (c != null && c.id == courseId) {
+          unawaited(OfflineCache.saveCourseDetail(
+              courseId, _courseJson(c), lectureData));
+        }
       }
+      detailOffline.value = false;
     } catch (e) {
-      detailError.value = apiErrorMessage(e, fallback: 'فشل تحميل المحاضرات');
-      Get.snackbar('خطأ', detailError.value!,
-          backgroundColor: Color(0xFFE53935), colorText: Color(0xFFFFFFFF));
+      final cached = await OfflineCache.loadCourseDetail(courseId);
+      if (cached != null && cached['lectures'] is List) {
+        if (currentCourse.value?.id != courseId && cached['course'] is Map) {
+          currentCourse.value = CourseModel.fromJson(
+              Map<String, dynamic>.from(cached['course'] as Map));
+        }
+        lectures.value = (cached['lectures'] as List)
+            .map<LectureModel>(
+                (e) => LectureModel.fromJson(Map<String, dynamic>.from(e as Map)))
+            .toList();
+        detailOffline.value = true;
+        Get.snackbar('غير متصل', 'عُرضت آخر بيانات محفوظة لهذه الدورة',
+            backgroundColor: const Color(0xFFFFA000), colorText: Color(0xFFFFFFFF));
+      } else {
+        detailError.value = apiErrorMessage(e, fallback: 'فشل تحميل المحاضرات');
+        Get.snackbar('خطأ', detailError.value!,
+            backgroundColor: Color(0xFFE53935), colorText: Color(0xFFFFFFFF));
+      }
     } finally {
       isLoadingDetail.value = false;
     }

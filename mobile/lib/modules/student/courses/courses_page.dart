@@ -6,6 +6,7 @@ import '../../../widgets/course_card.dart';
 import '../../../widgets/gradient_app_bar.dart';
 import '../../../widgets/loading_shimmer.dart';
 import '../../../widgets/empty_state.dart';
+import '../../../widgets/offline_banner.dart';
 import 'courses_controller.dart';
 
 class CoursesPage extends StatelessWidget {
@@ -29,6 +30,7 @@ class CoursesPage extends StatelessWidget {
               color: AppColors.primary,
               child: Column(
                 children: [
+                  if (ctrl.offlineFallback.value) const OfflineBanner(),
                   Container(
                     color: AppColors.sectionStrip,
                     padding: const EdgeInsets.symmetric(vertical: 10),
