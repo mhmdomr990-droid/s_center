@@ -43,7 +43,7 @@ class _AddEditLecturePageState extends State<AddEditLecturePage> {
   final selectedPdfBytes = Rxn<Uint8List>();
   final selectedPdfName = Rxn<String>();
 
-  bool compressVideo = true;
+  bool compressVideo = false;
 
   static const allowedVideoExts = ['mp4', 'webm', 'mov', 'mkv'];
   static const maxVideoBytes = 2048 * 1024 * 1024;
@@ -470,7 +470,15 @@ class _AddEditLecturePageState extends State<AddEditLecturePage> {
                 return Obx(() {
                   final compressing = ctrl.compressing.value;
                   final compressProgress = ctrl.compressProgress.value;
+                  final compressEta = ctrl.compressEta.value;
                   final uploading = ctrl.uploadProgress.value;
+                  final willSendFile = selectedType.value == 'VIDEO'
+                      ? (selectedVideoPath.value != null ||
+                          selectedVideoBytes.value != null)
+                      : (selectedType.value == 'PDF' &&
+                          urlCtrl.text.trim().isEmpty &&
+                          (selectedPdfPath.value != null ||
+                              selectedPdfBytes.value != null));
                   return Column(
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
@@ -488,7 +496,7 @@ class _AddEditLecturePageState extends State<AddEditLecturePage> {
                         const SizedBox(height: 8),
                         Text(
                           compressProgress > 0
-                              ? 'جاري ضغط الفيديو... ${(compressProgress * 100).toStringAsFixed(0)}%'
+                              ? 'جاري ضغط الفيديو... ${(compressProgress * 100).toStringAsFixed(0)}%${compressEta > 0 ? ' — متبقٍ ${compressEta >= 60 ? '${(compressEta / 60).round()} د' : '$compressEta ث'}' : ''}'
                               : 'جاري ضغط الفيديو...',
                           textAlign: TextAlign.center,
                           style: TextStyle(
@@ -496,18 +504,21 @@ class _AddEditLecturePageState extends State<AddEditLecturePage> {
                               color: AppColors.textSecondary),
                         ),
                         const SizedBox(height: 16),
-                      ] else if (uploading > 0) ...[
+                      ] else if (uploading > 0 ||
+                          (ctrl.isSaving.value && willSendFile)) ...[
                         ClipRRect(
                           borderRadius: BorderRadius.circular(8),
                           child: LinearProgressIndicator(
-                            value: uploading,
+                            value: uploading > 0 ? uploading : null,
                             minHeight: 8,
                             backgroundColor: AppColors.courseCard,
                           ),
                         ),
                         const SizedBox(height: 8),
                         Text(
-                          'جاري الرفع... ${(uploading * 100).toStringAsFixed(0)}%',
+                          uploading > 0
+                              ? 'جاري الرفع... ${(uploading * 100).toStringAsFixed(0)}%'
+                              : 'جاري الرفع...',
                           textAlign: TextAlign.center,
                           style: TextStyle(
                               fontSize: 13,
@@ -631,7 +642,7 @@ class _AddEditLecturePageState extends State<AddEditLecturePage> {
                 color: AppColors.textPrimary),
           ),
           subtitle: Text(
-            'أسرع رفع — لا يُضغط إلا عند الحاجة',
+            'يقلل حجم الفيديو قبل الرفع (بلا حد أدنى للحجم)',
             style: TextStyle(fontSize: 12, color: AppColors.textSecondary),
           ),
           value: compressVideo,

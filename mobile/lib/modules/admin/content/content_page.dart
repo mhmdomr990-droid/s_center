@@ -680,7 +680,7 @@ class _LecturesView extends StatelessWidget {
     Uint8List? pdfBytes;
     String? pdfName;
     double pdfSize = 0;
-    var compressVideo = true;
+    var compressVideo = false;
 
     final existingUrlEmpty = ((lecture?['url'] ?? '').toString().isEmpty);
     // ملف مخزّن داخل الخادم (لا رابط) — يبقى صالحاً عند الحفظ دون رفع جديد
@@ -978,7 +978,7 @@ class _LecturesView extends StatelessWidget {
                               color: AppColors.textPrimary),
                         ),
                         subtitle: Text(
-                          'أسرع رفع — لا يُضغط إلا عند الحاجة',
+                          'يقلل حجم الفيديو قبل الرفع (بلا حد أدنى للحجم)',
                           style: hintStyle,
                         ),
                         value: compressVideo,
@@ -1048,8 +1048,17 @@ class _LecturesView extends StatelessWidget {
                     Obx(() {
                       final compressing = ctrl.compressing.value;
                       final cp = ctrl.compressProgress.value;
+                      final eta = ctrl.compressEta.value;
                       final up = ctrl.uploadProgress.value;
-                      if (!compressing && up <= 0) return const SizedBox();
+                      final busy = ctrl.busy.value;
+                      final willSendFile = selectedType == 'VIDEO'
+                          ? (videoPath != null || videoBytes != null)
+                          : (selectedType == 'PDF' &&
+                              urlCtrl.text.trim().isEmpty &&
+                              (pdfPath != null || pdfBytes != null));
+                      if (!compressing && up <= 0 && !(busy && willSendFile)) {
+                        return const SizedBox();
+                      }
                       return Padding(
                         padding: const EdgeInsets.only(top: 12),
                         child: Column(
@@ -1059,7 +1068,7 @@ class _LecturesView extends StatelessWidget {
                               child: LinearProgressIndicator(
                                 value: compressing
                                     ? (cp > 0 ? cp : null)
-                                    : up,
+                                    : (up > 0 ? up : null),
                                 minHeight: 8,
                                 backgroundColor: AppColors.courseCard,
                               ),
@@ -1068,9 +1077,11 @@ class _LecturesView extends StatelessWidget {
                             Text(
                               compressing
                                   ? (cp > 0
-                                      ? 'جاري ضغط الفيديو... ${(cp * 100).toStringAsFixed(0)}%'
+                                      ? 'جاري ضغط الفيديو... ${(cp * 100).toStringAsFixed(0)}%${eta > 0 ? ' — متبقٍ ${eta >= 60 ? '${(eta / 60).round()} د' : '$eta ث'}' : ''}'
                                       : 'جاري ضغط الفيديو...')
-                                  : 'جاري الرفع... ${(up * 100).toStringAsFixed(0)}%',
+                                  : (up > 0
+                                      ? 'جاري الرفع... ${(up * 100).toStringAsFixed(0)}%'
+                                      : 'جاري الرفع...'),
                               textAlign: TextAlign.center,
                               style: TextStyle(
                                   fontSize: 12.5,

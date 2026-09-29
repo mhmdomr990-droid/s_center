@@ -13,6 +13,7 @@ class LecturesController extends GetxController {
   final uploadProgress = 0.0.obs;
   final compressing = false.obs;
   final compressProgress = 0.0.obs;
+  final compressEta = 0.obs;
   final items = <Map<String, dynamic>>[].obs;
   final courses = <Map<String, dynamic>>[].obs;
   final selectedCourseId = RxnInt();
@@ -71,15 +72,24 @@ class LecturesController extends GetxController {
     uploadProgress.value = 0;
     compressing.value = false;
     compressProgress.value = 0;
+    compressEta.value = 0;
     var uploadPath = videoFilePath;
+    String? compressSummary;
     try {
       if (compress && videoFilePath != null && type == 'VIDEO' && !kIsWeb) {
         compressing.value = true;
-        uploadPath = await VideoCompressor.compressForUpload(
-              videoFilePath,
-              onProgress: (p) => compressProgress.value = p,
-            ) ??
-            videoFilePath;
+        final outcome = await VideoCompressor.compressForUpload(
+          videoFilePath,
+          onProgress: (p) => compressProgress.value = p,
+          onEta: (s) => compressEta.value = s,
+        );
+        compressing.value = false;
+        compressProgress.value = 0;
+    compressEta.value = 0;
+        uploadPath = outcome.path ?? videoFilePath;
+        compressSummary = outcome.summary;
+        debugPrint(
+            'compress: ${outcome.reason} ${outcome.sourceSize} -> ${outcome.outputSize ?? '-'} ${outcome.error ?? ''}');
       }
       await _provider.createLecture(
         courseId: courseId,
@@ -99,7 +109,9 @@ class LecturesController extends GetxController {
       );
       Get.snackbar(
         'تم',
-        videoFilePath != null ? 'تم رفع الملف بنجاح ✓' : 'تم إنشاء المحاضرة',
+        videoFilePath != null
+            ? 'تم رفع الملف بنجاح ✓${compressSummary == null ? '' : '\n$compressSummary'}'
+            : 'تم إنشاء المحاضرة',
         backgroundColor: Colors.green,
         colorText: Colors.white,
       );
@@ -119,6 +131,7 @@ class LecturesController extends GetxController {
       uploadProgress.value = 0;
       compressing.value = false;
       compressProgress.value = 0;
+    compressEta.value = 0;
       if (videoFilePath != null) await VideoCompressor.deleteCache();
     }
   }
@@ -139,15 +152,24 @@ class LecturesController extends GetxController {
     uploadProgress.value = 0;
     compressing.value = false;
     compressProgress.value = 0;
+    compressEta.value = 0;
     var uploadPath = videoFilePath;
+    String? compressSummary;
     try {
       if (compress && videoFilePath != null && type == 'VIDEO' && !kIsWeb) {
         compressing.value = true;
-        uploadPath = await VideoCompressor.compressForUpload(
-              videoFilePath,
-              onProgress: (p) => compressProgress.value = p,
-            ) ??
-            videoFilePath;
+        final outcome = await VideoCompressor.compressForUpload(
+          videoFilePath,
+          onProgress: (p) => compressProgress.value = p,
+          onEta: (s) => compressEta.value = s,
+        );
+        compressing.value = false;
+        compressProgress.value = 0;
+    compressEta.value = 0;
+        uploadPath = outcome.path ?? videoFilePath;
+        compressSummary = outcome.summary;
+        debugPrint(
+            'compress: ${outcome.reason} ${outcome.sourceSize} -> ${outcome.outputSize ?? '-'} ${outcome.error ?? ''}');
       }
       await _provider.updateLecture(
         id,
@@ -167,7 +189,9 @@ class LecturesController extends GetxController {
       );
       Get.snackbar(
         'تم',
-        videoFilePath != null ? 'تم رفع الملف بنجاح ✓' : 'تم تحديث المحاضرة',
+        videoFilePath != null
+            ? 'تم رفع الملف بنجاح ✓${compressSummary == null ? '' : '\n$compressSummary'}'
+            : 'تم تحديث المحاضرة',
         backgroundColor: Colors.green,
         colorText: Colors.white,
       );
@@ -187,6 +211,7 @@ class LecturesController extends GetxController {
       uploadProgress.value = 0;
       compressing.value = false;
       compressProgress.value = 0;
+    compressEta.value = 0;
       if (videoFilePath != null) await VideoCompressor.deleteCache();
     }
   }
