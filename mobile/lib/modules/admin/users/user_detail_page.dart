@@ -372,6 +372,10 @@ class UserDetailPage extends StatelessWidget {
   }
 
   Widget _teacherCourseRow(Map<String, dynamic> c) {
+    final buyers = ((c['purchases_count'] ?? 0) as num).toInt();
+    final percent = double.tryParse('${c['teacher_percent'] ?? 0}') ?? 0;
+    final percentLabel =
+        percent == percent.roundToDouble() ? percent.toInt() : percent;
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
       padding: const EdgeInsets.all(12),
@@ -380,18 +384,31 @@ class UserDetailPage extends StatelessWidget {
         borderRadius: BorderRadius.circular(10),
         border: Border.all(color: AppColors.cardBorder),
       ),
-      child: Row(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Icon(Icons.play_lesson_outlined, color: AppColors.primary, size: 22),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Text(c['name'] ?? '',
-                style: AppTextStyles.bodyMedium.copyWith(fontSize: 14),
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis),
+          Row(
+            children: [
+              const Icon(Icons.play_lesson_outlined, color: AppColors.primary, size: 22),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Text(c['name'] ?? '',
+                    style: AppTextStyles.bodyMedium.copyWith(fontSize: 14),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis),
+              ),
+              Text(formatAmount(c['price']),
+                  style: AppTextStyles.bodyMedium.copyWith(fontWeight: FontWeight.w700)),
+            ],
           ),
-          Text(formatAmount(c['price']),
-              style: AppTextStyles.bodyMedium.copyWith(fontWeight: FontWeight.w700)),
+          if (c['teacher_id'] != null) ...[
+            const SizedBox(height: 4),
+            Padding(
+              padding: const EdgeInsets.only(left: 34),
+              child: Text('$buyers مشتري — حصة المعلم $percentLabel%',
+                  style: AppTextStyles.caption.copyWith(color: AppColors.textSecondary)),
+            ),
+          ],
         ],
       ),
     );
