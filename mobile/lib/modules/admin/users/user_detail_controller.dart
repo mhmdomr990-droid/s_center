@@ -9,7 +9,9 @@ class UserDetailController extends GetxController {
   final user = Rxn<Map<String, dynamic>>();
   final transactions = <Map<String, dynamic>>[].obs;
   final purchases = <Map<String, dynamic>>[].obs;
-  final tab = 0.obs; // 0 = حركات، 1 = مشتريات
+  final teacherPayouts = <Map<String, dynamic>>[].obs;
+  final teacherCourses = <Map<String, dynamic>>[].obs;
+  final tab = 0.obs; // طالب: 0 = حركات، 1 = مشتريات | معلم: 0 = دفعات، 1 = دورات
   final busy = false.obs;
 
   late final int userId;
@@ -40,7 +42,12 @@ class UserDetailController extends GetxController {
     try {
       final response = await _provider.userById(userId);
       user.value = Map<String, dynamic>.from(response.data['data']);
-      await Future.wait([_loadTransactions(), _loadPurchases()]);
+      final role = (user.value?['role'] ?? 'STUDENT').toString();
+      if (role == 'TEACHER') {
+        await _loadTeacherData();
+      } else {
+        await Future.wait([_loadTransactions(), _loadPurchases()]);
+      }
     } catch (_) {
       Get.snackbar('خطأ', 'تعذّر تحميل بيانات المستخدم',
           backgroundColor: Colors.red, colorText: Colors.white);
@@ -62,6 +69,17 @@ class UserDetailController extends GetxController {
       final response = await _provider.userPurchases(userId);
       purchases.assignAll(List<Map<String, dynamic>>.from(
           (response.data['data'] as List).map((e) => Map<String, dynamic>.from(e))));
+    } catch (_) {}
+  }
+
+  Future<void> _loadTeacherData() async {
+    try {
+      final response = await _provider.teacherById(userId);
+      final data = Map<String, dynamic>.from(response.data['data']);
+      teacherPayouts.assignAll(List<Map<String, dynamic>>.from(
+          ((data['payouts'] ?? []) as List).map((e) => Map<String, dynamic>.from(e))));
+      teacherCourses.assignAll(List<Map<String, dynamic>>.from(
+          ((data['courses'] ?? []) as List).map((e) => Map<String, dynamic>.from(e))));
     } catch (_) {}
   }
 

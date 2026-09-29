@@ -37,7 +37,7 @@ class _ContentPageState extends State<ContentPage> {
               children: [
                 _segmentButton(0, 'التخصصات'),
                 const SizedBox(width: 8),
-                _segmentButton(1, 'الكورسات'),
+                _segmentButton(1, 'الدورات'),
                 const SizedBox(width: 8),
                 _segmentButton(2, 'المحاضرات'),
               ],

@@ -27,6 +27,7 @@ class UserDetailPage extends StatelessWidget {
             final u = ctrl.user.value!;
             final isActive = u['is_active'] ?? true;
             final role = (u['role'] ?? 'STUDENT') as String;
+            final isTeacher = role == 'TEACHER';
             final roleLabel = switch (role) {
               'ADMIN' => 'إداري',
               'TEACHER' => 'معلم',
@@ -129,15 +130,47 @@ class UserDetailPage extends StatelessWidget {
                   Padding(
                     padding: const EdgeInsets.symmetric(horizontal: 16),
                     child: Row(
-                      children: [
-                        _tabChip(ctrl, 0, 'الحركات'),
-                        const SizedBox(width: 8),
-                        _tabChip(ctrl, 1, 'المشتريات'),
-                      ],
+                      children: isTeacher
+                          ? [
+                              _tabChip(ctrl, 0, 'سجل الدفعات'),
+                              const SizedBox(width: 8),
+                              _tabChip(ctrl, 1, 'سجل الدورات'),
+                            ]
+                          : [
+                              _tabChip(ctrl, 0, 'الحركات'),
+                              const SizedBox(width: 8),
+                              _tabChip(ctrl, 1, 'المشتريات'),
+                            ],
                     ),
                   ),
                   const SizedBox(height: 12),
-                  if (ctrl.tab.value == 0) ...[
+                  if (isTeacher) ...[
+                    if (ctrl.tab.value == 0) ...[
+                      if (ctrl.teacherPayouts.isEmpty)
+                        const Padding(
+                          padding: EdgeInsets.all(24),
+                          child: EmptyState(
+                            icon: Icons.payments_outlined,
+                            title: 'لا توجد دفعات',
+                            subtitle: 'ستظهر الدفعات المسجلة هنا',
+                          ),
+                        )
+                      else
+                        ...ctrl.teacherPayouts.map((p) => _payoutRow(p)),
+                    ] else ...[
+                      if (ctrl.teacherCourses.isEmpty)
+                        const Padding(
+                          padding: EdgeInsets.all(24),
+                          child: EmptyState(
+                            icon: Icons.menu_book_outlined,
+                            title: 'لا توجد دورات',
+                            subtitle: 'لم يُسند أي دورة لهذا المعلم',
+                          ),
+                        )
+                      else
+                        ...ctrl.teacherCourses.map((c) => _teacherCourseRow(c)),
+                    ],
+                  ] else if (ctrl.tab.value == 0) ...[
                     if (ctrl.transactions.isEmpty)
                       const Padding(
                         padding: EdgeInsets.all(24),
@@ -213,6 +246,22 @@ class UserDetailPage extends StatelessWidget {
     );
   }
 
+  static const _purchasedPrefix = 'Purchased course:';
+  static const _topupPrefix = 'Top-up request approved:';
+
+  String _txLabel(Map<String, dynamic> tx) {
+    final type = (tx['type'] ?? '').toString();
+    final raw = (tx['description'] ?? '').toString().trim();
+    if (raw.startsWith(_purchasedPrefix)) {
+      return 'شراء دورة: ${raw.substring(_purchasedPrefix.length).trim()}';
+    }
+    if (raw.startsWith(_topupPrefix)) {
+      return 'تمت الموافقة على شحن الرصيد — مرجع: ${raw.substring(_topupPrefix.length).trim()}';
+    }
+    if (raw.isNotEmpty) return raw;
+    return type == 'TOPUP' ? 'شحن رصيد' : 'شراء دورة';
+  }
+
   Widget _txRow(Map<String, dynamic> tx) {
     final isTopup = (tx['type'] ?? '') == 'TOPUP';
     final date = DateTime.tryParse(tx['created_at']?.toString() ?? '');
@@ -233,7 +282,7 @@ class UserDetailPage extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(tx['description'] ?? (isTopup ? 'شحن رصيد' : 'شراء دورة'),
+                Text(_txLabel(tx),
                     style: AppTextStyles.bodyMedium.copyWith(fontSize: 14)),
                 if (date != null) ...[
                   const SizedBox(height: 2),
@@ -278,7 +327,71 @@ class UserDetailPage extends StatelessWidget {
               ],
             ),
           ),
-          Text(formatAmount(p['amount']), style: AppTextStyles.bodyMedium.copyWith(fontWeight: FontWeight.w700)),
+          Text(formatAmount(p['price_paid'] ?? p['amount']),
+              style: AppTextStyles.bodyMedium.copyWith(fontWeight: FontWeight.w700)),
+        ],
+      ),
+    );
+  }
+
+  Widget _payoutRow(Map<String, dynamic> p) {
+    final date = DateTime.tryParse(p['created_at']?.toString() ?? '');
+    return Container(
+      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: AppColors.courseCard,
+        borderRadius: BorderRadius.circular(10),
+        border: Border.all(color: AppColors.cardBorder),
+      ),
+      child: Row(
+        children: [
+          const Icon(Icons.attach_money_rounded, color: AppColors.success, size: 22),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                if (p['note'] != null && '${p['note']}'.isNotEmpty)
+                  Text('${p['note']}',
+                      style: AppTextStyles.bodyMedium.copyWith(fontSize: 14))
+                else
+                  Text('دفعة للمعلم', style: AppTextStyles.bodyMedium.copyWith(fontSize: 14)),
+                if (date != null) ...[
+                  const SizedBox(height: 2),
+                  Text(formatArabicDate(date), style: AppTextStyles.caption),
+                ],
+              ],
+            ),
+          ),
+          Text(formatAmount(p['amount']),
+              style: AppTextStyles.bodyMedium.copyWith(fontWeight: FontWeight.w700)),
+        ],
+      ),
+    );
+  }
+
+  Widget _teacherCourseRow(Map<String, dynamic> c) {
+    return Container(
+      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: AppColors.courseCard,
+        borderRadius: BorderRadius.circular(10),
+        border: Border.all(color: AppColors.cardBorder),
+      ),
+      child: Row(
+        children: [
+          const Icon(Icons.play_lesson_outlined, color: AppColors.primary, size: 22),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Text(c['name'] ?? '',
+                style: AppTextStyles.bodyMedium.copyWith(fontSize: 14),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis),
+          ),
+          Text(formatAmount(c['price']),
+              style: AppTextStyles.bodyMedium.copyWith(fontWeight: FontWeight.w700)),
         ],
       ),
     );
