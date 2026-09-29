@@ -5,6 +5,7 @@ import '../../../app/theme/app_colors.dart';
 import '../../../app/theme/app_shadows.dart';
 import '../../../app/theme/app_text_styles.dart';
 import '../../../app/routes/app_routes.dart';
+import '../../../data/services/download_manager.dart';
 import '../../../widgets/balance_card.dart';
 import '../../../widgets/course_card.dart';
 import '../../../widgets/gradient_app_bar.dart';
@@ -39,6 +40,45 @@ class HomePage extends StatelessWidget {
                   style: GoogleFonts.cairo(fontWeight: FontWeight.w600, fontSize: 17),
                 )),
             actions: [
+              Obx(() {
+                final count = Get.find<DownloadManager>().records.length;
+                return Stack(
+                  clipBehavior: Clip.none,
+                  children: [
+                    IconButton(
+                      icon: const Icon(Icons.download_rounded,
+                          color: Colors.white, size: 25),
+                      tooltip: 'تنزيلاتي',
+                      onPressed: () => Get.toNamed(AppRoutes.downloads),
+                    ),
+                    if (count > 0)
+                      Positioned(
+                        top: 6,
+                        left: 6,
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 5, vertical: 1),
+                          constraints: const BoxConstraints(
+                              minWidth: 16, minHeight: 16),
+                          decoration: BoxDecoration(
+                            color: AppColors.primary,
+                            borderRadius: BorderRadius.circular(10),
+                            border:
+                                Border.all(color: Colors.white, width: 1.5),
+                          ),
+                          child: Text(
+                            count > 99 ? '99+' : '$count',
+                            style: const TextStyle(
+                                color: Colors.white,
+                                fontSize: 9,
+                                fontWeight: FontWeight.bold),
+                            textAlign: TextAlign.center,
+                          ),
+                        ),
+                      ),
+                  ],
+                );
+              }),
               Obx(() {
                 int count = 0;
                 if (Get.isRegistered<NotificationsController>()) {

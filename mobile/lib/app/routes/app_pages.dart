@@ -17,6 +17,7 @@ import '../../modules/student/wallet/topup_page.dart';
 import '../../modules/student/wallet/topup_controller.dart';
 import '../../modules/student/notifications/notifications_page.dart';
 import '../../modules/student/notifications/notifications_controller.dart';
+import '../../modules/student/downloads/downloads_page.dart';
 import '../../modules/teacher/dashboard/teacher_home_page.dart';
 import '../../modules/teacher/dashboard/teacher_home_controller.dart';
 import '../../modules/teacher/courses/teacher_courses_page.dart';
@@ -63,6 +64,7 @@ class AppPages {
     GetPage(name: AppRoutes.notifications, page: () => const NotificationsPage(), binding: BindingsBuilder(() {
       Get.lazyPut(() => NotificationsController());
     })),
+    GetPage(name: AppRoutes.downloads, page: () => const DownloadsPage()),
     GetPage(name: AppRoutes.teacherHome, page: () => const TeacherHomePage(), binding: BindingsBuilder(() {
       Get.lazyPut(() => TeacherHomeController());
     })),

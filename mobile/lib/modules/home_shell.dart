@@ -4,7 +4,6 @@ import '../app/theme/app_colors.dart';
 import '../app/theme/theme_controller.dart';
 import '../modules/student/home/home_page.dart';
 import '../modules/student/courses/courses_page.dart';
-import '../modules/student/downloads/downloads_page.dart';
 import '../modules/student/notifications/notifications_page.dart';
 import '../modules/student/notifications/notifications_controller.dart';
 import '../modules/student/profile/profile_page.dart';
@@ -28,7 +27,6 @@ class StudentShell extends StatelessWidget {
         CoursesPage(),
         NotificationsPage(),
         WalletPage(),
-        DownloadsPage(),
         ProfilePage(),
       ];
       return Scaffold(
@@ -64,8 +62,7 @@ class StudentShell extends StatelessWidget {
                     },
                   ),
                   _buildNavItem(currentIndex, 3, Icons.account_balance_wallet_rounded, 'المحفظة'),
-                  _buildNavItem(currentIndex, 4, Icons.download_rounded, 'تنزيلاتي'),
-                  _buildNavItem(currentIndex, 5, Icons.person_rounded, 'حسابي'),
+                  _buildNavItem(currentIndex, 4, Icons.person_rounded, 'حسابي'),
                 ],
               ),
             ),

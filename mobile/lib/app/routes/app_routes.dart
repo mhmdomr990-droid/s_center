@@ -10,6 +10,7 @@ abstract class AppRoutes {
   static const String wallet = '/wallet';
   static const String topup = '/wallet/topup';
   static const String notifications = '/notifications';
+  static const String downloads = '/downloads';
 
   static const String teacherHome = '/teacher/home';
   static const String teacherCourses = '/teacher/courses';
