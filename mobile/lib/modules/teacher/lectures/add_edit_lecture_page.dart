@@ -43,6 +43,8 @@ class _AddEditLecturePageState extends State<AddEditLecturePage> {
   final selectedPdfBytes = Rxn<Uint8List>();
   final selectedPdfName = Rxn<String>();
 
+  bool compressVideo = true;
+
   static const allowedVideoExts = ['mp4', 'webm', 'mov', 'mkv'];
   static const maxVideoBytes = 2048 * 1024 * 1024;
   static const maxPdfBytes = 2048 * 1024 * 1024;
@@ -329,6 +331,7 @@ class _AddEditLecturePageState extends State<AddEditLecturePage> {
               ? (contentCtrl.text.isNotEmpty ? contentCtrl.text.trim() : null)
               : null,
           sortOrder: sortOrder,
+          compress: compressVideo,
           videoFilePath: selectedType.value == 'VIDEO'
               ? selectedVideoPath.value
               : (selectedType.value == 'PDF' &&
@@ -357,6 +360,7 @@ class _AddEditLecturePageState extends State<AddEditLecturePage> {
           content:
               contentCtrl.text.isNotEmpty ? contentCtrl.text.trim() : null,
           sortOrder: sortOrder,
+          compress: compressVideo,
           videoFilePath: selectedType.value == 'VIDEO'
               ? selectedVideoPath.value
               : (selectedType.value == 'PDF' &&
@@ -534,7 +538,10 @@ class _AddEditLecturePageState extends State<AddEditLecturePage> {
     final existingFileKept = lecture != null &&
         lecture.isVideo &&
         (lecture.url == null || lecture.url!.isEmpty);
-    return Obx(() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Obx(() {
       final path = selectedVideoPath.value;
       if (path == null) {
         return Column(
@@ -611,7 +618,28 @@ class _AddEditLecturePageState extends State<AddEditLecturePage> {
           ],
         ),
       );
-    });
+        }),
+        const SizedBox(height: 4),
+        SwitchListTile(
+          contentPadding: EdgeInsets.zero,
+          dense: true,
+          title: Text(
+            'ضغط الفيديو قبل الرفع',
+            style: TextStyle(
+                fontSize: 13.5,
+                fontWeight: FontWeight.w600,
+                color: AppColors.textPrimary),
+          ),
+          subtitle: Text(
+            'أسرع رفع — لا يُضغط إلا عند الحاجة',
+            style: TextStyle(fontSize: 12, color: AppColors.textSecondary),
+          ),
+          value: compressVideo,
+          activeThumbColor: AppColors.primary,
+          onChanged: (value) => setState(() => compressVideo = value),
+        ),
+      ],
+    );
   }
 
   Widget _buildPdfPicker({required LectureModel? lecture}) {

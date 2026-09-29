@@ -65,6 +65,7 @@ class LecturesController extends GetxController {
     String? videoFilePath,
     Uint8List? fileBytes,
     String? fileName,
+    bool compress = true,
   }) async {
     busy.value = true;
     uploadProgress.value = 0;
@@ -72,7 +73,7 @@ class LecturesController extends GetxController {
     compressProgress.value = 0;
     var uploadPath = videoFilePath;
     try {
-      if (videoFilePath != null && type == 'VIDEO' && !kIsWeb) {
+      if (compress && videoFilePath != null && type == 'VIDEO' && !kIsWeb) {
         compressing.value = true;
         uploadPath = await VideoCompressor.compressForUpload(
               videoFilePath,
@@ -132,6 +133,7 @@ class LecturesController extends GetxController {
     String? videoFilePath,
     Uint8List? fileBytes,
     String? fileName,
+    bool compress = true,
   }) async {
     busy.value = true;
     uploadProgress.value = 0;
@@ -139,7 +141,7 @@ class LecturesController extends GetxController {
     compressProgress.value = 0;
     var uploadPath = videoFilePath;
     try {
-      if (videoFilePath != null && type == 'VIDEO' && !kIsWeb) {
+      if (compress && videoFilePath != null && type == 'VIDEO' && !kIsWeb) {
         compressing.value = true;
         uploadPath = await VideoCompressor.compressForUpload(
               videoFilePath,

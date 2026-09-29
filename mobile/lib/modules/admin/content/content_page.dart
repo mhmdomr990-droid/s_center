@@ -680,6 +680,7 @@ class _LecturesView extends StatelessWidget {
     Uint8List? pdfBytes;
     String? pdfName;
     double pdfSize = 0;
+    var compressVideo = true;
 
     final existingUrlEmpty = ((lecture?['url'] ?? '').toString().isEmpty);
     // ملف مخزّن داخل الخادم (لا رابط) — يبقى صالحاً عند الحفظ دون رفع جديد
@@ -782,6 +783,7 @@ class _LecturesView extends StatelessWidget {
                     ? (content.isNotEmpty ? content : null)
                     : null,
                 sortOrder: sortOrder,
+                compress: compressVideo,
                 videoFilePath: sendFile
                     ? (selectedType == 'VIDEO' ? videoPath : pdfPath)
                     : null,
@@ -800,6 +802,7 @@ class _LecturesView extends StatelessWidget {
                 url: url.isNotEmpty ? url : null,
                 content: content.isNotEmpty ? content : null,
                 sortOrder: sortOrder,
+                compress: compressVideo,
                 videoFilePath: sendFile
                     ? (selectedType == 'VIDEO' ? videoPath : pdfPath)
                     : null,
@@ -963,6 +966,26 @@ class _LecturesView extends StatelessWidget {
                             videoSize = 0;
                           }),
                         ),
+                      const SizedBox(height: 4),
+                      SwitchListTile(
+                        contentPadding: EdgeInsets.zero,
+                        dense: true,
+                        title: Text(
+                          'ضغط الفيديو قبل الرفع',
+                          style: TextStyle(
+                              fontSize: 13.5,
+                              fontWeight: FontWeight.w600,
+                              color: AppColors.textPrimary),
+                        ),
+                        subtitle: Text(
+                          'أسرع رفع — لا يُضغط إلا عند الحاجة',
+                          style: hintStyle,
+                        ),
+                        value: compressVideo,
+                        activeThumbColor: AppColors.primary,
+                        onChanged: (value) =>
+                            setState(() => compressVideo = value),
+                      ),
                     ] else if (selectedType == 'PDF') ...[
                       if (pdfPath == null) ...[
                         pickButton('اختر ملف PDF', pickPdf),

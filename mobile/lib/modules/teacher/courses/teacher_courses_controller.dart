@@ -156,14 +156,14 @@ class TeacherCoursesController extends GetxController {
   }
 
   Future<bool> createLecture(int courseId,
-      {required String title, required String type, String? url, String? content, int? sortOrder, String? videoFilePath, Uint8List? fileBytes, String? fileName}) async {
+      {required String title, required String type, String? url, String? content, int? sortOrder, String? videoFilePath, Uint8List? fileBytes, String? fileName, bool compress = true}) async {
     isSaving.value = true;
     uploadProgress.value = 0;
     compressing.value = false;
     compressProgress.value = 0;
     var uploadPath = videoFilePath;
     try {
-      if (videoFilePath != null && type == 'VIDEO' && !kIsWeb) {
+      if (compress && videoFilePath != null && type == 'VIDEO' && !kIsWeb) {
         compressing.value = true;
         uploadPath = await VideoCompressor.compressForUpload(
               videoFilePath,
@@ -215,14 +215,14 @@ class TeacherCoursesController extends GetxController {
   }
 
   Future<void> updateLecture(int lectureId, int courseId,
-      {required String title, required String type, String? url, String? content, int? sortOrder, String? videoFilePath, Uint8List? fileBytes, String? fileName}) async {
+      {required String title, required String type, String? url, String? content, int? sortOrder, String? videoFilePath, Uint8List? fileBytes, String? fileName, bool compress = true}) async {
     isSaving.value = true;
     uploadProgress.value = 0;
     compressing.value = false;
     compressProgress.value = 0;
     var uploadPath = videoFilePath;
     try {
-      if (videoFilePath != null && type == 'VIDEO' && !kIsWeb) {
+      if (compress && videoFilePath != null && type == 'VIDEO' && !kIsWeb) {
         compressing.value = true;
         uploadPath = await VideoCompressor.compressForUpload(
               videoFilePath,
