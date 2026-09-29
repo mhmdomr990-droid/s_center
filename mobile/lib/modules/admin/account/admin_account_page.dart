@@ -1,10 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../../../app/theme/app_colors.dart';
+import '../../../app/theme/app_shadows.dart';
 import '../../../app/theme/app_text_styles.dart';
+import '../../../app/theme/theme_controller.dart';
 import '../../../data/providers/api_client.dart';
 import '../../../widgets/custom_button.dart';
 import '../../../widgets/gradient_app_bar.dart';
+import '../../../widgets/section_header.dart';
 import 'admin_account_controller.dart';
 
 class AdminAccountPage extends StatelessWidget {
@@ -49,6 +52,39 @@ class AdminAccountPage extends StatelessWidget {
                     ],
                   ],
                 ),
+              ),
+              const SizedBox(height: 24),
+              const SectionHeader(
+                title: 'المظهر',
+                icon: Icons.dark_mode_rounded,
+              ),
+              const SizedBox(height: 12),
+              Container(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+                decoration: BoxDecoration(
+                  color: AppColors.courseCard,
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(color: AppColors.cardBorder),
+                  boxShadow: AppShadows.soft,
+                ),
+                child: Obx(() {
+                  final themeCtrl = Get.find<ThemeController>();
+                  return SwitchListTile(
+                    contentPadding: EdgeInsets.zero,
+                    title: Text(
+                      'الوضع الليلي',
+                      style: AppTextStyles.titleMedium,
+                    ),
+                    subtitle: Text(
+                      'خلفية داكنة مريحة للعين',
+                      style: AppTextStyles.bodySmall,
+                    ),
+                    value: themeCtrl.isDark,
+                    activeThumbColor: AppColors.primary,
+                    onChanged: themeCtrl.toggle,
+                  );
+                }),
               ),
               const SizedBox(height: 24),
               Obx(() => CustomButton(

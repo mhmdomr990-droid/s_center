@@ -1,3 +1,5 @@
+import 'dart:typed_data';
+
 import 'package:dio/dio.dart';
 import 'api_client.dart';
 
@@ -113,10 +115,116 @@ class AdminProvider {
     });
   }
 
-  Future<Response> createLecture(Map<String, dynamic> body) => _api.post('/admin/lectures', data: body);
+  static final _uploadOptions =
+      Options(receiveTimeout: const Duration(minutes: 30));
 
-  Future<Response> updateLecture(int id, Map<String, dynamic> body) {
-    return _api.patch('/admin/lectures/$id', data: body);
+  static String _fileName(String path) =>
+      path.split(RegExp(r'[/\\]')).last;
+
+  static DioMediaType _fileContentType(String path) {
+    switch (path.split('.').last.toLowerCase()) {
+      case 'webm':
+        return DioMediaType('video', 'webm');
+      case 'mov':
+        return DioMediaType('video', 'quicktime');
+      case 'mkv':
+        return DioMediaType('video', 'x-matroska');
+      case 'pdf':
+        return DioMediaType('application', 'pdf');
+      default:
+        return DioMediaType('video', 'mp4');
+    }
+  }
+
+  // حقل `video` يحمل الفيديو أو ملف PDF — مطابق لـlectureVideoUpload.single('video')
+  static MultipartFile _uploadFile(String? path,
+          {Uint8List? bytes, String? name}) =>
+      bytes != null && name != null
+          ? MultipartFile.fromBytes(
+              bytes,
+              filename: name,
+              contentType: _fileContentType(name),
+            )
+          : MultipartFile.fromFileSync(
+              path!,
+              filename: _fileName(path),
+              contentType: _fileContentType(path),
+            );
+
+  Future<Response> createLecture({
+    required int courseId,
+    required String title,
+    required String type,
+    String? url,
+    String? content,
+    int? sortOrder,
+    String? videoFilePath,
+    Uint8List? fileBytes,
+    String? fileName,
+    void Function(int, int)? onSendProgress,
+  }) async {
+    if (videoFilePath != null) {
+      final form = FormData.fromMap({
+        'course_id': courseId.toString(),
+        'title': title,
+        'type': type,
+        if (url != null) 'url': url,
+        if (content != null) 'content': content,
+        if (sortOrder != null) 'sort_order': sortOrder.toString(),
+        'video': _uploadFile(videoFilePath, bytes: fileBytes, name: fileName),
+      });
+      return _api.post(
+        '/admin/lectures',
+        data: form,
+        onSendProgress: onSendProgress,
+        options: _uploadOptions,
+      );
+    }
+    return _api.post('/admin/lectures', data: {
+      'course_id': courseId,
+      'title': title,
+      'type': type,
+      if (url != null) 'url': url,
+      if (content != null) 'content': content,
+      if (sortOrder != null) 'sort_order': sortOrder,
+    });
+  }
+
+  Future<Response> updateLecture(
+    int id, {
+    String? title,
+    String? type,
+    String? url,
+    String? content,
+    int? sortOrder,
+    String? videoFilePath,
+    Uint8List? fileBytes,
+    String? fileName,
+    void Function(int, int)? onSendProgress,
+  }) async {
+    if (videoFilePath != null) {
+      final form = FormData.fromMap({
+        if (title != null) 'title': title,
+        if (type != null) 'type': type,
+        if (url != null) 'url': url,
+        if (content != null) 'content': content,
+        if (sortOrder != null) 'sort_order': sortOrder.toString(),
+        'video': _uploadFile(videoFilePath, bytes: fileBytes, name: fileName),
+      });
+      return _api.patch(
+        '/admin/lectures/$id',
+        data: form,
+        onSendProgress: onSendProgress,
+        options: _uploadOptions,
+      );
+    }
+    final data = <String, dynamic>{};
+    if (title != null) data['title'] = title;
+    if (type != null) data['type'] = type;
+    if (url != null) data['url'] = url;
+    if (content != null) data['content'] = content;
+    if (sortOrder != null) data['sort_order'] = sortOrder;
+    return _api.patch('/admin/lectures/$id', data: data);
   }
 
   Future<Response> setLecturePublished(int id, {required bool isPublished}) {
