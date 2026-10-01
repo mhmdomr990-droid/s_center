@@ -2,6 +2,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../app/theme/app_colors.dart';
+import '../data/providers/api_exception.dart';
 import '../data/services/download_manager.dart';
 
 class DownloadLectureButton extends StatefulWidget {
@@ -73,7 +74,7 @@ class _DownloadLectureButtonState extends State<DownloadLectureButton> {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('فشل التحميل: $e'),
+            content: Text(apiErrorMessage(e, fallback: 'فشل التحميل')),
             backgroundColor: AppColors.error,
           ),
         );

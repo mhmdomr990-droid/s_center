@@ -1,4 +1,5 @@
 import 'package:dio/dio.dart';
+import 'package:flutter/foundation.dart';
 
 String apiErrorMessage(Object error, {String fallback = 'حدث خطأ، حاول مرة أخرى'}) {
   if (error is! DioException) return fallback;
@@ -9,6 +10,10 @@ String apiErrorMessage(Object error, {String fallback = 'حدث خطأ، حاو�
   if (data is Map && data['message'] is String) {
     serverMsg = (data['message'] as String).trim();
   }
+
+  // نص خادم طويل (أكثر من 120 حرفاً) لا يصل للمستخدم — نتجاهله
+  // ونعتمد الرسالة المختصرة حسب الحالة أدناه
+  if (serverMsg != null && serverMsg.length > 120) serverMsg = null;
 
   if (serverMsg != null && serverMsg.isNotEmpty) {
     final m = serverMsg.toLowerCase();
@@ -48,6 +53,10 @@ String apiErrorMessage(Object error, {String fallback = 'حدث خطأ، حاو�
       error.type == DioExceptionType.receiveTimeout ||
       error.type == DioExceptionType.connectionError ||
       error.type == DioExceptionType.unknown) {
+    // المستخدم يرى سطراً واحداً فقط — والتفاصيل (العنوان/السبب/النوع/
+    // الفحص) تبقى حصراً في نسخ التطوير للتشخيص
+    const short = 'تعذر الاتصال بالخادم، تحقق من الشبكة';
+    if (!kDebugMode) return short;
     final origin = error.requestOptions.uri.origin;
     final where = origin.isEmpty ? '' : '\nالعنوان: $origin';
     var cause = error.error?.toString() ?? '';
@@ -55,7 +64,7 @@ String apiErrorMessage(Object error, {String fallback = 'حدث خطأ، حاو�
     final why = cause.isEmpty ? '' : '\nالسبب: $cause';
     final hint = _netHint(cause);
     final hintLine = hint.isEmpty ? '' : '\n$hint';
-    return 'تعذر الاتصال بالخادم، تحقق من الشبكة$where$why\nالنوع: ${error.type.name}$hintLine';
+    return '$short$where$why\nالنوع: ${error.type.name}$hintLine';
   }
 
   if (status != null && status >= 500) {

@@ -177,21 +177,8 @@ class AuthController extends GetxController {
         Get.offAll(() => const StudentShell());
       }
     } catch (e) {
-      final msg = apiErrorMessage(e);
-      lastError.value = msg;
-      Get.dialog<void>(
-        AlertDialog(
-          title: const Text('تفاصيل فشل الاتصال'),
-          content: SelectableText(msg, style: const TextStyle(height: 1.5)),
-          actions: [
-            TextButton(
-              onPressed: () => Get.back(),
-              child: const Text('حسناً'),
-            ),
-          ],
-        ),
-        barrierDismissible: true,
-      );
+      // الشريط الأحمر أسفل حقل العنوان يعرض الخطأ — بلا نافذة منبثقة
+      lastError.value = apiErrorMessage(e);
     } finally {
       isLoading.value = false;
     }
