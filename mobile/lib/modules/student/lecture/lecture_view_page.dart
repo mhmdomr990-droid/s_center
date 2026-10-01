@@ -416,7 +416,11 @@ class LectureController extends GetxController with WidgetsBindingObserver {
     isFullscreen.value = false;
     await SystemChrome.setPreferredOrientations(
         const [DeviceOrientation.portraitUp]);
-    await SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
+    // استعادة وضع التشغيل الافتراضي (كل الأشرطة ظاهرة ومعمّة) —
+    // mode افتراضي سابق كان التطبيق لا يمتد خلف شريط التنقل، وفرض
+    // edgeToEdge هنا كان يغطي أزرار السابق/التالي بشريط النظام.
+    await SystemChrome.setEnabledSystemUIMode(SystemUiMode.manual,
+        overlays: SystemUiOverlay.values);
   }
 
   Future<void> retry() {
@@ -455,7 +459,9 @@ class LectureViewPage extends StatelessWidget {
         return Scaffold(
           backgroundColor: AppColors.background,
           appBar: GradientAppBar(title: lecture.title),
-          body: ListView(
+          body: SafeArea(
+            top: false,
+            child: ListView(
             padding: const EdgeInsets.all(16),
             children: [
               Container(
@@ -641,6 +647,7 @@ class LectureViewPage extends StatelessWidget {
                 ],
               ),
             ],
+            ),
           ),
         );
       },
