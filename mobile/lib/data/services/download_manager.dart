@@ -66,7 +66,8 @@ class DownloadRecord {
 }
 
 class DownloadManager extends GetxController {
-  static const _prefsKey = 'lecture_downloads_v1';
+  static const _prefsKeyLegacy = 'lecture_downloads_v1';
+  static const _prefsKeyPrefix = 'lecture_downloads_v1__u';
   static const _keyStorageKey = 'lecture_aes_key_v1';
   static const _chunkSize = 64 * 1024;
   static const _headerMagic = [0x53, 0x43, 0x56, 0x31]; // SCV1
@@ -83,6 +84,12 @@ class DownloadManager extends GetxController {
   final Set<int> downloadingIds = <int>{}.obs;
   final RxBool ready = false.obs;
 
+  /// مالك التنزيلات الحالي — لا قراءة ولا كتابة بلا نطاق نشط،
+  /// فتبقى تنزيلات كل حساب منفصلة تماماً.
+  int? _userId;
+
+  String? get _scopedKey => _userId == null ? null : '$_prefsKeyPrefix$_userId';
+
   final Dio _mediaDio = Dio(BaseOptions(
     connectTimeout: const Duration(seconds: 60),
     receiveTimeout: const Duration(seconds: 300),
@@ -94,11 +101,92 @@ class DownloadManager extends GetxController {
     _load();
   }
 
+  /// ضبط نطاق المستخدم: تفريغ ذاكرة الحساب السابق + تنظيف ملفات
+  /// التشغيل المؤقتة (plaintext) + ترحيل السجلات القديمة (إن وُجدت) +
+  /// تحميل سجل هذا المستخدم.
+  Future<void> scopeToUser(int userId) async {
+    if (_userId == userId) return;
+    _userId = userId;
+    records.clear();
+    await _clearTempPlaintext();
+    await _migrateLegacyScope();
+    await _load();
+  }
+
+  /// إنهاء النطاق (خروج من الحساب) — تُفرَّغ الذاكرة ويُمنع أي وصول.
+  Future<void> clearScope() async {
+    _userId = null;
+    records.clear();
+    await _clearTempPlaintext();
+  }
+
+  /// مرة واحدة عند أول دخول بعد التحديث: اعتماد المفتاح العالمي القديم
+  /// كسجلات هذا المستخدم ونقل ملفاته إلى مجلده ثم حذف المفتاح القديم.
+  Future<void> _migrateLegacyScope() async {
+    try {
+      final scoped = _scopedKey;
+      if (scoped == null) return;
+      final prefs = await SharedPreferences.getInstance();
+      if (prefs.containsKey(scoped)) return;
+      final raw = prefs.getString(_prefsKeyLegacy);
+      if (raw == null || raw.isEmpty) return;
+
+      // نقل ملفات المجلد القديم المشترك إلى مجلد المستخدم
+      final legacyDir = await _legacyDownloadsDir();
+      if (await legacyDir.exists()) {
+        final userDir = await _downloadsDir();
+        await for (final entity in legacyDir.list()) {
+          if (entity is! File) continue;
+          try {
+            final target =
+                File('${userDir.path}/${entity.uri.pathSegments.last}');
+            if (!await target.exists()) {
+              await entity.rename(target.path);
+            }
+          } catch (_) {
+            // فشل نقل ملف واحد لا يُسقط ترحيل السجل
+          }
+        }
+      }
+
+      await prefs.setString(scoped, raw);
+      await prefs.remove(_prefsKeyLegacy);
+    } catch (e) {
+      debugPrint('DOWNLOADS_MIGRATE_ERR $e');
+    }
+  }
+
+  /// حذف ملفات التشغيل المؤقتة المفكوكة (قد تكون نسخة مفتوحة من حساب
+  /// سابق) — تُحذف عند كل تغيير نطاق أو خروج.
+  Future<void> _clearTempPlaintext() async {
+    try {
+      final support = await getApplicationSupportDirectory();
+      final tmp = Directory('${support.path}/tmp');
+      if (!await tmp.exists()) return;
+      await for (final entity in tmp.list()) {
+        if (entity is! File) continue;
+        final name = entity.uri.pathSegments.last;
+        if (name.startsWith('play_') ||
+            name.startsWith('stream_') ||
+            name.startsWith('raw_')) {
+          try {
+            await entity.delete();
+          } catch (_) {}
+        }
+      }
+    } catch (_) {}
+  }
+
   Future<void> _load() async {
     try {
+      final key = _scopedKey;
+      if (key == null) {
+        records.clear();
+        return;
+      }
       await cleanupExpired();
       final prefs = await SharedPreferences.getInstance();
-      final raw = prefs.getString(_prefsKey);
+      final raw = prefs.getString(key);
       if (raw != null && raw.isNotEmpty) {
         final list = jsonDecode(raw) as List<dynamic>;
         final parsed = <int, DownloadRecord>{};
@@ -117,6 +205,8 @@ class DownloadManager extends GetxController {
         records
           ..clear()
           ..addAll(parsed);
+      } else {
+        records.clear();
       }
     } catch (e) {
       // لا نمسح الذاكرة عند فشل القراءة — والملف لا يُعاد كتابته إلا
@@ -128,9 +218,11 @@ class DownloadManager extends GetxController {
   }
 
   Future<void> _save() async {
+    final key = _scopedKey;
+    if (key == null) return;
     final prefs = await SharedPreferences.getInstance();
     final list = records.values.map((r) => r.toJson()).toList();
-    await prefs.setString(_prefsKey, jsonEncode(list));
+    await prefs.setString(key, jsonEncode(list));
   }
 
   DownloadRecord? recordFor(int lectureId) {
@@ -142,8 +234,10 @@ class DownloadManager extends GetxController {
   bool isDownloaded(int lectureId) => recordFor(lectureId) != null;
 
   Future<void> cleanupExpired() async {
+    final key = _scopedKey;
+    if (key == null) return;
     final prefs = await SharedPreferences.getInstance();
-    final raw = prefs.getString(_prefsKey);
+    final raw = prefs.getString(key);
     if (raw == null || raw.isEmpty) return;
 
     List<dynamic> list;
@@ -172,16 +266,26 @@ class DownloadManager extends GetxController {
         keep.add(Map<String, dynamic>.from(item as Map));
       }
     }
-    await prefs.setString(_prefsKey, jsonEncode(keep));
+    await prefs.setString(key, jsonEncode(keep));
   }
 
   Future<Directory> _downloadsDir() async {
     final support = await getApplicationSupportDirectory();
-    final dir = Directory('${support.path}/downloads');
+    // مجلد لكل مستخدم — يمنع تصادم اسم ملف لنفس المحاضرة بين حسابين
+    // ويُبقي حذف أحدهما لا يكسر الآخر. المسار القديم المشترك يُستخدم
+    // حصراً أثناء الترحيل.
+    final dir = _userId == null
+        ? Directory('${support.path}/downloads')
+        : Directory('${support.path}/downloads/u$_userId');
     if (!await dir.exists()) {
       await dir.create(recursive: true);
     }
     return dir;
+  }
+
+  Future<Directory> _legacyDownloadsDir() async {
+    final support = await getApplicationSupportDirectory();
+    return Directory('${support.path}/downloads');
   }
 
   Future<Directory> _tempDir() async {
@@ -229,6 +333,9 @@ class DownloadManager extends GetxController {
       {String? title, String? courseName, String? type}) async {
     if (!_offlineSupported) {
       throw UnsupportedError('التحميل متاح على تطبيق أندرويد فقط');
+    }
+    if (_userId == null) {
+      throw StateError('لا يوجد حساب نشط');
     }
     if (downloadingIds.contains(lectureId)) return;
     downloadingIds.add(lectureId);

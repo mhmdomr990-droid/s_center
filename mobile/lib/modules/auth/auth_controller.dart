@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
@@ -7,6 +9,8 @@ import '../../data/providers/api_exception.dart';
 import '../../data/providers/auth_provider.dart';
 import '../../data/services/storage_service.dart';
 import '../../data/services/device_service.dart';
+import '../../data/services/download_manager.dart';
+import '../../data/services/offline_cache.dart';
 import '../../data/models/user_model.dart';
 import '../../app/routes/app_routes.dart';
 import '../home_shell.dart';
@@ -35,6 +39,19 @@ class AuthController extends GetxController {
   final ipCtrl = TextEditingController(text: ApiClient.baseUrl);
 
   static final RegExp _ipv4 = RegExp(r'^\d{1,3}(\.\d{1,3}){3}$');
+
+  /// ربط نطاق البيانات المحلية (تنزيلات + كاش دورات) بالحساب الحالي —
+  /// استدعاء عند كل نجاح دخول/تسجيل/استعادة جلسة.
+  void _syncScope(UserModel u) {
+    unawaited(Get.find<DownloadManager>().scopeToUser(u.id));
+    unawaited(OfflineCache.setScope(u.id));
+  }
+
+  /// فك النطاق عند الخروج أو انتهاء الجلسة — تُفرَّغ الذاكرة ويُمنع الوصول.
+  void _clearScope() {
+    unawaited(Get.find<DownloadManager>().clearScope());
+    unawaited(OfflineCache.setScope(null));
+  }
 
   // تطبيع ما يكتبه المستخدم — بالحد الأدنى ولا شيء غير ذلك:
   // 1) يضيف http:// إن لم تكتب الصيغة
@@ -150,6 +167,7 @@ class AuthController extends GetxController {
       await _storage.saveToken(token);
       await _storage.saveUser(userData);
       user.value = userData;
+      _syncScope(userData);
 
       if (userData.isAdmin) {
         Get.offAll(() => const AdminShell());
@@ -217,6 +235,7 @@ class AuthController extends GetxController {
       await _storage.saveToken(token);
       await _storage.saveUser(userData);
       user.value = userData;
+      _syncScope(userData);
 
       Get.offAll(() => const StudentShell());
     } catch (e) {
@@ -252,6 +271,7 @@ class AuthController extends GetxController {
       final userData = UserModel.fromJson(response.data['data']);
       user.value = userData;
       await _storage.saveUser(userData);
+      _syncScope(userData);
 
       if (userData.isAdmin) {
         Get.offAll(() => const AdminShell());
@@ -265,6 +285,7 @@ class AuthController extends GetxController {
       if (status == 401 || status == 403) {
         // التوكن غير صالح فعليًا — الجلسة تنتهي ونطلب تسجيل الدخول
         await _storage.clearAll();
+        _clearScope();
         if (Get.currentRoute != AppRoutes.login) {
           Get.offAllNamed(AppRoutes.login);
         }
@@ -274,6 +295,7 @@ class AuthController extends GetxController {
       final cached = await _storage.getUser();
       if (cached != null) {
         user.value = cached;
+        _syncScope(cached);
         if (cached.isAdmin) {
           Get.offAll(() => const AdminShell());
         } else if (cached.isTeacher) {
@@ -296,6 +318,7 @@ class AuthController extends GetxController {
       await _authProvider.logoutAll();
     } catch (_) {}
     await _storage.clearAll();
+    _clearScope();
     user.value = null;
     loginUsernameCtrl.clear();
     loginPasswordCtrl.clear();
