@@ -152,12 +152,12 @@ class AuthController extends GetxController {
       final token = data['token'] as String;
       final userData = UserModel.fromJson(data['user']);
 
-      const roleLabels = {'STUDENT': 'طالب', 'TEACHER': 'معلم', 'ADMIN': 'إداري'};
       if (loginRole.value != userData.role) {
-        final accountRole = roleLabels[userData.role] ?? userData.role;
+        // نوع الحساب لا يطابق التبويب المختار — نعرض رسالة بيانات الدخول
+        // القياسية نفسها (بلا كشف نوع الحساب) ونمنع الدخول قبل حفظ التوكن
         Get.snackbar(
           'خطأ',
-          'هذا حساب $accountRole — اختر تبويب $accountRole',
+          'اسم المستخدم أو كلمة المرور غير صحيحة',
           backgroundColor: Colors.red,
           colorText: Colors.white,
         );
