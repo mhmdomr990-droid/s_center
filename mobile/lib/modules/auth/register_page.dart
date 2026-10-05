@@ -86,13 +86,6 @@ class RegisterPage extends StatelessWidget {
                             onPressed: () => ctrl.obscureConfirmPassword.toggle(),
                           ),
                         )),
-                        const SizedBox(height: 16),
-                        CustomTextField(
-                          labelText: 'عنوان الخادم',
-                          prefixIcon: Icons.dns_outlined,
-                          controller: ctrl.ipCtrl,
-                          keyboardType: TextInputType.url,
-                        ),
                       ],
                     ),
                   ),

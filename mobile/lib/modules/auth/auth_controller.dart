@@ -3,7 +3,6 @@ import 'dart:async';
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 import '../../data/providers/api_client.dart';
 import '../../data/providers/api_exception.dart';
 import '../../data/providers/auth_provider.dart';
@@ -34,12 +33,6 @@ class AuthController extends GetxController {
   final loginUsernameCtrl = TextEditingController();
   final loginPasswordCtrl = TextEditingController();
 
-  // حقل عنوان الخادم في شاشتي الدخول والتسجيل — مصدر العنوان الوحيد
-  // يعرض العنوان المحفوظ كما هو حرفياً
-  final ipCtrl = TextEditingController(text: ApiClient.baseUrl);
-
-  static final RegExp _ipv4 = RegExp(r'^\d{1,3}(\.\d{1,3}){3}$');
-
   /// ربط نطاق البيانات المحلية (تنزيلات + كاش دورات) بالحساب الحالي —
   /// استدعاء عند كل نجاح دخول/تسجيل/استعادة جلسة.
   void _syncScope(UserModel u) {
@@ -53,59 +46,6 @@ class AuthController extends GetxController {
     unawaited(OfflineCache.setScope(null));
   }
 
-  // تطبيع ما يكتبه المستخدم — بالحد الأدنى ولا شيء غير ذلك:
-  // 1) يضيف http:// إن لم تكتب الصيغة
-  // 2) يضيف :3000 لـ IP/localhost فقط إن لم يكتب منفذاً (النطاقات لا تُمس)
-  // 3) يضيف /api إن لم ينتهِ بها
-  // وكل ما كتبه المستخدم يبقى كما هو (العملية لا دائرية عند إعادة الإرسال)
-  static String? _normalizeBase(String input) {
-    var v = input.trim();
-    if (v.isEmpty) return null;
-    if (RegExp(r'\s').hasMatch(v)) return null; // نص حر بمسافات — ليس عنواناً
-    final lower = v.toLowerCase();
-    if (!lower.startsWith('http://') && !lower.startsWith('https://')) {
-      v = 'http://$v';
-    }
-    var uri = Uri.tryParse(v);
-    if (uri == null || uri.host.isEmpty) return null;
-    if (uri.scheme != 'http' && uri.scheme != 'https') return null;
-    // منفذ 3000 فقط لـ IP أو localhost حين لا يذكر المستخدم منفذاً
-    if (!uri.hasPort && (uri.host == 'localhost' || _ipv4.hasMatch(uri.host))) {
-      uri = uri.replace(port: 3000);
-    }
-    if (!uri.path.endsWith('/api')) {
-      var p = uri.path;
-      while (p.endsWith('/')) {
-        p = p.substring(0, p.length - 1);
-      }
-      uri = uri.replace(path: '$p/api');
-    }
-    return uri.toString();
-  }
-
-  // تطبيق عنوان الخادم المختار — مصدره حقل ipCtrl دائماً.
-  // يرجع false عند حقل فارغ أو عنوان غير صالح (لا يستمر الدخول/التسجيل)
-  Future<bool> _applyServerHost() async {
-    final host = ipCtrl.text.trim();
-    if (host.isEmpty) {
-      Get.snackbar('خطأ', 'أدخل عنوان الخادم — مثال: 10.42.0.1:3000 أو https://example.com',
-          backgroundColor: Colors.red, colorText: Colors.white);
-      return false;
-    }
-    final base = _normalizeBase(host);
-    if (base == null) {
-      Get.snackbar(
-          'خطأ', 'عنوان غير صالح — مثال: 192.168.1.10:3000 أو https://example.com',
-          backgroundColor: Colors.red, colorText: Colors.white);
-      return false;
-    }
-    try {
-      final prefs = await SharedPreferences.getInstance();
-      await prefs.setString(ApiClient.overrideKey, base);
-    } catch (_) {}
-    _apiClient.applyBaseUrl(base);
-    return true;
-  }
   final registerUsernameCtrl = TextEditingController();
   final registerFullNameCtrl = TextEditingController();
   final registerPasswordCtrl = TextEditingController();
@@ -121,7 +61,6 @@ class AuthController extends GetxController {
   void onClose() {
     loginUsernameCtrl.dispose();
     loginPasswordCtrl.dispose();
-    ipCtrl.dispose();
     registerUsernameCtrl.dispose();
     registerFullNameCtrl.dispose();
     registerPasswordCtrl.dispose();
@@ -130,9 +69,6 @@ class AuthController extends GetxController {
   }
 
   Future<void> login() async {
-    // تطبيق عنوان الخادم قبل أي طلب — حقل فارغ يمنع الدخول
-    if (!await _applyServerHost()) return;
-
     if (loginUsernameCtrl.text.isEmpty || loginPasswordCtrl.text.isEmpty) {
       Get.snackbar('خطأ', 'أدخل اسم المستخدم وكلمة المرور', backgroundColor: Colors.red, colorText: Colors.white);
       return;
@@ -185,9 +121,6 @@ class AuthController extends GetxController {
   }
 
   Future<void> register() async {
-    // تطبيق عنوان الخادم (حقل شاشة التسجيل) قبل أي طلب
-    if (!await _applyServerHost()) return;
-
     if (registerUsernameCtrl.text.isEmpty ||
         registerFullNameCtrl.text.isEmpty ||
         registerPasswordCtrl.text.isEmpty) {
@@ -239,14 +172,6 @@ class AuthController extends GetxController {
 
     final hasToken = await _storage.hasToken();
     if (!hasToken) {
-      if (Get.currentRoute != AppRoutes.login) {
-        Get.offAllNamed(AppRoutes.login);
-      }
-      return;
-    }
-
-    // لا عنوان خادم بعد (تثبيت جديد أو مسح البيانات) — نذهب للشاشة لإدخاله
-    if (ApiClient.baseUrl.isEmpty) {
       if (Get.currentRoute != AppRoutes.login) {
         Get.offAllNamed(AppRoutes.login);
       }

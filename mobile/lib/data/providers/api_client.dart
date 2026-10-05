@@ -2,14 +2,11 @@ import 'package:dio/dio.dart';
 import '../services/storage_service.dart';
 
 class ApiClient {
-  // لا عنوان افتراضي مطبوع — المستخدم يُدخل العنوان في شاشة الدخول
-  static const String defaultBaseUrl = '';
+  // عنوان الخادم الثابت — لا يُدخل من الواجهة ولا يتغير
+  static const String defaultBaseUrl = 'http://143.244.151.183/api';
 
-  // العنوان الفعلي القابل للتغيير وقت التشغيل — مصدره حقل شاشة الدخول
+  // العنوان الفعلي — يبدأ ثابتاً منذ أول إطار
   static String baseUrl = defaultBaseUrl;
-
-  // مفتاح حفظ العنوان الذي أدخله المستخدم في SharedPreferences
-  static const String overrideKey = 'api_base_url_v1';
 
   static const Duration timeout = Duration(seconds: 30);
 
@@ -42,13 +39,6 @@ class ApiClient {
   }
 
   Dio get dio => _dio;
-
-  // تطبيق عنوان جديد فوراً (الطلبات + روابط الوسائط
-  // لأن MediaProvider.origin يقرأ ApiClient.baseUrl ديناميكياً)
-  void applyBaseUrl(String value) {
-    baseUrl = value;
-    _dio.options.baseUrl = value;
-  }
 
   Future<Response> get(String path, {Map<String, dynamic>? queryParameters}) {
     return _dio.get(path, queryParameters: queryParameters);

@@ -3,7 +3,6 @@ import 'package:flutter/services.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:get/get.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 import 'app/theme/app_theme.dart';
 import 'app/theme/theme_controller.dart';
 import 'app/routes/app_pages.dart';
@@ -54,16 +53,6 @@ void main() async {
 
   final storageService = StorageService();
   final deviceService = DeviceService();
-
-  // تحميل العنوان الذي أدخله المستخدم مسبقاً (شاشة الدخول) قبل بناء العميل،
-  // حتى يعمل من أول لحظة (الدخول التلقائي من الـ splash)
-  try {
-    final prefs = await SharedPreferences.getInstance();
-    final savedBase = prefs.getString(ApiClient.overrideKey);
-    if (savedBase != null && savedBase.isNotEmpty) {
-      ApiClient.baseUrl = savedBase;
-    }
-  } catch (_) {}
 
   final apiClient = ApiClient(storageService);
 

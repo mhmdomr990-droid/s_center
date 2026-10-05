@@ -85,13 +85,6 @@ class LoginPage extends StatelessWidget {
                         onPressed: () => ctrl.obscurePassword.toggle(),
                       ),
                     )),
-                    const SizedBox(height: 16),
-                    CustomTextField(
-                      labelText: 'عنوان الخادم',
-                      prefixIcon: Icons.dns_outlined,
-                      controller: ctrl.ipCtrl,
-                      keyboardType: TextInputType.url,
-                    ),
                     // شريط دائم لآخر خطأ — يبقى حتى إعادة المحاولة/إعادة التشغيل
                     Obx(() {
                       if (ctrl.lastError.value.isEmpty) {
