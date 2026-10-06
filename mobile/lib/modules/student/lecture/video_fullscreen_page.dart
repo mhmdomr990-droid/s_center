@@ -28,6 +28,10 @@ class _VideoFullscreenPageState extends State<VideoFullscreenPage> {
 
   @override
   void dispose() {
+    // لا صوت مخفي في الشاشة العادية — أوقف التشغيل عند الخروج
+    if (widget.ctrl.isPlaying.value) {
+      unawaited(widget.ctrl.togglePlay());
+    }
     unawaited(widget.ctrl.exitFullscreen());
     super.dispose();
   }
@@ -200,6 +204,45 @@ class _VideoFullscreenPageState extends State<VideoFullscreenPage> {
           ],
         );
       }),
+    );
+  }
+}
+
+class VideoSeekBar extends StatelessWidget {
+  final LectureController ctrl;
+
+  const VideoSeekBar({super.key, required this.ctrl});
+
+  @override
+  Widget build(BuildContext context) {
+    final maxMs = ctrl.duration.value.inMilliseconds;
+    final shownMs = (ctrl.isScrubbing.value
+            ? ctrl.scrubPosition.value
+            : ctrl.position.value)
+        .inMilliseconds;
+    final value = maxMs > 0 ? shownMs.clamp(0, maxMs).toDouble() : 0.0;
+
+    return SliderTheme(
+      data: SliderTheme.of(context).copyWith(
+        trackHeight: 4,
+        thumbShape: const RoundSliderThumbShape(enabledThumbRadius: 7),
+        overlayShape: const RoundSliderOverlayShape(overlayRadius: 18),
+        activeTrackColor: AppColors.primary,
+        inactiveTrackColor: Colors.white24,
+        thumbColor: AppColors.primary,
+        overlayColor: AppColors.primary.withValues(alpha: 0.25),
+      ),
+      child: Slider(
+        value: value,
+        max: maxMs > 0 ? maxMs.toDouble() : 1,
+        onChanged: maxMs > 0
+            ? (v) => ctrl.updateScrub(Duration(milliseconds: v.round()))
+            : null,
+        onChangeStart: maxMs > 0 ? (_) => ctrl.beginScrub() : null,
+        onChangeEnd: maxMs > 0
+            ? (v) => ctrl.endScrub(Duration(milliseconds: v.round()))
+            : null,
+      ),
     );
   }
 }

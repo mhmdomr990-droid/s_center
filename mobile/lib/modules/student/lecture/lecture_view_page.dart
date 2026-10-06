@@ -120,10 +120,6 @@ class LectureController extends GetxController with WidgetsBindingObserver {
     WidgetsBinding.instance.addObserver(this);
     unawaited(_ensureProgressLoaded());
     unawaited(ScreenGuard.instance.protect());
-    ever<int>(currentIndex, (_) {
-      _recoveryCount = 0;
-      unawaited(_loadPlayer());
-    });
     unawaited(_loadPlayer());
   }
 
@@ -157,16 +153,6 @@ class LectureController extends GetxController with WidgetsBindingObserver {
   }
 
   LectureModel get currentLecture => lectures[currentIndex.value];
-  bool get hasPrevious => currentIndex.value > 0;
-  bool get hasNext => currentIndex.value < lectures.length - 1;
-
-  void previousLecture() {
-    if (hasPrevious) currentIndex.value--;
-  }
-
-  void nextLecture() {
-    if (hasNext) currentIndex.value++;
-  }
 
   Future<void> openPdf(LectureModel lecture) async {
     final url = lecture.url;
@@ -255,6 +241,13 @@ class LectureController extends GetxController with WidgetsBindingObserver {
 
     final lecture = currentLecture;
     if (!lecture.isVideo) return;
+    // الفيديو يُعرض في ملء الشاشة فقط — ادخله تلقائياً عند التحميل
+    // (خارج ملء الشاشة فقط؛ إعادة المحاولة داخله لا تعيد الدفع)
+    if (!isFullscreen.value) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        Get.to<void>(() => VideoFullscreenPage(ctrl: this));
+      });
+    }
     if (resumeAt <= Duration.zero) {
       // تحميل جديد — استأنف من آخر موضع محفوظ لهذه المحاضرة
       await _ensureProgressLoaded();
@@ -427,6 +420,14 @@ class LectureController extends GetxController with WidgetsBindingObserver {
   Future<void> retry() {
     _recoveryCount = 0;
     return _loadPlayer(resumeAt: position.value, autoplay: true);
+  }
+
+  Future<void> openFullscreenVideo() async {
+    if (videoController == null || playerError.value != null) {
+      await retry();
+    } else if (!isFullscreen.value) {
+      await Get.to<void>(() => VideoFullscreenPage(ctrl: this));
+    }
   }
 
   Future<void> openExternal() async {
@@ -623,33 +624,6 @@ class LectureViewPage extends StatelessWidget {
                   ),
                 ),
               const SizedBox(height: 24),
-              Row(
-                children: [
-                  Expanded(
-                    child: ElevatedButton.icon(
-                      onPressed: ctrl.hasPrevious ? ctrl.previousLecture : null,
-                      icon: const Icon(Icons.arrow_forward, size: 18),
-                      label: Text('السابق', style: GoogleFonts.cairo()),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: AppColors.primary,
-                        disabledBackgroundColor: AppColors.divider,
-                      ),
-                    ),
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: ElevatedButton.icon(
-                      onPressed: ctrl.hasNext ? ctrl.nextLecture : null,
-                      icon: const Icon(Icons.arrow_back, size: 18),
-                      label: Text('التالي', style: GoogleFonts.cairo()),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: AppColors.primary,
-                        disabledBackgroundColor: AppColors.divider,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
             ],
             ),
           ),
@@ -708,7 +682,7 @@ class _VideoSection extends StatelessWidget {
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
                     ElevatedButton.icon(
-                      onPressed: ctrl.retry,
+                      onPressed: ctrl.openFullscreenVideo,
                       icon: const Icon(Icons.refresh, size: 18),
                       label: Text('إعادة المحاولة', style: GoogleFonts.cairo()),
                       style: ElevatedButton.styleFrom(
@@ -730,160 +704,37 @@ class _VideoSection extends StatelessWidget {
         );
       }
 
-      final controller = ctrl.videoController;
-      if (controller == null || !controller.value.isInitialized) {
-        return Container(
-          height: 220,
-          width: double.infinity,
-          decoration: BoxDecoration(
-            color: Colors.black,
-            borderRadius: BorderRadius.circular(16),
-          ),
-          child: Center(
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                const Icon(Icons.play_circle_outline,
-                    color: Colors.white, size: 64),
-                const SizedBox(height: 12),
-                Text('اضغط لتشغيل الفيديو',
-                    style: GoogleFonts.cairo(color: Colors.white70, fontSize: 14)),
-                const SizedBox(height: 16),
-                ElevatedButton.icon(
-                  onPressed: ctrl.retry,
-                  icon: const Icon(Icons.play_arrow, size: 18),
-                  label: Text('تشغيل', style: GoogleFonts.cairo()),
-                  style: ElevatedButton.styleFrom(
-                      backgroundColor: AppColors.primary),
-                ),
-              ],
-            ),
-          ),
-        );
-      }
-
+      // الفيديو يُعرض في ملء الشاشة فقط — بطاقة إعادة الدخول
       return Container(
+        height: 160,
+        width: double.infinity,
         decoration: BoxDecoration(
           color: Colors.black,
           borderRadius: BorderRadius.circular(16),
         ),
-        clipBehavior: Clip.antiAlias,
-        child: Column(
-          children: [
-            AspectRatio(
-              aspectRatio: controller.value.aspectRatio == 0
-                  ? 16 / 9
-                  : controller.value.aspectRatio,
-              child: Stack(
-                alignment: Alignment.center,
-                children: [
-                  VideoPlayer(controller),
-                  if (!ctrl.isPlaying.value)
-                    GestureDetector(
-                      onTap: ctrl.togglePlay,
-                      child: Container(
-                        padding: const EdgeInsets.all(12),
-                        decoration: BoxDecoration(
-                          color: Colors.black.withValues(alpha: 0.45),
-                          shape: BoxShape.circle,
-                        ),
-                        child: const Icon(Icons.play_arrow,
-                            color: Colors.white, size: 48),
-                      ),
-                    ),
-                ],
+        child: Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              const Icon(Icons.play_circle_outline,
+                  color: Colors.white, size: 56),
+              const SizedBox(height: 12),
+              ElevatedButton.icon(
+                onPressed: ctrl.openFullscreenVideo,
+                icon: const Icon(Icons.fullscreen, size: 18),
+                label: Text('عرض بملء الشاشة', style: GoogleFonts.cairo()),
+                style: ElevatedButton.styleFrom(
+                    backgroundColor: AppColors.primary),
               ),
-            ),
-            Padding(
-              padding: const EdgeInsets.fromLTRB(8, 4, 8, 8),
-              child: Column(
-                children: [
-                  VideoSeekBar(ctrl: ctrl),
-                  Row(
-                    children: [
-                      IconButton(
-                        onPressed: ctrl.togglePlay,
-                        icon: Icon(
-                          ctrl.isPlaying.value
-                              ? Icons.pause_circle_filled
-                              : Icons.play_circle_fill,
-                          color: Colors.white,
-                          size: 32,
-                        ),
-                      ),
-                      Text(
-                        '${ctrl.formatDuration(ctrl.isScrubbing.value ? ctrl.scrubPosition.value : ctrl.position.value)} / ${ctrl.formatDuration(ctrl.duration.value)}',
-                        style: GoogleFonts.cairo(
-                          color: ctrl.isScrubbing.value
-                              ? AppColors.primaryLight
-                              : Colors.white70,
-                          fontSize: 12,
-                        ),
-                      ),
-                      const Spacer(),
-                      IconButton(
-                        onPressed: () => Get.to<void>(
-                            () => VideoFullscreenPage(ctrl: ctrl)),
-                        icon: const Icon(Icons.fullscreen,
-                            color: Colors.white, size: 26),
-                        tooltip: 'ملء الشاشة',
-                        padding: const EdgeInsets.symmetric(horizontal: 4),
-                        constraints: const BoxConstraints(
-                            minWidth: 36, minHeight: 36),
-                      ),
-                      if (ctrl.isOffline.value)
-                        Padding(
-                          padding: const EdgeInsets.only(left: 8),
-                          child: Icon(Icons.cloud_off,
-                              color: AppColors.accent, size: 18),
-                        ),
-                    ],
-                  ),
-                ],
-              ),
-            ),
-          ],
+              if (ctrl.isOffline.value)
+                Padding(
+                  padding: const EdgeInsets.only(top: 8),
+                  child: Icon(Icons.cloud_off, color: AppColors.accent, size: 18),
+                ),
+            ],
+          ),
         ),
       );
     });
-  }
-}
-
-class VideoSeekBar extends StatelessWidget {
-  final LectureController ctrl;
-
-  const VideoSeekBar({super.key, required this.ctrl});
-
-  @override
-  Widget build(BuildContext context) {
-    final maxMs = ctrl.duration.value.inMilliseconds;
-    final shownMs = (ctrl.isScrubbing.value
-            ? ctrl.scrubPosition.value
-            : ctrl.position.value)
-        .inMilliseconds;
-    final value =
-        maxMs > 0 ? shownMs.clamp(0, maxMs).toDouble() : 0.0;
-
-    return SliderTheme(
-      data: SliderTheme.of(context).copyWith(
-        trackHeight: 4,
-        thumbShape: const RoundSliderThumbShape(enabledThumbRadius: 7),
-        overlayShape: const RoundSliderOverlayShape(overlayRadius: 18),
-        activeTrackColor: AppColors.primary,
-        inactiveTrackColor: Colors.white24,
-        thumbColor: AppColors.primary,
-        overlayColor: AppColors.primary.withValues(alpha: 0.25),
-      ),
-      child: Slider(
-        value: value,
-        max: maxMs > 0 ? maxMs.toDouble() : 1,
-        onChanged:
-            maxMs > 0 ? (v) => ctrl.updateScrub(Duration(milliseconds: v.round())) : null,
-        onChangeStart: maxMs > 0 ? (_) => ctrl.beginScrub() : null,
-        onChangeEnd: maxMs > 0
-            ? (v) => ctrl.endScrub(Duration(milliseconds: v.round()))
-            : null,
-      ),
-    );
   }
 }
