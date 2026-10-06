@@ -17,8 +17,8 @@ android {
         applicationId = "com.scenter.mobile"
         minSdk = flutter.minSdkVersion
         targetSdk = 34
-        versionCode = 28
-        versionName = "1.0.27"
+        versionCode = 30
+        versionName = "1.0.29"
     }
 
     buildTypes {
