@@ -150,6 +150,13 @@ class LectureController extends GetxController with WidgetsBindingObserver {
       } catch (_) {}
       unawaited(_persistProgress(force: true));
     }
+    // دخول الخلفية (زر الرئيسية/مبدّل التطبيقات/إطفاء الشاشة) ⇐ أوقف
+    // التشغيل بلا صوت مستمر — العودة لا استئناف تلقائي (يدوس المستخدم).
+    // inactive عمداً بلا إيقاف: لوحة الإشعارات/الأذونات لا توقف الفيديو.
+    if (state == AppLifecycleState.paused ||
+        state == AppLifecycleState.detached) {
+      unawaited(videoController?.pause());
+    }
   }
 
   LectureModel get currentLecture => lectures[currentIndex.value];
