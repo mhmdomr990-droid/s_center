@@ -33,33 +33,15 @@ class LoginPage extends StatelessWidget {
                 child: const Icon(Icons.school, size: 60, color: AppColors.primary),
               ),
               const SizedBox(height: 20),
-              Obx(() => Text(
-                    ctrl.loginRole.value == 'TEACHER'
-                        ? 'دخول المعلمين'
-                        : ctrl.loginRole.value == 'ADMIN'
-                            ? 'دخول الإدارة'
-                            : 'مرحباً بعودتك',
-                    style: AppTextStyles.headlineLarge,
-                  )),
+              Text(
+                'مرحباً بعودتك',
+                style: AppTextStyles.headlineLarge,
+              ),
               const SizedBox(height: 8),
-              Obx(() => Text(
-                    ctrl.loginRole.value == 'TEACHER'
-                        ? 'سجّل دخولك لإدارة دوراتك ومحاضراتك'
-                        : ctrl.loginRole.value == 'ADMIN'
-                            ? 'سجّل دخولك لإدارة الطلبات والمستخدمين'
-                            : 'سجّل دخولك للوصول لدوراتك',
-                    style: AppTextStyles.bodyMedium.copyWith(color: AppColors.textSecondary),
-                  )),
-              const SizedBox(height: 24),
-              Obx(() => Row(
-                    children: [
-                      _buildRoleTab(ctrl, 'STUDENT', 'طالب', Icons.school_outlined),
-                      const SizedBox(width: 10),
-                      _buildRoleTab(ctrl, 'TEACHER', 'معلم', Icons.menu_book_outlined),
-                      const SizedBox(width: 10),
-                      _buildRoleTab(ctrl, 'ADMIN', 'إدارة', Icons.admin_panel_settings_outlined),
-                    ],
-                  )),
+              Text(
+                'سجّل دخولك للوصول لدوراتك',
+                style: AppTextStyles.bodyMedium.copyWith(color: AppColors.textSecondary),
+              ),
               const SizedBox(height: 24),
               Form(
                 child: Column(
@@ -111,71 +93,28 @@ class LoginPage extends StatelessWidget {
               ),
               const SizedBox(height: 32),
               Obx(() => CustomButton(
-                    text: ctrl.loginRole.value == 'TEACHER'
-                        ? 'دخول المعلم'
-                        : ctrl.loginRole.value == 'ADMIN'
-                            ? 'دخول الإدارة'
-                            : 'تسجيل الدخول',
+                    text: 'تسجيل الدخول',
                     isLoading: ctrl.isLoading.value,
                     onPressed: ctrl.login,
                     icon: Icons.login,
                   )),
               const SizedBox(height: 20),
-              Obx(() {
-                if (ctrl.loginRole.value != 'STUDENT') return const SizedBox.shrink();
-                return Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Text('ليس لديك حساب؟ ', style: AppTextStyles.bodyMedium),
-                    GestureDetector(
-                      onTap: () => Get.toNamed(AppRoutes.register),
-                      child: Text(
-                        'سجّل الآن',
-                        style: GoogleFonts.cairo(
-                          fontSize: 15,
-                          fontWeight: FontWeight.w600,
-                          color: AppColors.primary,
-                        ),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Text('ليس لديك حساب؟ ', style: AppTextStyles.bodyMedium),
+                  GestureDetector(
+                    onTap: () => Get.toNamed(AppRoutes.register),
+                    child: Text(
+                      'سجّل الآن',
+                      style: GoogleFonts.cairo(
+                        fontSize: 15,
+                        fontWeight: FontWeight.w600,
+                        color: AppColors.primary,
                       ),
                     ),
-                  ],
-                );
-              }),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildRoleTab(AuthController ctrl, String role, String label, IconData icon) {
-    final isSelected = ctrl.loginRole.value == role;
-    return Expanded(
-      child: GestureDetector(
-        onTap: () => ctrl.loginRole.value = role,
-        child: AnimatedContainer(
-          duration: const Duration(milliseconds: 200),
-          padding: const EdgeInsets.symmetric(vertical: 12),
-          decoration: BoxDecoration(
-            color: isSelected ? AppColors.primary : AppColors.courseCard,
-            borderRadius: BorderRadius.circular(12),
-            border: Border.all(
-              color: isSelected ? AppColors.primary : AppColors.cardBorder,
-              width: isSelected ? 2 : 1,
-            ),
-          ),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Icon(icon, size: 20, color: isSelected ? Colors.white : AppColors.textSecondary),
-              const SizedBox(width: 8),
-              Text(
-                label,
-                style: TextStyle(
-                  color: isSelected ? Colors.white : AppColors.textPrimary,
-                  fontWeight: FontWeight.w600,
-                  fontSize: 15,
-                ),
+                  ),
+                ],
               ),
             ],
           ),
@@ -183,4 +122,5 @@ class LoginPage extends StatelessWidget {
       ),
     );
   }
+
 }

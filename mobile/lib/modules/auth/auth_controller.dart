@@ -24,7 +24,6 @@ class AuthController extends GetxController {
   final isLoading = false.obs;
   final obscurePassword = true.obs;
   final obscureConfirmPassword = true.obs;
-  final loginRole = 'STUDENT'.obs;
   final user = Rxn<UserModel>();
   // آخر رسالة خطأ دخول — تبقى معروضة في الشاشة حتى بعد اختفاء النافذة
   final lastError = ''.obs;
@@ -87,18 +86,6 @@ class AuthController extends GetxController {
       final data = response.data['data'];
       final token = data['token'] as String;
       final userData = UserModel.fromJson(data['user']);
-
-      if (loginRole.value != userData.role) {
-        // نوع الحساب لا يطابق التبويب المختار — نعرض رسالة بيانات الدخول
-        // القياسية نفسها (بلا كشف نوع الحساب) ونمنع الدخول قبل حفظ التوكن
-        Get.snackbar(
-          'خطأ',
-          'اسم المستخدم أو كلمة المرور غير صحيحة',
-          backgroundColor: Colors.red,
-          colorText: Colors.white,
-        );
-        return;
-      }
 
       await _storage.saveToken(token);
       await _storage.saveUser(userData);
