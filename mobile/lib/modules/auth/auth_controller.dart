@@ -114,7 +114,13 @@ class AuthController extends GetxController {
       }
     } catch (e) {
       // الشريط الأحمر أسفل حقل العنوان يعرض الخطأ — بلا نافذة منبثقة
-      lastError.value = apiErrorMessage(e);
+      final status = e is DioException ? e.response?.statusCode : null;
+      if (status == 400) {
+        // رسائل تحقق الخادم (إنجليزية) → رسالة الدخول المعتادة
+        lastError.value = 'اسم المستخدم أو كلمة المرور غير صحيحة';
+      } else {
+        lastError.value = apiErrorMessage(e);
+      }
     } finally {
       isLoading.value = false;
     }
