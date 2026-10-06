@@ -122,9 +122,17 @@ class AuthController extends GetxController {
 
       final data = response.data['data'];
       final token = data['token'] as String;
-      final userData = UserModel.fromJson(data['user']);
+      var userData = UserModel.fromJson(data['user']);
 
       await _storage.saveToken(token);
+
+      try {
+        final me = await _authProvider.getMe();
+        userData = UserModel.fromJson(me.data['data']);
+      } catch (_) {
+        // فشل مؤقت — نكمل ببيانات الدخول ويصححها checkAuth عند الإقلاع
+      }
+
       await _storage.saveUser(userData);
       user.value = userData;
       _syncScope(userData);
