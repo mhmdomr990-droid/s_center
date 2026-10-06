@@ -132,6 +132,44 @@ class ProfilePage extends StatelessWidget {
                                     ),
                                   ],
                                 ),
+                                if (user?.phone?.isNotEmpty == true) ...[
+                                  const SizedBox(height: 6),
+                                  Row(
+                                    children: [
+                                      const Icon(Icons.phone_outlined,
+                                          color: Colors.white70, size: 16),
+                                      const SizedBox(width: 6),
+                                      Text(
+                                        user!.phone!,
+                                        style: GoogleFonts.cairo(
+                                            color: Colors.white,
+                                            fontSize: 14,
+                                            fontWeight: FontWeight.w600),
+                                      ),
+                                    ],
+                                  ),
+                                ],
+                                if (user?.specializationId != null) ...[
+                                  const SizedBox(height: 6),
+                                  Row(
+                                    children: [
+                                      const Icon(Icons.category_outlined,
+                                          color: Colors.white70, size: 16),
+                                      const SizedBox(width: 6),
+                                      Flexible(
+                                        child: Text(
+                                          'الاختصاص: ${ctrl.specNames[user!.specializationId] ?? (user.specializationName?.isNotEmpty == true ? user.specializationName : '—')}',
+                                          style: GoogleFonts.cairo(
+                                              color: Colors.white,
+                                              fontSize: 14,
+                                              fontWeight: FontWeight.w600),
+                                          maxLines: 1,
+                                          overflow: TextOverflow.ellipsis,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ],
                               ],
                             ],
                           ),

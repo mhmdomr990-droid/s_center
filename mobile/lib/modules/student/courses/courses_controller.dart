@@ -10,6 +10,7 @@ import '../../../data/models/specialization_model.dart';
 import '../../../data/models/course_model.dart';
 import '../../../data/models/lecture_model.dart';
 import '../../../data/services/offline_cache.dart';
+import '../../auth/auth_controller.dart';
 import '../notifications/notifications_controller.dart';
 
 class CoursesController extends GetxController {
@@ -29,7 +30,6 @@ class CoursesController extends GetxController {
   final specializations = <SpecializationModel>[].obs;
   final courses = <CourseModel>[].obs;
   final lectures = <LectureModel>[].obs;
-  final selectedSpecializationId = Rxn<int>();
   final selectedYear = Rxn<int>();
   final currentCourse = Rxn<CourseModel>();
   final purchasedIds = <int>{}.obs;
@@ -40,14 +40,34 @@ class CoursesController extends GetxController {
 
   bool isPurchased(int courseId) => purchasedIds.contains(courseId);
 
+  /// اختصاص الطالب المسجَّل عند التسجيل — واجهة الطالب تعرضه فقط
+  int? get _mySpecId => Get.isRegistered<AuthController>()
+      ? Get.find<AuthController>().user.value?.specializationId
+      : null;
+
+  bool get hasSpecialization => _mySpecId != null;
+
+  String get mySpecializationLabel {
+    final mySpecId = _mySpecId;
+    if (mySpecId == null) return 'لم تختر اختصاصاً';
+    return 'اختصاصك: ${_specNames[mySpecId] ?? '—'}';
+  }
+
+  /// فل أمان جانب العميل: بدون اختصاص ⇐ لا دورات (تظهر رسالة)؛
+  /// وإلا أزل أي دورة لا تخص اختصاص الطالب (ضمان «فقط تخصصه»).
+  List<CourseModel> _restrictToMySpec(List<CourseModel> list) {
+    final mySpecId = _mySpecId;
+    if (mySpecId == null) return [];
+    return list.where((c) => c.specializationId == mySpecId).toList();
+  }
+
   String get filterTitle {
-    final specName = selectedSpecializationId.value == null
-        ? 'كل الاختصاصات'
-        : (specializations
-                .firstWhereOrNull((s) => s.id == selectedSpecializationId.value)
-                ?.name ??
-            'اختصاص');
-    final yearLabel = selectedYear.value == null ? 'كل السنوات' : 'السنة ${selectedYear.value}';
+    final mySpecId = _mySpecId;
+    final specName = mySpecId == null
+        ? 'لم تختر اختصاصاً'
+        : (_specNames[mySpecId] ?? 'اختصاصي');
+    final yearLabel =
+        selectedYear.value == null ? 'كل السنوات' : 'السنة ${selectedYear.value}';
     return '$specName — $yearLabel';
   }
 
@@ -76,10 +96,7 @@ class CoursesController extends GetxController {
     try {
       final results = await Future.wait([
         _catalogProvider.getSpecializations(),
-        _catalogProvider.getCourses(
-          specializationId: selectedSpecializationId.value,
-          year: selectedYear.value,
-        ),
+        _catalogProvider.getCourses(year: selectedYear.value),
       ]);
 
       final specData = results[0].data['data'];
@@ -89,7 +106,7 @@ class CoursesController extends GetxController {
         _specNames = {for (final s in specializations) s.id: s.name};
       }
 
-      courses.value = _parseCourses(results[1].data['data']);
+      courses.value = _restrictToMySpec(_parseCourses(results[1].data['data']));
       if (specData is List && results[1].data['data'] is List) {
         unawaited(OfflineCache.saveCatalog(
             specData, results[1].data['data'] as List));
@@ -103,7 +120,7 @@ class CoursesController extends GetxController {
                 (e) => SpecializationModel.fromJson(Map<String, dynamic>.from(e as Map)))
             .toList();
         _specNames = {for (final s in specializations) s.id: s.name};
-        courses.value = _parseCourses(cached['courses']);
+        courses.value = _restrictToMySpec(_parseCourses(cached['courses']));
         offlineFallback.value = true;
         Get.snackbar('غير متصل', 'عُرضت آخر بيانات محفوظة',
             backgroundColor: const Color(0xFFFFA000), colorText: Color(0xFFFFFFFF));
@@ -120,21 +137,17 @@ class CoursesController extends GetxController {
     isLoading.value = true;
     try {
       final response = await _catalogProvider.getCourses(
-        specializationId: selectedSpecializationId.value,
         year: selectedYear.value,
       );
-      courses.value = _parseCourses(response.data['data']);
+      courses.value = _restrictToMySpec(_parseCourses(response.data['data']));
       offlineFallback.value = false;
     } catch (e) {
       final cached = await OfflineCache.loadCatalog();
       if (cached != null && cached['courses'] is List) {
-        courses.value = _parseCourses(cached['courses']).where((c) {
-          final okSpec = selectedSpecializationId.value == null ||
-              c.specializationId == selectedSpecializationId.value;
-          final okYear =
-              selectedYear.value == null || c.year == selectedYear.value;
-          return okSpec && okYear;
-        }).toList();
+        courses.value = _restrictToMySpec(_parseCourses(cached['courses']))
+            .where((c) =>
+                selectedYear.value == null || c.year == selectedYear.value)
+            .toList();
         offlineFallback.value = true;
         Get.snackbar('غير متصل', 'عُرضت نتائج محفوظة من آخر اتصال',
             backgroundColor: const Color(0xFFFFA000), colorText: Color(0xFFFFFFFF));
@@ -145,12 +158,6 @@ class CoursesController extends GetxController {
     } finally {
       isLoading.value = false;
     }
-  }
-
-  void selectSpecialization(int? specId) {
-    if (selectedSpecializationId.value == specId) return;
-    selectedSpecializationId.value = specId;
-    applyFilters();
   }
 
   void selectYear(int? year) {

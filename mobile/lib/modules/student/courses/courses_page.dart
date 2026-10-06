@@ -42,18 +42,7 @@ class CoursesPage extends StatelessWidget {
                             scrollDirection: Axis.horizontal,
                             padding: const EdgeInsets.symmetric(horizontal: 12),
                             children: [
-                              _buildFilterChip(
-                                ctrl,
-                                'الكل',
-                                ctrl.selectedSpecializationId.value == null,
-                                () => ctrl.selectSpecialization(null),
-                              ),
-                              ...ctrl.specializations.map((spec) => _buildFilterChip(
-                                    ctrl,
-                                    spec.name,
-                                    ctrl.selectedSpecializationId.value == spec.id,
-                                    () => ctrl.selectSpecialization(spec.id),
-                                  )),
+                              _buildStaticChip(ctrl.mySpecializationLabel),
                             ],
                           )),
                         ),
@@ -109,11 +98,18 @@ class CoursesPage extends StatelessWidget {
                   const SizedBox(height: 4),
                   Expanded(
                     child: Obx(() {
+                      if (!ctrl.hasSpecialization) {
+                        return const EmptyState(
+                          icon: Icons.category_outlined,
+                          title: 'لم تختر اختصاصاً',
+                          subtitle: 'تواصل مع الإدارة لتعيين اختصاصك',
+                        );
+                      }
                       if (ctrl.courses.isEmpty) {
                         return const EmptyState(
                           icon: Icons.school_outlined,
                           title: 'لا توجد دورات مطابقة',
-                          subtitle: 'جرّب اختيار اختصاص أو سنة أخرى',
+                          subtitle: 'جرّب اختيار سنة أخرى',
                         );
                       }
                       return ListView.builder(
@@ -145,26 +141,21 @@ class CoursesPage extends StatelessWidget {
     );
   }
 
-  Widget _buildFilterChip(
-      CoursesController ctrl, String label, bool isSelected, VoidCallback onTap) {
-    return GestureDetector(
-      onTap: onTap,
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 200),
-        margin: const EdgeInsets.symmetric(horizontal: 4),
-        padding: const EdgeInsets.symmetric(horizontal: 16),
-        decoration: BoxDecoration(
-          color: isSelected ? AppColors.primary : AppColors.surface,
-          borderRadius: BorderRadius.circular(20),
-          border: Border.all(color: isSelected ? AppColors.primary : AppColors.cardBorder),
-        ),
-        child: Center(
-          child: Text(label, style: TextStyle(
-            color: isSelected ? Colors.white : AppColors.textPrimary,
-            fontWeight: FontWeight.w500,
-            fontSize: 13,
-          )),
-        ),
+  /// شريحة ثابتة (غير تفاعلية) تعرض اختصاص الطالب — لا تصفح لغيره
+  Widget _buildStaticChip(String label) {
+    return Container(
+      margin: const EdgeInsets.symmetric(horizontal: 4),
+      padding: const EdgeInsets.symmetric(horizontal: 16),
+      decoration: BoxDecoration(
+        color: AppColors.primary,
+        borderRadius: BorderRadius.circular(20),
+      ),
+      child: Center(
+        child: Text(label, style: const TextStyle(
+          color: Colors.white,
+          fontWeight: FontWeight.w600,
+          fontSize: 13,
+        )),
       ),
     );
   }

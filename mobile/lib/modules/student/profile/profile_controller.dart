@@ -1,8 +1,11 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../../../data/providers/api_client.dart';
 import '../../../data/providers/api_exception.dart';
 import '../../../data/providers/auth_provider.dart';
+import '../../../data/providers/catalog_provider.dart';
 import '../../../data/providers/teacher_provider.dart';
 import '../../../data/services/storage_service.dart';
 import '../../../data/models/user_model.dart';
@@ -24,6 +27,9 @@ class ProfileController extends GetxController {
   final teacherCoursesCount = 0.obs;
   final teacherTotalEarned = '0.00'.obs;
 
+  /// أسماء الاختصاصات (مسار عام) لعرض اسم تخصص الطالب — صامت عند الفشل
+  final specNames = <int, String>{}.obs;
+
   final oldPasswordCtrl = TextEditingController();
   final newPasswordCtrl = TextEditingController();
   final confirmPasswordCtrl = TextEditingController();
@@ -36,6 +42,23 @@ class ProfileController extends GetxController {
   void onInit() {
     super.onInit();
     loadProfile();
+    unawaited(_loadSpecNames());
+  }
+
+  Future<void> _loadSpecNames() async {
+    try {
+      final provider = CatalogProvider(Get.find<ApiClient>());
+      final response = await provider.getSpecializations();
+      final data = response.data['data'];
+      if (data is List) {
+        specNames.value = {
+          for (final e in data)
+            ((e['id'] as num?)?.toInt() ?? 0): (e['name'] ?? '').toString()
+        };
+      }
+    } catch (_) {
+      // زخرفة فقط — الاسم يظهر إن توفّر وإلا يُخفى
+    }
   }
 
   @override

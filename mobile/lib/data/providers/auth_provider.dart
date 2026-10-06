@@ -19,13 +19,18 @@ class AuthProvider {
     required String fullName,
     required String password,
     required String deviceId,
+    int? specializationId,
+    String? phone,
   }) {
-    return _api.post('/auth/register', data: {
+    final data = <String, dynamic>{
       'username': username,
       'full_name': fullName,
       'password': password,
       'device_id': deviceId,
-    });
+    };
+    if (specializationId != null) data['specialization_id'] = specializationId;
+    if (phone != null && phone.isNotEmpty) data['phone'] = phone;
+    return _api.post('/auth/register', data: data);
   }
 
   Future<Response> getMe() {

@@ -57,6 +57,104 @@ class RegisterPage extends StatelessWidget {
                           keyboardType: TextInputType.name,
                         ),
                         const SizedBox(height: 16),
+                        Obx(() {
+                          if (ctrl.isLoadingSpecializations.value) {
+                            return Container(
+                              height: 56,
+                              padding: const EdgeInsets.symmetric(horizontal: 16),
+                              decoration: BoxDecoration(
+                                color: AppColors.surface,
+                                borderRadius: BorderRadius.circular(12),
+                                border: Border.all(color: AppColors.divider),
+                              ),
+                              child: Row(
+                                children: [
+                                  const SizedBox(
+                                    width: 18,
+                                    height: 18,
+                                    child: CircularProgressIndicator(
+                                        strokeWidth: 2, color: AppColors.primary),
+                                  ),
+                                  const SizedBox(width: 12),
+                                  Text('جارٍ تحميل الاختصاصات...',
+                                      style: GoogleFonts.cairo(
+                                          fontSize: 14, color: AppColors.textHint)),
+                                ],
+                              ),
+                            );
+                          }
+                          if (ctrl.specializationsError.value != null) {
+                            return Container(
+                              padding: const EdgeInsets.symmetric(
+                                  horizontal: 12, vertical: 8),
+                              decoration: BoxDecoration(
+                                color: AppColors.surface,
+                                borderRadius: BorderRadius.circular(12),
+                                border: Border.all(color: AppColors.error),
+                              ),
+                              child: Row(
+                                children: [
+                                  const Icon(Icons.error_outline,
+                                      color: AppColors.error, size: 20),
+                                  const SizedBox(width: 8),
+                                  Expanded(
+                                    child: Text('تعذر تحميل الاختصاصات',
+                                        style: GoogleFonts.cairo(
+                                            fontSize: 13, color: AppColors.textPrimary)),
+                                  ),
+                                  TextButton(
+                                    onPressed: ctrl.loadSpecializations,
+                                    child: const Text('إعادة المحاولة'),
+                                  ),
+                                ],
+                              ),
+                            );
+                          }
+                          return DropdownButtonFormField<int>(
+                            initialValue: ctrl.registerSpecializationId.value,
+                            style: GoogleFonts.cairo(
+                                fontSize: 15, color: AppColors.textPrimary),
+                            icon: Icon(Icons.keyboard_arrow_down_rounded,
+                                color: AppColors.textHint),
+                            decoration: InputDecoration(
+                              labelText: 'الاختصاص *',
+                              labelStyle: GoogleFonts.cairo(
+                                  color: AppColors.textHint),
+                              prefixIcon: Icon(Icons.category_outlined,
+                                  color: AppColors.textHint, size: 22),
+                              filled: true,
+                              fillColor: AppColors.surface,
+                              contentPadding: const EdgeInsets.symmetric(
+                                  horizontal: 16, vertical: 16),
+                              border: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(12),
+                                borderSide: BorderSide(color: AppColors.divider),
+                              ),
+                              enabledBorder: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(12),
+                                borderSide: BorderSide(color: AppColors.divider),
+                              ),
+                              focusedBorder: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(12),
+                                borderSide: const BorderSide(
+                                    color: AppColors.primary, width: 2),
+                              ),
+                            ),
+                            items: [
+                              DropdownMenuItem<int>(
+                                value: null,
+                                child: Text('اختر الاختصاص',
+                                    style: TextStyle(color: AppColors.textHint)),
+                              ),
+                              ...ctrl.specializations.map((s) =>
+                                  DropdownMenuItem<int>(
+                                      value: s.id, child: Text(s.name))),
+                            ],
+                            onChanged: (value) =>
+                                ctrl.registerSpecializationId.value = value,
+                          );
+                        }),
+                        const SizedBox(height: 16),
                         Obx(() => CustomTextField(
                           labelText: 'كلمة المرور',
                           prefixIcon: Icons.lock_outline,
@@ -86,6 +184,13 @@ class RegisterPage extends StatelessWidget {
                             onPressed: () => ctrl.obscureConfirmPassword.toggle(),
                           ),
                         )),
+                        const SizedBox(height: 16),
+                        CustomTextField(
+                          labelText: 'رقم الهاتف (اختياري)',
+                          prefixIcon: Icons.phone_outlined,
+                          controller: ctrl.registerPhoneCtrl,
+                          keyboardType: TextInputType.phone,
+                        ),
                       ],
                     ),
                   ),
@@ -93,7 +198,11 @@ class RegisterPage extends StatelessWidget {
                   Obx(() => CustomButton(
                     text: 'سجّل الآن',
                     isLoading: ctrl.isLoading.value,
-                    onPressed: ctrl.register,
+                    onPressed: ctrl.isLoadingSpecializations.value ||
+                            ctrl.specializationsError.value != null ||
+                            ctrl.registerSpecializationId.value == null
+                        ? null
+                        : ctrl.register,
                     icon: Icons.person_add,
                   )),
                   const SizedBox(height: 20),

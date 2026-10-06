@@ -8,6 +8,7 @@ import '../../../app/routes/app_routes.dart';
 import '../../../data/services/download_manager.dart';
 import '../../../widgets/balance_card.dart';
 import '../../../widgets/course_card.dart';
+import '../../../widgets/empty_state.dart';
 import '../../../widgets/gradient_app_bar.dart';
 import '../../../widgets/loading_shimmer.dart';
 import '../../../widgets/section_header.dart';
@@ -258,6 +259,18 @@ class HomePage extends StatelessWidget {
                     onAction: () => Get.toNamed(AppRoutes.courses),
                   ),
                   const SizedBox(height: 8),
+                  if (ctrl.latestCourses.isEmpty)
+                    EmptyState(
+                      icon: ctrl.hasSpecialization
+                          ? Icons.school_outlined
+                          : Icons.category_outlined,
+                      title: ctrl.hasSpecialization
+                          ? 'لا توجد دورات بعد'
+                          : 'لم تختر اختصاصاً',
+                      subtitle: ctrl.hasSpecialization
+                          ? 'ستظهر الدورات الجديدة هنا قريباً'
+                          : 'تواصل مع الإدارة لتعيين اختصاصك',
+                    ),
                   ...ctrl.latestCourses.map((course) => CourseCard(
                         courseId: course.id,
                         name: course.name,

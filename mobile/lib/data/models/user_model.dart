@@ -6,6 +6,9 @@ class UserModel {
   final bool isActive;
   final bool isTest;
   final String? balance;
+  final String? phone;
+  final int? specializationId;
+  final String? specializationName;
 
   UserModel({
     required this.id,
@@ -15,6 +18,9 @@ class UserModel {
     required this.isActive,
     required this.isTest,
     this.balance,
+    this.phone,
+    this.specializationId,
+    this.specializationName,
   });
 
   factory UserModel.fromJson(Map<String, dynamic> json) {
@@ -26,6 +32,9 @@ class UserModel {
       isActive: json['is_active'] ?? true,
       isTest: json['is_test'] ?? false,
       balance: json['balance']?.toString(),
+      phone: json['phone'] as String?,
+      specializationId: (json['specialization_id'] as num?)?.toInt(),
+      specializationName: json['specialization_name'] as String?,
     );
   }
 

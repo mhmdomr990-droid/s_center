@@ -6,11 +6,13 @@ import 'package:get/get.dart';
 import '../../data/providers/api_client.dart';
 import '../../data/providers/api_exception.dart';
 import '../../data/providers/auth_provider.dart';
+import '../../data/providers/catalog_provider.dart';
 import '../../data/services/storage_service.dart';
 import '../../data/services/device_service.dart';
 import '../../data/services/download_manager.dart';
 import '../../data/services/offline_cache.dart';
 import '../../data/models/user_model.dart';
+import '../../data/models/specialization_model.dart';
 import '../../app/routes/app_routes.dart';
 import '../home_shell.dart';
 import '../admin/admin_shell.dart';
@@ -49,11 +51,22 @@ class AuthController extends GetxController {
   final registerFullNameCtrl = TextEditingController();
   final registerPasswordCtrl = TextEditingController();
   final registerConfirmCtrl = TextEditingController();
+  final registerPhoneCtrl = TextEditingController();
+
+  /// الاختصاص إلزامي عند التسجيل — القائمة تُجلب من مسار عام (بلا دخول)
+  final registerSpecializationId = Rxn<int>();
+  final specializations = <SpecializationModel>[].obs;
+  final isLoadingSpecializations = false.obs;
+  final specializationsError = Rxn<String>();
+
+  late final CatalogProvider _catalogProvider;
 
   @override
   void onInit() {
     super.onInit();
     _authProvider = AuthProvider(_apiClient);
+    _catalogProvider = CatalogProvider(_apiClient);
+    unawaited(loadSpecializations());
   }
 
   @override
@@ -64,7 +77,31 @@ class AuthController extends GetxController {
     registerFullNameCtrl.dispose();
     registerPasswordCtrl.dispose();
     registerConfirmCtrl.dispose();
+    registerPhoneCtrl.dispose();
     super.onClose();
+  }
+
+  Future<void> loadSpecializations() async {
+    isLoadingSpecializations.value = true;
+    specializationsError.value = null;
+    try {
+      final response = await _catalogProvider.getSpecializations();
+      final data = response.data['data'];
+      if (data is List) {
+        specializations.value = data
+            .map<SpecializationModel>((e) =>
+                SpecializationModel.fromJson(Map<String, dynamic>.from(e as Map)))
+            .where((s) => s.isPublished && s.id != 0)
+            .toList();
+      } else {
+        specializations.clear();
+      }
+    } catch (_) {
+      specializations.clear();
+      specializationsError.value = 'تعذر تحميل الاختصاصات';
+    } finally {
+      isLoadingSpecializations.value = false;
+    }
   }
 
   Future<void> login() async {
@@ -131,6 +168,26 @@ class AuthController extends GetxController {
       return;
     }
 
+    // الاختصاص إلزامي (مطابق لواجهة الويب) — ولا تسجيل قبل تحميل قائمته
+    if (isLoadingSpecializations.value) {
+      Get.snackbar('خطأ', 'انتظر تحميل الاختصاصات', backgroundColor: Colors.red, colorText: Colors.white);
+      return;
+    }
+    if (specializationsError.value != null) {
+      Get.snackbar('خطأ', 'تعذر تحميل الاختصاصات — أعد المحاولة', backgroundColor: Colors.red, colorText: Colors.white);
+      return;
+    }
+    if (registerSpecializationId.value == null) {
+      Get.snackbar('خطأ', 'يرجى اختيار الاختصاص', backgroundColor: Colors.red, colorText: Colors.white);
+      return;
+    }
+
+    final phone = registerPhoneCtrl.text.trim();
+    if (phone.isNotEmpty && !RegExp(r'^\+?[0-9\s\-()]{7,30}$').hasMatch(phone)) {
+      Get.snackbar('خطأ', 'رقم الهاتف غير صالح', backgroundColor: Colors.red, colorText: Colors.white);
+      return;
+    }
+
     isLoading.value = true;
     try {
       final deviceId = await _deviceService.getDeviceId();
@@ -139,6 +196,8 @@ class AuthController extends GetxController {
         fullName: registerFullNameCtrl.text.trim(),
         password: registerPasswordCtrl.text,
         deviceId: deviceId,
+        specializationId: registerSpecializationId.value,
+        phone: phone.isEmpty ? null : phone,
       );
 
       final data = response.data['data'];

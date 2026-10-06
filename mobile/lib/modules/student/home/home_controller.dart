@@ -8,6 +8,7 @@ import '../../../data/providers/purchase_provider.dart';
 import '../../../data/services/storage_service.dart';
 import '../../../data/models/course_model.dart';
 import '../../../data/models/purchase_model.dart';
+import '../../auth/auth_controller.dart';
 
 class HomeController extends GetxController {
   final CatalogProvider _catalogProvider;
@@ -26,6 +27,11 @@ class HomeController extends GetxController {
   final userName = ''.obs;
   final myCourses = <PurchaseModel>[].obs;
   final latestCourses = <CourseModel>[].obs;
+
+  /// هل اختار الطالب اختصاصاً عند التسجيل؟ (رسالة لمن بلا اختصاص)
+  bool get hasSpecialization => Get.isRegistered<AuthController>()
+      ? Get.find<AuthController>().user.value?.specializationId != null
+      : false;
 
   Map<int, String> _specNames = {};
 
@@ -80,7 +86,11 @@ class HomeController extends GetxController {
 
       final catalogData = results[2].data['data'];
       if (catalogData is List) {
-        latestCourses.value = catalogData.map<CourseModel>((e) {
+        // واجهة الطالب تعرض تخصصه فقط — فل أمان جانب العميل
+        final mySpecId = Get.isRegistered<AuthController>()
+            ? Get.find<AuthController>().user.value?.specializationId
+            : null;
+        final parsed = catalogData.map<CourseModel>((e) {
           final json = Map<String, dynamic>.from(e as Map);
           if ((json['specialization_name'] == null ||
                   json['specialization_name'] == '') &&
@@ -88,7 +98,12 @@ class HomeController extends GetxController {
             json['specialization_name'] = _specNames[json['specialization_id']];
           }
           return CourseModel.fromJson(json);
-        }).toList().take(5).toList();
+        });
+        latestCourses.value = (mySpecId == null
+                ? <CourseModel>[]
+                : parsed.where((c) => c.specializationId == mySpecId))
+            .take(5)
+            .toList();
       }
     } catch (e) {
       Get.snackbar('خطأ', apiErrorMessage(e, fallback: 'فشل تحميل البيانات'),
