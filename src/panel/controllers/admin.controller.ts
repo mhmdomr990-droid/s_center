@@ -1,9 +1,10 @@
 import type { Request, Response } from 'express';
 
 import { AppDataSource } from '../../config/data-source';
+import { Lecture } from '../../entities/Lecture';
 import { User } from '../../entities/User';
 import { AppError } from '../../utils/AppError';
-import type { StoredVideoFile } from '../../services/media';
+import { createSignedMediaToken, type StoredVideoFile } from '../../services/media';
 import {
   approveTopupRequest,
   archiveCourse,
@@ -16,6 +17,8 @@ import {
   createNotifications,
   createSpecialization,
   createTeacher,
+  createStudent,
+  createAdmin,
   adjustBalance,
   listCourses,
   listLectures,
@@ -239,6 +242,45 @@ export async function deleteLectureAction(req: Request, res: Response) {
   return res.redirect('/panel/admin/lectures');
 }
 
+export async function watchLecturePage(req: Request, res: Response) {
+  const lectureId = Number(req.params.id);
+  const lecture = await AppDataSource.getRepository(Lecture).findOne({
+    where: { id: lectureId },
+    relations: { course: { specialization: true, teacher: true } },
+  });
+
+  if (!lecture) {
+    throw new AppError(404, 'Lecture not found');
+  }
+
+  const token = createSignedMediaToken({
+    lectureId: lecture.id,
+    userId: req.user!.id,
+    purpose: 'stream',
+    role: req.user!.role,
+    expiresInMinutes: 10,
+  });
+
+  const common = await loadAdminCommon();
+
+  return res.render('admin/lecture-watch', {
+    title: 'مشاهدة المحاضرة',
+    currentUser: req.user,
+    flash: res.locals.flash,
+    csrfToken: res.locals.csrfToken,
+    lecture: {
+      ...lecture,
+      course_id: lecture.course.id,
+      course_name: lecture.course.name,
+      type: lecture.type,
+      is_published: lecture.isPublished,
+      sort_order: lecture.sortOrder,
+    },
+    streamUrl: `/media/play/${token}`,
+    ...common,
+  });
+}
+
 export async function topupsPage(req: Request, res: Response) {
   const status = (req.query.status as TopupStatus) || TopupStatus.PENDING;
   const requests = await listTopupRequests(status);
@@ -287,7 +329,26 @@ export async function usersPage(req: Request, res: Response) {
 }
 
 export async function toggleUserActiveAction(req: Request, res: Response) {
-  await setUserActive(Number(req.params.id), req.body.is_active === 'true');
+  const targetUserId = Number(req.params.id);
+  const targetUser = await AppDataSource.getRepository(User).findOne({ where: { id: targetUserId } });
+
+  if (!targetUser) {
+    setFlash(res, 'error', 'المستخدم غير موجود');
+    return res.redirect('/panel/admin/users');
+  }
+
+  if (targetUser.id === req.user!.id) {
+    setFlash(res, 'error', 'لا يمكنك إيقاف حسابك الشخصي');
+    return res.redirect('/panel/admin/users');
+  }
+
+  if (targetUser.role === UserRole.ADMIN) {
+    setFlash(res, 'error', 'لا يمكن إيقاف حساب مدير');
+    return res.redirect('/panel/admin/users');
+  }
+
+  const nextIsActive = req.body.is_active === true || req.body.is_active === 'true' || req.body.is_active === 1 || req.body.is_active === '1';
+  await setUserActive(targetUserId, nextIsActive);
   setFlash(res, 'success', 'تم تحديث حالة المستخدم');
   return res.redirect('/panel/admin/users');
 }
@@ -327,6 +388,18 @@ export async function createTeacherAction(req: Request, res: Response) {
   await createTeacher(req.body);
   setFlash(res, 'success', 'تم إنشاء المدرس');
   return res.redirect('/panel/admin/teachers');
+}
+
+export async function createStudentAction(req: Request, res: Response) {
+  await createStudent(req.body);
+  setFlash(res, 'success', 'تم إنشاء الطالب');
+  return res.redirect('/panel/admin/users');
+}
+
+export async function createAdminAction(req: Request, res: Response) {
+  await createAdmin(req.body);
+  setFlash(res, 'success', 'تم إنشاء المدير الجديد');
+  return res.redirect('/panel/admin/users');
 }
 
 export async function teacherPayoutAction(req: Request, res: Response) {

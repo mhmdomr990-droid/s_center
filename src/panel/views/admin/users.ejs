@@ -5,10 +5,14 @@
   <div>
     <h1 style="margin:0;">المستخدمون</h1>
   </div>
-  <form method="get" action="/panel/admin/users">
-    <input type="text" name="search" placeholder="بحث" value="<%= search || '' %>">
-    <button class="panel-btn panel-btn-secondary" type="submit">بحث</button>
-  </form>
+  <div class="panel-topbar-actions">
+    <button class="panel-btn panel-btn-primary" data-modal-open="student-create-modal">إضافة طالب</button>
+    <button class="panel-btn panel-btn-secondary" data-modal-open="admin-create-modal">إضافة مدير</button>
+    <form method="get" action="/panel/admin/users" class="panel-topbar-search">
+      <input type="text" name="search" placeholder="بحث" value="<%= search || '' %>">
+      <button class="panel-btn panel-btn-secondary" type="submit">بحث</button>
+    </form>
+  </div>
 </div>
 <%- include('../partials/breadcrumb', {
   items: [
@@ -64,6 +68,35 @@
       <% }) %>
     </tbody>
   </table>
+</div>
+<div class="panel-modal" id="student-create-modal">
+  <div class="panel-modal-content">
+    <div class="panel-modal-header"><h3>إضافة طالب جديد</h3><button type="button" class="panel-modal-close" data-modal-close>×</button></div>
+    <form method="post" action="/panel/admin/students" class="panel-form">
+      <input type="hidden" name="csrf_token" value="<%= csrfToken %>">
+      <div class="panel-form-grid">
+        <div><label>اسم المستخدم</label><input name="username" required></div>
+        <div><label>الاسم الكامل</label><input name="full_name" required></div>
+        <div><label>كلمة المرور</label><input name="password" type="password" required></div>
+        <div><label>معرّف الجهاز (اختياري)</label><input name="device_id" type="text" placeholder="إذا كان الجهاز معروفًا"></div>
+      </div>
+      <div class="panel-form-actions"><button class="panel-btn panel-btn-primary" type="submit">حفظ</button></div>
+    </form>
+  </div>
+</div>
+<div class="panel-modal" id="admin-create-modal">
+  <div class="panel-modal-content">
+    <div class="panel-modal-header"><h3>إضافة مدير جديد</h3><button type="button" class="panel-modal-close" data-modal-close>×</button></div>
+    <form method="post" action="/panel/admin/admins" class="panel-form">
+      <input type="hidden" name="csrf_token" value="<%= csrfToken %>">
+      <div class="panel-form-grid">
+        <div><label>اسم المستخدم</label><input name="username" required></div>
+        <div><label>الاسم الكامل</label><input name="full_name" required></div>
+        <div><label>كلمة المرور</label><input name="password" type="password" required></div>
+      </div>
+      <div class="panel-form-actions"><button class="panel-btn panel-btn-primary" type="submit">حفظ</button></div>
+    </form>
+  </div>
 </div>
 <div class="panel-modal" id="user-reset-password-modal">
   <div class="panel-modal-content">

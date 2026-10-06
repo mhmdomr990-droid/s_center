@@ -17,6 +17,80 @@
   });
   window.Polish?.initThemeToggle(document);
 
+  document.querySelectorAll('.panel-table').forEach((tableWrap) => {
+    if (tableWrap.querySelector('.panel-table-search')) {
+      return;
+    }
+
+    const table = tableWrap.querySelector('table');
+    if (!table) {
+      return;
+    }
+
+    const scrollContainer = document.createElement('div');
+    scrollContainer.className = 'panel-table-scroll';
+    tableWrap.insertBefore(scrollContainer, table);
+    scrollContainer.appendChild(table);
+
+    const searchWrap = document.createElement('div');
+    searchWrap.className = 'panel-table-search';
+
+    const searchInput = document.createElement('input');
+    searchInput.type = 'search';
+    searchInput.placeholder = 'بحث داخل الجدول';
+    searchInput.setAttribute('aria-label', 'بحث داخل الجدول');
+    searchInput.value = '';
+
+    searchWrap.appendChild(searchInput);
+    tableWrap.insertBefore(searchWrap, scrollContainer);
+
+    searchInput.addEventListener('input', () => {
+      const query = searchInput.value.trim().toLowerCase();
+      const rows = table.querySelectorAll('tbody tr');
+      rows.forEach((row) => {
+        const text = row.textContent.replace(/\s+/g, ' ').trim().toLowerCase();
+        row.hidden = !!query && !text.includes(query);
+      });
+    });
+  });
+
+  const mobileToggle = document.querySelector('.panel-mobile-menu-toggle');
+  const sidebar = document.getElementById('panelSidebar');
+  if (mobileToggle && sidebar) {
+    const setSidebarOpen = (isOpen) => {
+      sidebar.classList.toggle('is-open', isOpen);
+      mobileToggle.setAttribute('aria-expanded', String(isOpen));
+      mobileToggle.setAttribute('aria-label', isOpen ? 'إغلاق القائمة' : 'فتح القائمة');
+      mobileToggle.textContent = isOpen ? '✕' : '☰';
+    };
+
+    mobileToggle.addEventListener('click', () => {
+      const isOpen = sidebar.classList.contains('is-open');
+      setSidebarOpen(!isOpen);
+    });
+
+    sidebar.querySelectorAll('a, button').forEach((link) => {
+      link.addEventListener('click', () => {
+        if (window.innerWidth <= 1100) {
+          setSidebarOpen(false);
+        }
+      });
+    });
+
+    document.addEventListener('click', (event) => {
+      if (window.innerWidth > 1100) {
+        return;
+      }
+      const target = event.target;
+      if (!(target instanceof Node)) {
+        return;
+      }
+      if (!sidebar.contains(target) && !mobileToggle.contains(target)) {
+        setSidebarOpen(false);
+      }
+    });
+  }
+
   const csrfTokenInput = document.querySelector('input[name="csrf_token"]');
   const csrfToken = csrfTokenInput ? csrfTokenInput.value : '';
 

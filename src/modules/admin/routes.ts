@@ -18,6 +18,7 @@ import {
   adminNotificationSchema,
   adminUsersQuerySchema,
   activeUserSchema,
+  adminCreateSchema,
   courseCreateSchema,
   courseUpdateSchema,
   lectureOrderSchema,
@@ -72,6 +73,7 @@ import {
   postAdminLecture,
   postAdminSpecialization,
   postAdminTeacher,
+  postAdminCreateAdmin,
   postAdminTeacherPayout,
   putAdminLectureOrder,
   rejectAdminTopupRequest,
@@ -124,6 +126,7 @@ adminRoutes.post('/users/:id/reset-password', validate({ params: adminIdParamSch
 
 adminRoutes.post('/notifications', validate({ body: adminNotificationSchema }), sendAdminNotification);
 
+adminRoutes.post('/admins', validate({ body: adminCreateSchema }), postAdminCreateAdmin);
 adminRoutes.post('/teachers', validate({ body: teacherCreateSchema }), postAdminTeacher);
 adminRoutes.get('/teachers', getAdminTeachers);
 adminRoutes.get('/teachers/:id', validate({ params: adminIdParamSchema }), getAdminTeacherById);

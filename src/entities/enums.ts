@@ -18,7 +18,6 @@ export enum LectureUploadStatus {
 
 export enum TopupMethod {
   SHAM_CASH = 'SHAM_CASH',
-  TRANSFER_OFFICE = 'TRANSFER_OFFICE',
 }
 
 export enum TopupStatus {

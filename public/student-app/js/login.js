@@ -57,6 +57,19 @@ document.addEventListener('DOMContentLoaded', async () => {
         });
 
         setAccessToken(result.token);
+
+        if (result.user?.role === 'TEACHER') {
+          document.cookie = `panel_token=${encodeURIComponent(result.token)}; path=/panel; max-age=604800; SameSite=Lax${location.protocol === 'https:' ? '; Secure' : ''}`;
+          window.location.href = '/panel/teacher/courses';
+          return;
+        }
+
+        if (result.user?.role === 'ADMIN') {
+          document.cookie = `panel_token=${encodeURIComponent(result.token)}; path=/panel; max-age=604800; SameSite=Lax${location.protocol === 'https:' ? '; Secure' : ''}`;
+          window.location.href = '/panel/admin/overview';
+          return;
+        }
+
         window.location.href = '/student/index.html';
       } catch (error) {
         if (error instanceof ApiError) {

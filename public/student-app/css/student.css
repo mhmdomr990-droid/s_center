@@ -16,6 +16,15 @@ body {
     radial-gradient(circle at 0% 120%, color-mix(in srgb, var(--panel-soft) 80%, transparent) 0, transparent 40%),
     linear-gradient(180deg, color-mix(in srgb, var(--bg) 64%, var(--panel-soft)) 0%, var(--bg) 100%);
   font-family: Cairo, Tahoma, sans-serif;
+  overflow-x: hidden;
+  max-width: 100%;
+}
+
+img,
+video,
+iframe,
+svg {
+  max-width: 100%;
 }
 
 a {
@@ -48,6 +57,9 @@ textarea {
 
 .student-shell {
   min-height: 100vh;
+  width: 100%;
+  max-width: 100%;
+  overflow-x: hidden;
 }
 
 .student-main {
@@ -321,6 +333,34 @@ textarea {
   border-radius: 12px;
   margin: 8px 0;
   background: var(--panel);
+}
+
+@media (max-width: 767px) {
+  .student-main {
+    padding-left: 12px;
+    padding-right: 12px;
+  }
+
+  .student-card {
+    padding: 12px;
+  }
+
+  .student-card-row {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .student-actions {
+    width: 100%;
+  }
+
+  .student-btn {
+    width: 100%;
+  }
+
+  .student-media {
+    min-height: 220px;
+  }
 }
 
 @media (min-width: 768px) {

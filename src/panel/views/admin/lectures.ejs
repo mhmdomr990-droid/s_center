@@ -64,6 +64,7 @@
           <td><%= item.is_published ? 'منشور' : 'مخفي' %></td>
           <td>
             <button class="panel-btn panel-btn-secondary" data-modal-open="lecture-edit-modal" data-modal-action="/panel/admin/lectures/<%= item.id %>?csrf_token=<%= csrfToken %>" data-modal-fill='<%= JSON.stringify(item) %>'>تعديل</button>
+            <a class="panel-btn panel-btn-secondary" href="/panel/admin/lectures/<%= item.id %>/watch">مشاهدة</a>
             <form method="post" action="/panel/admin/lectures/<%= item.id %>/hide" style="display:inline;">
               <input type="hidden" name="csrf_token" value="<%= csrfToken %>">
               <button class="panel-btn panel-btn-secondary" type="submit" data-confirm="هل تريد إخفاء هذه المحاضرة؟">إخفاء</button>

@@ -15,10 +15,10 @@
   ],
 }) %>
 <div class="panel-toolbar">
-  <form method="get" action="/panel/admin/courses">
+  <form method="get" action="/panel/admin/courses" class="panel-topbar-search">
     <input type="text" name="specializationId" placeholder="التخصص" value="<%= filters.specializationId || '' %>">
     <input type="text" name="year" placeholder="السنة" value="<%= filters.year || '' %>">
-    <button class="panel-btn panel-btn-secondary" type="submit">تصفية</button>
+    <button class="panel-btn panel-btn-secondary" type="submit">عرض</button>
   </form>
 </div>
 <div class="panel-table">

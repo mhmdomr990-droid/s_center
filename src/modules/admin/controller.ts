@@ -21,6 +21,7 @@ import {
   createNotifications,
   createSpecialization,
   createTeacher,
+  createAdmin,
   adjustBalance,
   listTeacherPayouts,
   listTeachers,
@@ -240,6 +241,11 @@ export const sendAdminNotification = asyncHandler(async (req: Request, res: Resp
 
 export const postAdminTeacher = asyncHandler(async (req: Request, res: Response) => {
   const data = await createTeacher(req.body);
+  res.status(201).json({ success: true, data });
+});
+
+export const postAdminCreateAdmin = asyncHandler(async (req: Request, res: Response) => {
+  const data = await createAdmin(req.body);
   res.status(201).json({ success: true, data });
 });
 

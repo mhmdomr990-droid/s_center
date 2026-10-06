@@ -67,16 +67,22 @@ export async function loginUser(input: { username: string; password: string; dev
   const user = await authenticateCredentials({ username: input.username, password: input.password });
 
   if (user.role === UserRole.STUDENT) {
-    if (!input.device_id) {
+    const deviceId = input.device_id?.trim() || user.deviceId || null;
+
+    if (!deviceId) {
       throw new AppError(400, 'device_id is required');
     }
 
     if (!user.deviceId) {
-      user.deviceId = input.device_id;
+      user.deviceId = deviceId;
       await userRepository.save(user);
-    } else if (user.deviceId !== input.device_id) {
+    } else if (user.deviceId !== deviceId) {
       throw new AppError(403, 'This account is linked to another device');
     }
+  }
+
+  if (user.role !== UserRole.STUDENT && user.role !== UserRole.TEACHER && user.role !== UserRole.ADMIN) {
+    throw new AppError(403, 'This account is not allowed to sign in');
   }
 
   return {

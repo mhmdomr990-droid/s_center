@@ -1,0 +1,35 @@
+<%- include('../layout/header', { title: 'مشاهدة المحاضرة' }) %>
+<%- include('../layout/sidebar', { currentUser, csrfToken, pendingTopupsCount }) %>
+<%- include('../partials/flash', { flash }) %>
+<div class="panel-topbar">
+  <div>
+    <h1 style="margin:0;">مشاهدة المحاضرة</h1>
+    <p class="panel-muted" style="margin:6px 0 0;"><%= lecture.title %></p>
+  </div>
+</div>
+<%
+  const lectureBreadcrumb = [
+    { label: 'لوحة التحكم', href: '/panel/admin/overview' },
+    { label: 'المحاضرات', href: `/panel/admin/lectures?courseId=${lecture.course_id}` },
+    { label: lecture.title },
+  ];
+%>
+<%- include('../partials/breadcrumb', { items: lectureBreadcrumb }) %>
+<div class="panel-card" style="padding:24px;">
+  <% if (lecture.type === 'VIDEO') { %>
+    <video controls preload="metadata" playsinline src="<%= streamUrl %>" style="display:block; width:100%; max-height:72vh; border-radius:12px; background:#000;"></video>
+  <% } else if (lecture.type === 'PDF' && lecture.url) { %>
+    <iframe src="<%= lecture.url %>" style="width:100%; min-height:70vh; border:0; border-radius:12px; background:#fff;"></iframe>
+  <% } else if (lecture.type === 'TEXT' || lecture.content) { %>
+    <div class="panel-content" style="background:#f8fafc; padding:20px; border-radius:12px; line-height:1.8; white-space:pre-wrap;">
+      <%= lecture.content || 'لا يوجد محتوى نصي لهذه المحاضرة.' %>
+    </div>
+  <% } else { %>
+    <p class="panel-muted">لا يوجد محتوى متاح لهذه المحاضرة.</p>
+  <% } %>
+
+  <div style="margin-top:20px;">
+    <a class="panel-btn panel-btn-secondary" href="/panel/admin/lectures?courseId=<%= lecture.course_id %>">عودة إلى المحاضرات</a>
+  </div>
+</div>
+<%- include('../layout/footer') %>

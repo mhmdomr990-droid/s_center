@@ -57,8 +57,23 @@ export async function redirectIfAuthenticated() {
   }
 
   try {
-    await apiGet('/auth/me', { skip401Redirect: true });
-    window.location.href = '/student/index.html';
+    const me = await apiGet('/auth/me', { skip401Redirect: true });
+    if (me.role === 'STUDENT') {
+      window.location.href = '/student/index.html';
+      return;
+    }
+
+    if (me.role === 'TEACHER') {
+      document.cookie = `panel_token=${encodeURIComponent(token)}; path=/panel; max-age=604800; SameSite=Lax${location.protocol === 'https:' ? '; Secure' : ''}`;
+      window.location.href = '/panel/teacher/courses';
+      return;
+    }
+
+    if (me.role === 'ADMIN') {
+      document.cookie = `panel_token=${encodeURIComponent(token)}; path=/panel; max-age=604800; SameSite=Lax${location.protocol === 'https:' ? '; Secure' : ''}`;
+      window.location.href = '/panel/admin/overview';
+      return;
+    }
   } catch (_error) {
     clearAuthStorage();
   }

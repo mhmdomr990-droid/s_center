@@ -19,7 +19,7 @@ const adminSeedSchema = z.object({
   ADMIN_PASSWORD: z.string().min(8),
 });
 
-async function main() {
+export async function ensureDefaultAdmin() {
   const parsed = adminSeedSchema.safeParse({
     ADMIN_USERNAME: env.ADMIN_USERNAME,
     ADMIN_PASSWORD: env.ADMIN_PASSWORD,
@@ -29,15 +29,12 @@ async function main() {
     throw new Error(parsed.error.issues.map((issue) => issue.message).join(', '));
   }
 
-  await AppDataSource.initialize();
-
   const userRepository = AppDataSource.getRepository(User);
-  const existingAdminCount = await userRepository.count({ where: { role: UserRole.ADMIN } });
+  const existingAdmin = await userRepository.findOne({ where: { role: UserRole.ADMIN } });
 
-  if (existingAdminCount > 0) {
-    console.log('An admin user already exists. Skipping seed.');
-    await AppDataSource.destroy();
-    return;
+  if (existingAdmin) {
+    console.log(`Admin user already exists. Skipping default seed for username: ${existingAdmin.username}`);
+    return existingAdmin;
   }
 
   const username = parsed.data.ADMIN_USERNAME;
@@ -46,15 +43,14 @@ async function main() {
   if (existingUser) {
     if (existingUser.role === UserRole.ADMIN) {
       console.log('Admin user already exists. Skipping seed.');
-      await AppDataSource.destroy();
-      return;
+      return existingUser;
     }
 
     throw new Error('The configured admin username is already taken by another account');
   }
 
   const passwordHash = await bcrypt.hash(parsed.data.ADMIN_PASSWORD, 12);
-  await userRepository.save(
+  const createdAdmin = await userRepository.save(
     userRepository.create({
       username,
       fullName: 'System Administrator',
@@ -67,14 +63,22 @@ async function main() {
   );
 
   console.log('Admin user created successfully');
+  return createdAdmin;
+}
+
+async function main() {
+  await AppDataSource.initialize();
+  await ensureDefaultAdmin();
   await AppDataSource.destroy();
 }
 
-main().catch(async (error) => {
-  console.error('Failed to seed admin');
-  console.error(error instanceof Error ? error.message : error);
-  if (AppDataSource.isInitialized) {
-    await AppDataSource.destroy();
-  }
-  process.exit(1);
-});
+if (require.main === module) {
+  main().catch(async (error) => {
+    console.error('Failed to seed admin');
+    console.error(error instanceof Error ? error.message : error);
+    if (AppDataSource.isInitialized) {
+      await AppDataSource.destroy();
+    }
+    process.exit(1);
+  });
+}

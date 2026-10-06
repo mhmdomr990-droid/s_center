@@ -4,11 +4,13 @@ import { AppDataSource } from './config/data-source';
 import { env } from './config/env';
 import { app } from './app';
 import { cleanupExpiredIdempotencyKeys } from './services/idempotency';
+import { ensureDefaultAdmin } from './seed-admin';
 
 let idempotencyCleanupTimer: NodeJS.Timeout | undefined;
 
 async function bootstrap() {
   await AppDataSource.initialize();
+  await ensureDefaultAdmin();
   await cleanupExpiredIdempotencyKeys();
   idempotencyCleanupTimer = setInterval(() => {
     void cleanupExpiredIdempotencyKeys();

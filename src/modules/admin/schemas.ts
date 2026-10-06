@@ -121,7 +121,18 @@ export const rejectTopupSchema = z
 
 export const activeUserSchema = z
   .object({
-    is_active: z.boolean(),
+    is_active: z.preprocess((value) => {
+      if (typeof value === 'string') {
+        const normalized = value.trim().toLowerCase();
+        if (normalized === 'true' || normalized === '1') {
+          return true;
+        }
+        if (normalized === 'false' || normalized === '0') {
+          return false;
+        }
+      }
+      return value;
+    }, z.boolean()),
   })
   .strict();
 
@@ -189,6 +200,23 @@ export const adminNotificationSchema = z.union([
 ]);
 
 export const teacherCreateSchema = z
+  .object({
+    username: usernameSchema,
+    full_name: z.string().trim().min(2).max(120),
+    password: passwordSchema,
+  })
+  .strict();
+
+export const studentCreateSchema = z
+  .object({
+    username: usernameSchema,
+    full_name: z.string().trim().min(2).max(120),
+    password: passwordSchema,
+    device_id: z.string().trim().max(255).optional().nullable(),
+  })
+  .strict();
+
+export const adminCreateSchema = z
   .object({
     username: usernameSchema,
     full_name: z.string().trim().min(2).max(120),

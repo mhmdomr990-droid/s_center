@@ -24,8 +24,8 @@ const envSchema = z.object({
   VIDEO_SIGNING_SECRET: z.string().min(1).optional(),
   DOWNLOAD_URL_EXPIRY_MINUTES: z.coerce.number().int().positive().default(120),
   DOWNLOAD_TTL_DAYS: z.coerce.number().int().positive().default(100),
-  ADMIN_USERNAME: z.string().optional(),
-  ADMIN_PASSWORD: z.string().optional(),
+  ADMIN_USERNAME: z.string().default('asmaa'),
+  ADMIN_PASSWORD: z.string().default('asmaa2026'),
   DEBUG_PANEL: z
     .string()
     .optional()

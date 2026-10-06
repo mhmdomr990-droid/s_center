@@ -10,8 +10,10 @@ import {
 	adminIdParamSchema,
 	adjustBalanceSchema,
 	activeUserSchema,
+	adminCreateSchema,
 	adminNotificationSchema,
 	adminSalesStatsSchema,
+	studentCreateSchema,
 	adminStatsRangeSchema,
 	adminTeachersStatsSchema,
 	adminTopCoursesStatsSchema,
@@ -34,11 +36,14 @@ import {
 	approveTopupAction,
 	adjustUserBalanceAction,
 	coursesPage,
+	createAdminAction,
 	createCourseAction,
 	createLectureAction,
 	createSpecializationAction,
+	createStudentAction,
 	createTeacherAction,
 	lecturesPage,
+	watchLecturePage,
 	notificationsPage,
 	overviewPage,
 	rejectTopupAction,
@@ -100,6 +105,7 @@ panelAdminRoutes.post('/courses/:id/toggle', validate({ params: adminIdParamSche
 panelAdminRoutes.post('/courses/:id/delete', validate({ params: adminIdParamSchema }), asyncHandler(deleteCourseAction));
 
 panelAdminRoutes.get('/lectures', asyncHandler(lecturesPage));
+panelAdminRoutes.get('/lectures/:id/watch', validate({ params: adminIdParamSchema }), asyncHandler(watchLecturePage));
 panelAdminRoutes.post('/lectures', lectureVideoUpload.single('video'), validate({ body: lectureCreateSchema }), asyncHandler(createLectureAction));
 panelAdminRoutes.post('/lectures/:id', lectureVideoUpload.single('video'), validate({ params: adminIdParamSchema, body: lectureUpdateSchema }), asyncHandler(updateLectureAction));
 panelAdminRoutes.post('/lectures/:id/hide', validate({ params: adminIdParamSchema }), asyncHandler(hideLectureAction));
@@ -115,6 +121,8 @@ panelAdminRoutes.post('/users/:id/reset-device', validate({ params: adminIdParam
 panelAdminRoutes.post('/users/:id/reset-password', validate({ params: adminIdParamSchema, body: resetPasswordSchema }), asyncHandler(resetUserPasswordAction));
 panelAdminRoutes.post('/users/:id/adjust-balance', validate({ params: adminIdParamSchema, body: adjustBalanceSchema }), asyncHandler(adjustUserBalanceAction));
 
+panelAdminRoutes.post('/students', validate({ body: studentCreateSchema }), asyncHandler(createStudentAction));
+panelAdminRoutes.post('/admins', validate({ body: adminCreateSchema }), asyncHandler(createAdminAction));
 panelAdminRoutes.get('/teachers', asyncHandler(teachersPage));
 panelAdminRoutes.post('/teachers', validate({ body: teacherCreateSchema }), asyncHandler(createTeacherAction));
 panelAdminRoutes.post('/teachers/:id/payouts', validate({ params: adminIdParamSchema, body: teacherPayoutSchema }), asyncHandler(teacherPayoutAction));

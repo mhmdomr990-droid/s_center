@@ -1053,6 +1053,54 @@ export async function createTeacher(input: { username: string; full_name: string
   return mapUser(saved);
 }
 
+export async function createStudent(input: { username: string; full_name: string; password: string; device_id?: string | null }) {
+  const userRepository = AppDataSource.getRepository(User);
+  const username = input.username.trim().toLowerCase();
+  const existing = await userRepository.findOne({ where: { username } });
+
+  if (existing) {
+    throw new AppError(409, 'Username already exists');
+  }
+
+  const passwordHash = await bcrypt.hash(input.password, 12);
+  const student = userRepository.create({
+    username,
+    fullName: input.full_name,
+    passwordHash,
+    role: UserRole.STUDENT,
+    isActive: true,
+    balance: '0.00',
+    deviceId: input.device_id?.trim() || null,
+  });
+
+  const saved = await userRepository.save(student);
+  return mapUser(saved);
+}
+
+export async function createAdmin(input: { username: string; full_name: string; password: string }) {
+  const userRepository = AppDataSource.getRepository(User);
+  const username = input.username.trim().toLowerCase();
+  const existing = await userRepository.findOne({ where: { username } });
+
+  if (existing) {
+    throw new AppError(409, 'Username already exists');
+  }
+
+  const passwordHash = await bcrypt.hash(input.password, 12);
+  const admin = userRepository.create({
+    username,
+    fullName: input.full_name,
+    passwordHash,
+    role: UserRole.ADMIN,
+    isActive: true,
+    balance: '0.00',
+    deviceId: null,
+  });
+
+  const saved = await userRepository.save(admin);
+  return mapUser(saved);
+}
+
 function buildTeacherAggregateQuery(from?: string, to?: string) {
   const purchaseAgg = AppDataSource.createQueryBuilder()
     .from(Purchase, 'purchase')

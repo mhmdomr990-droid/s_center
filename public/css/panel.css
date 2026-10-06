@@ -46,13 +46,25 @@ textarea {
 .panel-brand {
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: 2px;
   margin-bottom: 24px;
 }
 
-.panel-brand h1 {
+.panel-brand-title {
   margin: 0;
-  font-size: 1.3rem;
+  font-size: clamp(2.2rem, 4vw, 3rem);
+  line-height: 1;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  color: var(--brand);
+}
+
+.panel-brand-subtitle {
+  color: var(--muted);
+  font-size: 0.92rem;
+  font-weight: 400;
+  line-height: 1.6;
+  letter-spacing: 0.02em;
 }
 
 .panel-brand small,
@@ -106,6 +118,28 @@ textarea {
   justify-content: space-between;
   gap: 16px;
   margin-bottom: 20px;
+  flex-wrap: wrap;
+}
+
+.panel-topbar-actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.panel-topbar-search {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.panel-topbar-search input,
+.panel-toolbar input {
+  min-width: 180px;
+  max-width: 260px;
 }
 
 .panel-card,
@@ -157,6 +191,13 @@ textarea {
   flex-wrap: wrap;
   gap: 10px;
   align-items: center;
+  width: 100%;
+}
+
+.panel-toolbar .panel-btn,
+.panel-topbar .panel-btn,
+.panel-topbar-search .panel-btn {
+  white-space: nowrap;
 }
 
 input,
@@ -203,11 +244,38 @@ textarea {
 }
 
 .panel-table {
+  border: 1px solid var(--border);
+  border-radius: 18px;
+  background: color-mix(in srgb, var(--panel) 88%, transparent);
   overflow: hidden;
+  box-shadow: 0 14px 38px rgba(19, 22, 30, 0.08);
+}
+
+.panel-table-search {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 14px 0;
+}
+
+.panel-table-search input {
+  width: min(320px, 100%);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 10px 12px;
+  background: var(--panel-soft);
+  color: var(--text);
+}
+
+.panel-table-scroll {
+  max-height: clamp(360px, 60vh, 760px);
+  overflow: auto;
+  border-radius: 0 0 18px 18px;
 }
 
 .panel-table table {
   width: 100%;
+  min-width: 760px;
   border-collapse: collapse;
 }
 
@@ -217,12 +285,35 @@ textarea {
   border-bottom: 1px solid var(--border);
   text-align: right;
   vertical-align: top;
+  white-space: nowrap;
 }
 
-.panel-table th {
+.panel-table thead th {
+  position: sticky;
+  top: 0;
+  z-index: 1;
   background: color-mix(in srgb, var(--panel-soft) 70%, var(--panel));
   color: var(--muted);
   font-size: 0.92rem;
+}
+
+.panel-table td:last-child {
+  min-width: 260px;
+}
+
+.panel-table td form,
+.panel-table td a,
+.panel-table td button {
+  vertical-align: middle;
+}
+
+.panel-table td form {
+  display: inline-flex;
+  margin: 2px 0;
+}
+
+.panel-table td .panel-btn {
+  margin: 2px 0;
 }
 
 .panel-badge {
@@ -403,16 +494,55 @@ textarea {
   box-shadow: var(--shadow);
 }
 
+.panel-mobile-menu-toggle {
+  display: none;
+}
+
 @media (max-width: 1100px) {
   .panel-shell {
     grid-template-columns: 1fr;
   }
 
+  .panel-mobile-menu-toggle {
+    position: fixed;
+    top: 14px;
+    right: 14px;
+    z-index: 70;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 46px;
+    height: 46px;
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    background: var(--panel);
+    color: var(--text);
+    box-shadow: var(--shadow);
+    cursor: pointer;
+    font-size: 1.4rem;
+  }
+
   .panel-sidebar {
-    position: static;
-    height: auto;
-    border-left: 0;
-    border-bottom: 1px solid var(--border);
+    position: fixed;
+    top: 0;
+    right: 0;
+    width: min(82vw, 320px);
+    height: 100vh;
+    z-index: 60;
+    padding: 20px 16px;
+    border-left: 1px solid var(--border);
+    border-bottom: 0;
+    transform: translateX(105%);
+    transition: transform 0.2s ease;
+    box-shadow: -10px 0 30px rgba(0, 0, 0, 0.12);
+  }
+
+  .panel-sidebar.is-open {
+    transform: translateX(0);
+  }
+
+  .panel-main {
+    padding-top: 72px;
   }
 
   .panel-cards,

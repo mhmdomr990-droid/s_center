@@ -35,7 +35,7 @@ export const lectureStreamUrlRateLimit = rateLimit({
 
 export const lectureDownloadUrlRateLimit = rateLimit({
   windowMs: 60 * 60 * 1000,
-  limit: 5,
+  limit: 30,
   standardHeaders: true,
   legacyHeaders: false,
   keyGenerator: getUserOrIpKey,
