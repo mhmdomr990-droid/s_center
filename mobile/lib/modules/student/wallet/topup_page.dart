@@ -53,8 +53,6 @@ class TopupPage extends StatelessWidget {
                 Obx(() => Row(
                   children: [
                     Expanded(child: _buildMethodChip(ctrl, 'SHAM_CASH', 'Sham Cash', Icons.account_balance_wallet_rounded)),
-                    const SizedBox(width: 12),
-                    Expanded(child: _buildMethodChip(ctrl, 'TRANSFER_OFFICE', 'تحويل مكتب', Icons.store_rounded)),
                   ],
                 )),
                 const SizedBox(height: 16),

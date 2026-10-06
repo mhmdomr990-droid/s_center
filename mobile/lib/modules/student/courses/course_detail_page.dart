@@ -320,11 +320,23 @@ class CourseDetailPage extends StatelessWidget {
                               type: lecture.type,
                             )
                           : null,
-                      onTap: () => Get.toNamed(AppRoutes.lectureView, arguments: {
-                        'lecture': lecture,
-                        'lectures': ctrl.lectures,
-                        'currentIndex': entry.key,
-                      }),
+                      onTap: () {
+                        // غير مشتري ⇐ لا فتح شاشة العرض — رسالة اشتراك فقط
+                        if (!(ctrl.isPurchased(courseId) || course.isPurchased)) {
+                          Get.snackbar(
+                            'خطأ',
+                            'أنت غير مشترك في الدورة، يرجى الاشتراك والمحاولة لاحقاً',
+                            backgroundColor: const Color(0xFFE53935),
+                            colorText: const Color(0xFFFFFFFF),
+                          );
+                          return;
+                        }
+                        Get.toNamed(AppRoutes.lectureView, arguments: {
+                          'lecture': lecture,
+                          'lectures': ctrl.lectures,
+                          'currentIndex': entry.key,
+                        });
+                      },
                     );
                   }),
                 const SizedBox(height: 90),
