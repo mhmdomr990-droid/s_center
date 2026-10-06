@@ -2,8 +2,10 @@ import 'package:file_picker/file_picker.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import '../../../app/routes/app_routes.dart';
 import '../../../app/theme/app_colors.dart';
 import '../../../app/theme/app_text_styles.dart';
+import '../../../data/models/lecture_model.dart';
 import '../../../widgets/custom_text_field.dart';
 import '../../../widgets/empty_state.dart';
 import '../../../widgets/gradient_app_bar.dart';
@@ -622,6 +624,19 @@ class _LecturesView extends StatelessWidget {
                           Row(
                             mainAxisAlignment: MainAxisAlignment.end,
                             children: [
+                              if (type == 'VIDEO' || type == 'PDF')
+                                IconButton(
+                                  icon: const Icon(Icons.play_circle_outline,
+                                      color: AppColors.primary, size: 20),
+                                  onPressed: () =>
+                                      Get.toNamed(AppRoutes.lectureView, arguments: {
+                                    'lecture': LectureModel.fromJson(lecture),
+                                    'lectures': ctrl.items
+                                        .map(LectureModel.fromJson)
+                                        .toList(),
+                                    'currentIndex': ctrl.items.indexOf(lecture),
+                                  }),
+                                ),
                               IconButton(
                                 icon: const Icon(Icons.edit_outlined,
                                     color: AppColors.primary, size: 20),

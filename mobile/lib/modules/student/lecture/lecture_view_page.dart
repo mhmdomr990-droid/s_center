@@ -18,6 +18,7 @@ import '../../../data/providers/api_exception.dart';
 import '../../../data/providers/media_provider.dart';
 import '../../../data/services/download_manager.dart';
 import '../../../data/services/screen_guard.dart';
+import '../../auth/auth_controller.dart';
 import '../../../widgets/download_lecture_button.dart';
 import '../../../widgets/gradient_app_bar.dart';
 import '../../../widgets/pdf_viewer_page.dart';
@@ -566,7 +567,10 @@ class LectureViewPage extends StatelessWidget {
                           ),
                         ),
                       ),
-                      if (lecture.isPdfHosted && !kIsWeb) ...[
+                      if (lecture.isPdfHosted &&
+                          !kIsWeb &&
+                          Get.find<AuthController>().user.value?.isStudent ==
+                              true) ...[
                         const SizedBox(height: 6),
                         Row(
                           children: [

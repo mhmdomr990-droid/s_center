@@ -89,6 +89,11 @@ class TeacherCourseDetailPage extends StatelessWidget {
                     isPublished: lecture.isPublished,
                     trailing: PopupMenuButton(
                       itemBuilder: (context) => [
+                        if (lecture.isVideo || lecture.isPdf)
+                          const PopupMenuItem(
+                            value: 'play',
+                            child: Text('تشغيل'),
+                          ),
                         const PopupMenuItem(
                           value: 'edit',
                           child: Text('تعديل'),
@@ -100,7 +105,13 @@ class TeacherCourseDetailPage extends StatelessWidget {
                         PopupMenuItem(value: 'delete', child: const Text('حذف', style: TextStyle(color: Colors.red))),
                       ],
                       onSelected: (value) {
-                        if (value == 'edit') {
+                        if (value == 'play') {
+                          Get.toNamed(AppRoutes.lectureView, arguments: {
+                            'lecture': lecture,
+                            'lectures': ctrl.lectures,
+                            'currentIndex': ctrl.lectures.indexOf(lecture),
+                          });
+                        } else if (value == 'edit') {
                           Get.toNamed(AppRoutes.addLecture,
                               arguments: {'courseId': courseId, 'lecture': lecture});
                         } else if (value == 'toggle') {
