@@ -66,6 +66,8 @@ class TeacherCourseDetailPage extends StatelessWidget {
                           if (course.specializationName.isNotEmpty)
                             _buildInfoChip(course.specializationName),
                           _buildInfoChip('${course.purchasesCount ?? 0} مشتري'),
+                          _buildInfoChip(
+                              'نسبة المعلم: ${_percentLabel(course.teacherPercent)}%'),
                           _buildInfoChip('${course.price} SYP'),
                           if (course.year > 0) _buildInfoChip('السنة ${course.year}'),
                         ],
@@ -128,6 +130,14 @@ class TeacherCourseDetailPage extends StatelessWidget {
         );
       },
     );
+  }
+
+  String _percentLabel(String value) {
+    var v = value.trim();
+    if (v.contains('.')) {
+      v = v.replaceFirst(RegExp(r'0+$'), '').replaceFirst(RegExp(r'\.$'), '');
+    }
+    return v.isEmpty ? '0' : v;
   }
 
   Widget _buildInfoChip(String text) {

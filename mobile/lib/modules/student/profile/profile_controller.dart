@@ -89,15 +89,24 @@ class ProfileController extends GetxController {
   }
 
   Future<void> _loadTeacherStats() async {
+    final teacherProvider = TeacherProvider(Get.find<ApiClient>());
     try {
-      final teacherProvider = TeacherProvider(Get.find<ApiClient>());
       final response = await teacherProvider.getStats();
       final stats = response.data['data'];
-      final courses = stats['courses'];
-      teacherCoursesCount.value = courses is List ? courses.length : 0;
       teacherTotalEarned.value = (stats['total_earned'] ?? '0.00').toString();
     } catch (_) {
       // ignore — stats are optional decoration on the card
+    }
+    try {
+      // العدّ يشمل كل دورات المعلّم (meta.total) لا المباعة فقط
+      final response = await teacherProvider.getCourses();
+      final total = response.data['meta']?['total'];
+      final list = response.data['data'];
+      teacherCoursesCount.value = total is num
+          ? total.toInt()
+          : (list is List ? list.length : 0);
+    } catch (_) {
+      // ignore — count is optional decoration on the card
     }
   }
 
