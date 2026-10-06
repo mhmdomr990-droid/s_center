@@ -21,6 +21,8 @@ function toPurchasedCourseResponse(purchase: Purchase) {
     price: purchase.course.price,
     price_paid: purchase.pricePaid,
     teacher_share: purchase.teacherShare,
+    source: purchase.source,
+    is_granted: purchase.source === 'GRANTED',
     purchased_at: purchase.createdAt,
   };
 }

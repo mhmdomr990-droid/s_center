@@ -2,6 +2,7 @@ import { Column, Entity, OneToMany } from 'typeorm';
 
 import { BaseColumns } from './BaseColumns';
 import { Course } from './Course';
+import { User } from './User';
 
 @Entity({ name: 'specializations' })
 export class Specialization extends BaseColumns {
@@ -16,4 +17,7 @@ export class Specialization extends BaseColumns {
 
   @OneToMany(() => Course, (course) => course.specialization)
   courses!: Course[];
+
+  @OneToMany(() => User, (user) => user.specialization)
+  users!: User[];
 }

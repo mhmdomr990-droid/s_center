@@ -1,4 +1,4 @@
-import { ApiError, apiPost } from './api.js';
+import { ApiError, apiGet, apiPost } from './api.js';
 import { ensureDeviceId, redirectIfAuthenticated, setAccessToken } from './auth.js';
 import { withSubmitLock } from './ui.js';
 
@@ -11,6 +11,34 @@ function setError(message) {
   }
   box.textContent = message || '';
   box.hidden = !message;
+}
+
+function populateSpecializationOptions() {
+  const select = document.querySelector('select[name="specialization_id"]');
+  if (!select) {
+    return;
+  }
+
+  select.innerHTML = '<option value="">اختر الاختصاص</option>';
+
+  apiGet('/specializations', { requiresAuth: false, skip401Redirect: true })
+    .then((specializations) => {
+      if (!Array.isArray(specializations) || !specializations.length) {
+        select.innerHTML = '<option value="">لا توجد اختصاصات منشورة</option>';
+        return;
+      }
+
+      select.innerHTML = '<option value="">اختر الاختصاص</option>';
+      specializations.forEach((item) => {
+        const option = document.createElement('option');
+        option.value = String(item.id);
+        option.textContent = item.name;
+        select.appendChild(option);
+      });
+    })
+    .catch(() => {
+      select.innerHTML = '<option value="">تعذر تحميل الاختصاصات</option>';
+    });
 }
 
 document.addEventListener('DOMContentLoaded', async () => {
@@ -28,6 +56,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     return;
   }
 
+  populateSpecializationOptions();
   void redirectIfAuthenticated().catch(() => {});
 
   form.addEventListener('submit', (event) => {
@@ -38,6 +67,8 @@ document.addEventListener('DOMContentLoaded', async () => {
       const formData = new FormData(form);
       const username = String(formData.get('username') || '').trim().toLowerCase();
       const fullName = String(formData.get('full_name') || '').trim();
+      const specializationId = Number(formData.get('specialization_id') || 0) || null;
+      const phone = String(formData.get('phone') || '').trim();
       const password = String(formData.get('password') || '');
       const confirmPassword = String(formData.get('confirm_password') || '');
 
@@ -48,6 +79,11 @@ document.addEventListener('DOMContentLoaded', async () => {
 
       if (fullName.length < 2) {
         setError('الاسم الكامل قصير جدًا.');
+        return;
+      }
+
+      if (!specializationId) {
+        setError('يرجى اختيار الاختصاص الخاص بك.');
         return;
       }
 
@@ -65,6 +101,8 @@ document.addEventListener('DOMContentLoaded', async () => {
         const result = await apiPost('/auth/register', {
           username,
           full_name: fullName,
+          specialization_id: specializationId,
+          phone: phone || null,
           password,
           device_id: ensureDeviceId(),
         }, {

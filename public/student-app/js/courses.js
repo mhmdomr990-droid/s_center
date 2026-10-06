@@ -49,6 +49,13 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
   }
 
+  function getCourseStatus(course) {
+    if (course?.is_granted || course?.source === 'GRANTED') {
+      return { label: 'مجاني', className: 'student-badge success' };
+    }
+    return { label: 'مشترى', className: 'student-badge success' };
+  }
+
   function renderPaymentsChunk() {
     const chunk = payments.slice(paymentsVisible, paymentsVisible + PAYMENTS_STEP);
 
@@ -111,20 +118,23 @@ document.addEventListener('DOMContentLoaded', async () => {
         : '<div class="student-empty-inline">لم تشترِ أي مادة بعد.</div>';
     } else {
       coursesList.innerHTML = myCourses
-        .map((course) => `
-          <article class="student-card">
-            <div class="student-card-row">
-              <h3>${course.name}</h3>
-              <span class="student-badge success">مشترى</span>
-            </div>
-            <p>${course.description || 'لا يوجد وصف.'}</p>
-            <p class="student-muted">المدرس: ${course.teacher_full_name || 'غير محدد'}</p>
-            <p class="student-muted">تاريخ الشراء: ${formatDate(course.purchased_at)}</p>
-            <a class="student-btn student-btn-primary" href="/student/course.html?id=${course.id}&name=${encodeURIComponent(course.name)}&price=${encodeURIComponent(course.price)}&purchased=1&from=my-courses">
-              متابعة الدروس
-            </a>
-          </article>
-        `)
+        .map((course) => {
+          const status = getCourseStatus(course);
+          return `
+            <article class="student-card">
+              <div class="student-card-row">
+                <h3>${course.name}</h3>
+                <span class="${status.className}">${status.label}</span>
+              </div>
+              <p>${course.description || 'لا يوجد وصف.'}</p>
+              <p class="student-muted">المدرس: ${course.teacher_full_name || 'غير محدد'}</p>
+              <p class="student-muted">تاريخ الشراء: ${formatDate(course.purchased_at)}</p>
+              <a class="student-btn student-btn-primary" href="/student/course.html?id=${course.id}&name=${encodeURIComponent(course.name)}&price=${encodeURIComponent(course.price)}&purchased=1&from=my-courses">
+                متابعة الدروس
+              </a>
+            </article>
+          `;
+        })
         .join('');
     }
 

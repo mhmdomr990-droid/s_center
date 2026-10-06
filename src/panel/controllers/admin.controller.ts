@@ -27,6 +27,7 @@ import {
   listTeachers,
   listTopupRequests,
   listUsers,
+  listFreeGrantsByAdmin,
   overviewStats,
   payoutTeacher,
   rejectTopupRequest,
@@ -39,6 +40,8 @@ import {
   updateLecture,
   updateSpecialization,
   setUserActive,
+  grantCourseToUser,
+  revokeCourseGrant,
 } from '../../modules/admin/service';
 import { TopupStatus, UserRole } from '../../entities/enums';
 import { setFlash } from '../middlewares/flash';
@@ -310,7 +313,12 @@ export async function rejectTopupAction(req: Request, res: Response) {
 
 export async function usersPage(req: Request, res: Response) {
   const search = typeof req.query.search === 'string' ? req.query.search : '';
-  const users = await listUsers(search || undefined);
+  const [users, courses, specializations, freeGrants] = await Promise.all([
+    listUsers(search || undefined),
+    listCourses(),
+    listSpecializations(),
+    listFreeGrantsByAdmin(req.user!.id),
+  ]);
   const paged = paginate(users, Number(req.query.page) || 1, 20);
   const common = await loadAdminCommon();
   return res.render('admin/users', {
@@ -319,6 +327,9 @@ export async function usersPage(req: Request, res: Response) {
     flash: res.locals.flash,
     csrfToken: res.locals.csrfToken,
     users: paged.items,
+    courses,
+    specializations,
+    freeGrants,
     search,
     page: paged.page,
     pageCount: paged.pageCount,
@@ -326,6 +337,22 @@ export async function usersPage(req: Request, res: Response) {
     queryString: search ? `search=${encodeURIComponent(search)}` : '',
     ...common,
   });
+}
+
+export async function grantUserCourseAction(req: Request, res: Response) {
+  const userId = Number(req.params.id);
+  const courseId = Number(req.body.course_id);
+  await grantCourseToUser({ adminId: req.user!.id, userId, courseId });
+  setFlash(res, 'success', 'تم منح الطالب صلاحية الوصول المجاني لهذا الكورس');
+  return res.redirect('/panel/admin/users');
+}
+
+export async function revokeUserCourseGrantAction(req: Request, res: Response) {
+  const userId = Number(req.params.id);
+  const courseId = Number(req.body.course_id);
+  await revokeCourseGrant({ adminId: req.user!.id, userId, courseId });
+  setFlash(res, 'success', 'تم إلغاء المنحة المجانية لهذا الكورس');
+  return res.redirect('/panel/admin/users');
 }
 
 export async function toggleUserActiveAction(req: Request, res: Response) {

@@ -57,6 +57,16 @@ function renderYears(specializationId, specializationName) {
   `;
 }
 
+function getCourseStatus(course) {
+  if (course?.is_granted || course?.source === 'GRANTED') {
+    return { label: 'مجاني', className: 'student-badge success' };
+  }
+  if (course?.purchased) {
+    return { label: 'مشترى', className: 'student-badge success' };
+  }
+  return { label: 'غير مشترى', className: 'student-badge' };
+}
+
 function renderCourses(specializationId, year, specializationName, courses) {
   if (!courses.length) {
     return `
@@ -79,12 +89,13 @@ function renderCourses(specializationId, year, specializationName, courses) {
     <section class="student-grid">
       ${courses
         .map((course) => {
+          const status = getCourseStatus(course);
           const detailUrl = `/student/course.html?id=${course.id}&name=${encodeURIComponent(course.name)}&price=${encodeURIComponent(course.price)}&purchased=${course.purchased ? '1' : '0'}&from=catalog&specialization=${encodeURIComponent(specializationId)}&specializationName=${encodeURIComponent(specializationName)}&year=${encodeURIComponent(year)}`;
           return `
             <article class="student-card">
               <div class="student-card-row">
                 <h3>${course.name}</h3>
-                ${course.purchased ? '<span class="student-badge success">مُشترى</span>' : '<span class="student-badge">غير مشترى</span>'}
+                <span class="${status.className}">${status.label}</span>
               </div>
               <p>${course.description || 'لا يوجد وصف.'}</p>
               <p class="student-muted">المدرس: ${course.teacher_full_name || 'غير محدد'}</p>
@@ -119,7 +130,14 @@ document.addEventListener('DOMContentLoaded', async () => {
     });
 
     const { specializationId, year } = getParams();
-    const specializations = await apiGet('/specializations');
+    const me = await apiGet('/auth/me');
+    const defaultSpecializationId = me?.specialization_id ?? null;
+    if (!specializationId && defaultSpecializationId) {
+      window.location.replace(buildHomeLink(defaultSpecializationId, year));
+      return;
+    }
+
+    const specializations = await apiGet('/specializations', { requiresAuth: false, skip401Redirect: true });
 
     setViewState(state, null);
 

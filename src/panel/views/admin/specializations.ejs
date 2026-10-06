@@ -42,14 +42,14 @@
           <td><%= item.sort_order %></td>
           <td><%= item.is_published ? 'منشور' : 'مخفي' %></td>
           <td>
-            <div class="panel-toolbar">
+            <div class="panel-actions-inline">
               <button class="panel-btn panel-btn-secondary" data-modal-open="specialization-edit-modal" data-modal-action="/panel/admin/specializations/<%= item.id %>" data-modal-fill='<%= JSON.stringify(item) %>'>تعديل</button>
-              <form method="post" action="/panel/admin/specializations/<%= item.id %>/toggle" style="display:inline;">
+              <form method="post" action="/panel/admin/specializations/<%= item.id %>/toggle" class="panel-action-form">
                 <input type="hidden" name="csrf_token" value="<%= csrfToken %>">
                 <input type="hidden" name="next_is_published" value="<%= item.is_published ? 'false' : 'true' %>">
                 <button class="panel-btn <%= item.is_published ? 'panel-btn-secondary' : 'panel-btn-primary' %>" type="submit" data-confirm="هل تريد <%= item.is_published ? 'إخفاء' : 'نشر' %> هذا التخصص؟"><%= item.is_published ? 'إخفاء' : 'نشر' %></button>
               </form>
-              <form method="post" action="/panel/admin/specializations/<%= item.id %>/delete" style="display:inline;">
+              <form method="post" action="/panel/admin/specializations/<%= item.id %>/delete" class="panel-action-form">
                 <input type="hidden" name="csrf_token" value="<%= csrfToken %>">
                 <button class="panel-btn panel-btn-danger" type="submit" data-confirm="هل تريد حذف هذا التخصص؟">حذف</button>
               </form>

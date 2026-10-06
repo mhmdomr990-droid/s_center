@@ -1,10 +1,11 @@
-import { Column, Entity, OneToMany } from 'typeorm';
+import { Column, Entity, JoinColumn, ManyToOne, OneToMany } from 'typeorm';
 
 import { BaseColumns } from './BaseColumns';
 import { UserRole } from './enums';
 import { Course } from './Course';
 import { Notification } from './Notification';
 import { Purchase } from './Purchase';
+import { Specialization } from './Specialization';
 import { TeacherPayout } from './TeacherPayout';
 import { TopupRequest } from './TopupRequest';
 import { Transaction } from './Transaction';
@@ -22,6 +23,13 @@ export class User extends BaseColumns {
 
   @Column({ type: 'enum', enum: UserRole, default: UserRole.STUDENT })
   role!: UserRole;
+
+  @ManyToOne(() => Specialization, (specialization) => specialization.users, { nullable: true, onDelete: 'SET NULL', eager: false })
+  @JoinColumn({ name: 'specialization_id' })
+  specialization!: Specialization | null;
+
+  @Column({ type: 'varchar', length: 30, nullable: true })
+  phone!: string | null;
 
   @Column({ name: 'token_version', type: 'int', default: 0 })
   tokenVersion!: number;
@@ -43,6 +51,9 @@ export class User extends BaseColumns {
 
   @OneToMany(() => Purchase, (purchase) => purchase.user)
   purchases!: Purchase[];
+
+  @OneToMany(() => Purchase, (purchase) => purchase.grantedBy)
+  grantedCourses!: Purchase[];
 
   @OneToMany(() => Transaction, (transaction) => transaction.user)
   transactions!: Transaction[];

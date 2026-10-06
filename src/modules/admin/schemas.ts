@@ -8,13 +8,13 @@ const usernameSchema = z
   .string()
   .trim()
   .toLowerCase()
-  .min(3)
-  .max(30)
-  .regex(/^[a-z0-9_]+$/, 'Username may contain only lowercase letters, numbers, and underscores');
+  .min(3, 'اسم المستخدم يجب أن يكون 3 أحرف على الأقل')
+  .max(30, 'اسم المستخدم لا يمكن أن يتجاوز 30 حرفًا')
+  .regex(/^[a-z0-9_]+$/, 'اسم المستخدم يسمح فقط بحروف صغيرة، أرقام، وشرطة سفلية');
 
-const passwordSchema = z.string().min(8).max(128);
+const passwordSchema = z.string().min(8, 'كلمة المرور يجب أن تكون 8 أحرف على الأقل').max(128, 'كلمة المرور لا يمكن أن تتجاوز 128 حرفًا');
 
-const nameSchema = z.string().trim().min(1).max(120);
+const nameSchema = z.string().trim().min(1, 'هذا الحقل مطلوب').max(120, 'هذا الحقل لا يمكن أن يتجاوز 120 حرفًا');
 const descriptionSchema = z.string().trim().max(5000).optional().nullable();
 const contentSchema = z.string().trim().max(50000).optional().nullable();
 const urlSchema = z
@@ -212,7 +212,18 @@ export const studentCreateSchema = z
     username: usernameSchema,
     full_name: z.string().trim().min(2).max(120),
     password: passwordSchema,
-    device_id: z.string().trim().max(255).optional().nullable(),
+    phone: z.preprocess(
+      (value) => (value === '' || value === null || value === undefined ? null : String(value).trim()),
+      z.string().max(30).nullable().optional(),
+    ),
+    specialization_id: z.preprocess(
+      (value) => (value === '' || value === null || value === undefined ? null : value),
+      z.coerce.number().int().positive().nullable().optional(),
+    ),
+    device_id: z.preprocess(
+      (value) => (value === '' || value === null || value === undefined ? null : String(value).trim()),
+      z.string().max(255).nullable().optional(),
+    ),
   })
   .strict();
 

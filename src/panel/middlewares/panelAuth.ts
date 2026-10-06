@@ -18,7 +18,11 @@ function redirectToLogin(res: Response) {
 }
 
 export function clearPanelAuthCookies(res: Response) {
-  res.clearCookie('panel_token', { path: '/panel' });
+  const expired = { path: '/panel', httpOnly: true, sameSite: 'strict' as const, secure: env.NODE_ENV === 'production', expires: new Date(0), maxAge: 0 };
+  const rootExpired = { path: '/', httpOnly: true, sameSite: 'strict' as const, secure: env.NODE_ENV === 'production', expires: new Date(0), maxAge: 0 };
+
+  res.clearCookie('panel_token', expired);
+  res.clearCookie('panel_token', rootExpired);
 }
 
 export async function resolvePanelUserFromToken(token: string | undefined) {

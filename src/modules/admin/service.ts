@@ -10,7 +10,7 @@ import { Purchase } from '../../entities/Purchase';
 import { TeacherPayout } from '../../entities/TeacherPayout';
 import { Specialization } from '../../entities/Specialization';
 import { TopupRequest } from '../../entities/TopupRequest';
-import { LectureType, LectureUploadStatus, TopupStatus, TransactionType } from '../../entities/enums';
+import { LectureType, LectureUploadStatus, PurchaseSource, TopupStatus, TransactionType } from '../../entities/enums';
 import { Transaction } from '../../entities/Transaction';
 import { User } from '../../entities/User';
 import { UserRole } from '../../entities/enums';
@@ -128,6 +128,9 @@ function mapTeacherAggregate(row: Record<string, unknown>) {
     username: String(row.username ?? ''),
     full_name: String(row.full_name ?? ''),
     purchases_count: Number(row.purchases_count ?? 0),
+    paid_count: Number(row.paid_count ?? 0),
+    free_count: Number(row.free_count ?? 0),
+    paid_revenue: String(row.paid_revenue ?? '0.00'),
     earned,
     paid,
     remaining,
@@ -833,6 +836,28 @@ export async function listUsers(search?: string) {
   return listUsersFiltered({ search });
 }
 
+export async function listFreeGrantsByAdmin(adminId: number) {
+  const purchases = await AppDataSource.getRepository(Purchase).find({
+    where: {
+      grantedBy: { id: adminId },
+      source: PurchaseSource.GRANTED,
+    },
+    relations: { user: true, course: { specialization: true } },
+    order: { createdAt: 'DESC', id: 'DESC' },
+  });
+
+  return purchases.map((purchase) => ({
+    id: purchase.id,
+    user_id: purchase.user.id,
+    username: purchase.user.username,
+    full_name: purchase.user.fullName,
+    course_id: purchase.course.id,
+    course_name: purchase.course.name,
+    specialization_name: purchase.course.specialization?.name ?? 'غير محدد',
+    granted_at: purchase.createdAt,
+  }));
+}
+
 export async function listUsersFiltered(filters: {
   search?: string;
   role?: UserRole;
@@ -931,6 +956,106 @@ export async function listUserPurchases(userId: number) {
     teacher_share: purchase.teacherShare,
     created_at: purchase.createdAt,
   }));
+}
+
+export async function grantCourseToUser(input: { adminId: number; userId: number; courseId: number }) {
+  return AppDataSource.transaction(async (manager) => {
+    const userRepository = manager.getRepository(User);
+    const courseRepository = manager.getRepository(Course);
+    const purchaseRepository = manager.getRepository(Purchase);
+    const admin = await userRepository.findOne({ where: { id: input.adminId } });
+    if (!admin) {
+      throw new AppError(404, 'Admin not found');
+    }
+
+    const user = await userRepository.findOne({ where: { id: input.userId } });
+    if (!user) {
+      throw new AppError(404, 'User not found');
+    }
+
+    const course = await courseRepository.findOne({
+      where: { id: input.courseId, isPublished: true },
+      relations: { teacher: true, specialization: true },
+    });
+    if (!course) {
+      throw new AppError(404, 'Course not found');
+    }
+
+    const existing = await purchaseRepository.findOne({ where: { user: { id: user.id }, course: { id: course.id } } });
+    if (existing) {
+      throw new AppError(409, 'User already has access to this course');
+    }
+
+    const purchase = purchaseRepository.create({
+      user: { id: user.id } as User,
+      course: { id: course.id } as Course,
+      teacher: course.teacher ? ({ id: course.teacher.id } as User) : null,
+      source: PurchaseSource.GRANTED,
+      grantedBy: { id: admin.id } as User,
+      pricePaid: '0.00',
+      teacherShare: '0.00',
+    });
+
+    let saved;
+    try {
+      saved = await purchaseRepository.save(purchase);
+    } catch (error) {
+      if (error instanceof Error && /duplicate|ER_DUP_ENTRY|uq_purchase_user_course/i.test(error.message)) {
+        throw new AppError(409, 'User already has access to this course');
+      }
+      throw error;
+    }
+
+    await notify(user.id, 'تمت المنحة المجانية', `تم منحك الوصول إلى المقرر: ${course.name}`, manager);
+    await logAuditEvent({
+      action: 'GRANT_COURSE',
+      actorId: admin.id,
+      entityType: 'Purchase',
+      entityId: saved.id,
+      metadata: { userId: user.id, courseId: course.id, source: PurchaseSource.GRANTED },
+    });
+
+    return {
+      message: 'Course access granted for free',
+      purchase_id: saved.id,
+      source: saved.source,
+      granted_by: admin.id,
+    };
+  });
+}
+
+export async function revokeCourseGrant(input: { adminId: number; userId: number; courseId: number }) {
+  return AppDataSource.transaction(async (manager) => {
+    const userRepository = manager.getRepository(User);
+    const purchaseRepository = manager.getRepository(Purchase);
+    const admin = await userRepository.findOne({ where: { id: input.adminId } });
+    if (!admin) {
+      throw new AppError(404, 'Admin not found');
+    }
+
+    const purchase = await purchaseRepository.findOne({
+      where: { user: { id: input.userId }, course: { id: input.courseId }, source: PurchaseSource.GRANTED },
+      relations: { course: true },
+    });
+
+    if (!purchase) {
+      throw new AppError(404, 'Free grant not found');
+    }
+
+    await purchaseRepository.remove(purchase);
+    await logAuditEvent({
+      action: 'REVOKE_GRANT',
+      actorId: admin.id,
+      entityType: 'Purchase',
+      entityId: purchase.id,
+      metadata: { userId: input.userId, courseId: input.courseId },
+    });
+
+    return {
+      message: 'Free course access revoked',
+      purchase_id: purchase.id,
+    };
+  });
 }
 
 export async function setUserActive(userId: number, isActive: boolean) {
@@ -1053,13 +1178,30 @@ export async function createTeacher(input: { username: string; full_name: string
   return mapUser(saved);
 }
 
-export async function createStudent(input: { username: string; full_name: string; password: string; device_id?: string | null }) {
+export async function createStudent(input: {
+  username: string;
+  full_name: string;
+  password: string;
+  phone?: string | null;
+  specialization_id?: number | null;
+  device_id?: string | null;
+}) {
   const userRepository = AppDataSource.getRepository(User);
+  const specializationRepository = AppDataSource.getRepository(Specialization);
   const username = input.username.trim().toLowerCase();
   const existing = await userRepository.findOne({ where: { username } });
 
   if (existing) {
     throw new AppError(409, 'Username already exists');
+  }
+
+  const specializationId = Number(input.specialization_id ?? 0) || null;
+  const specialization = specializationId
+    ? await specializationRepository.findOne({ where: { id: specializationId, isPublished: true } })
+    : null;
+
+  if (specializationId && !specialization) {
+    throw new AppError(404, 'Selected specialization not found');
   }
 
   const passwordHash = await bcrypt.hash(input.password, 12);
@@ -1068,6 +1210,8 @@ export async function createStudent(input: { username: string; full_name: string
     fullName: input.full_name,
     passwordHash,
     role: UserRole.STUDENT,
+    specialization: specialization ? ({ id: specialization.id } as Specialization) : null,
+    phone: input.phone && input.phone.trim() ? input.phone.trim() : null,
     isActive: true,
     balance: '0.00',
     deviceId: input.device_id?.trim() || null,
@@ -1107,8 +1251,12 @@ function buildTeacherAggregateQuery(from?: string, to?: string) {
     // Earnings attribution is historical and must come from purchase.teacher_id snapshots.
     .select('purchase.teacher_id', 'teacher_id')
     .addSelect('COUNT(purchase.id)', 'purchases_count')
+    .addSelect('SUM(CASE WHEN purchase.source = :purchaseSource THEN 1 ELSE 0 END)', 'paid_count')
+    .addSelect('SUM(CASE WHEN purchase.source = :grantSource THEN 1 ELSE 0 END)', 'free_count')
+    .addSelect('COALESCE(SUM(CASE WHEN purchase.source = :purchaseSource THEN purchase.teacher_share ELSE 0 END), 0)', 'paid_revenue')
     .addSelect('COALESCE(SUM(purchase.teacher_share), 0)', 'total_earned')
-    .where('purchase.teacher_id IS NOT NULL');
+    .where('purchase.teacher_id IS NOT NULL')
+    .setParameters({ purchaseSource: PurchaseSource.PURCHASED, grantSource: PurchaseSource.GRANTED });
 
   const payoutAgg = AppDataSource.createQueryBuilder()
     .from(TeacherPayout, 'payout')
@@ -1133,6 +1281,9 @@ async function loadTeacherRows(from?: string, to?: string) {
     .addSelect('teacher.username', 'username')
     .addSelect('teacher.full_name', 'full_name')
     .addSelect('COALESCE(purchases.purchases_count, 0)', 'purchases_count')
+    .addSelect('COALESCE(purchases.paid_count, 0)', 'paid_count')
+    .addSelect('COALESCE(purchases.free_count, 0)', 'free_count')
+    .addSelect('COALESCE(purchases.paid_revenue, 0)', 'paid_revenue')
     .addSelect('COALESCE(purchases.total_earned, 0)', 'total_earned')
     .addSelect('COALESCE(payouts.total_paid, 0)', 'total_paid')
     .leftJoin(`(${purchaseAgg.getQuery()})`, 'purchases', 'purchases.teacher_id = teacher.id')

@@ -81,6 +81,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     const me = await apiGet('/auth/me');
     setText('profileUsername', me.username);
     setText('profileFullName', me.full_name);
+    setText('profilePhone', me.phone || 'غير محدد');
     const balanceElement = document.getElementById('profileBalance');
     if (window.Polish?.animateCount && balanceElement) {
       window.Polish.animateCount(balanceElement, Number(me.balance || 0), { duration: 700, decimals: 2, suffix: ' ل.س' });

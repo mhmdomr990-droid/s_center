@@ -7,6 +7,6 @@ import { getCourses, getLectures, getSpecializations } from './controller';
 
 export const catalogRoutes = Router();
 
-catalogRoutes.get('/specializations', authMiddleware, getSpecializations);
+catalogRoutes.get('/specializations', getSpecializations);
 catalogRoutes.get('/courses', authMiddleware, validate({ query: coursesQuerySchema }), getCourses);
 catalogRoutes.get('/courses/:id/lectures', authMiddleware, validate({ params: courseIdParamSchema }), getLectures);

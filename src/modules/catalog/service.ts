@@ -29,18 +29,30 @@ export async function listSpecializations() {
 export async function listCourses(userId: number, filters: { specializationId?: number; year?: number }) {
   const courseRepository = AppDataSource.getRepository(Course);
   const purchaseRepository = AppDataSource.getRepository(Purchase);
+  const userRepository = AppDataSource.getRepository(User);
+
+  const user = await userRepository.findOne({
+    where: { id: userId },
+    relations: { specialization: true },
+  });
+
+  const effectiveSpecializationId = filters.specializationId ?? user?.specialization?.id ?? null;
 
   const purchasedCourses = await purchaseRepository.find({
     where: { user: { id: userId } },
     relations: { course: true },
   });
   const purchasedCourseIds = new Set(purchasedCourses.map((purchase) => purchase.course.id));
+  const grantedCourseIds = new Set(purchasedCourses.filter((purchase) => purchase.source === 'GRANTED').map((purchase) => purchase.course.id));
 
   const courses = await courseRepository.find({
     relations: { specialization: true, teacher: true },
     where: {
       isPublished: true,
-      specialization: { isPublished: true, ...(filters.specializationId ? { id: filters.specializationId } : {}) },
+      specialization: {
+        isPublished: true,
+        ...(effectiveSpecializationId ? { id: effectiveSpecializationId } : {}),
+      },
       ...(filters.year ? { year: filters.year } : {}),
     },
     order: { sortOrder: 'ASC', id: 'ASC' },
@@ -57,6 +69,8 @@ export async function listCourses(userId: number, filters: { specializationId?: 
     sort_order: course.sortOrder,
     teacher_full_name: course.teacher ? course.teacher.fullName : null,
     purchased: isPurchasedCourse(purchasedCourseIds, course.id),
+    source: grantedCourseIds.has(course.id) ? 'GRANTED' : 'PURCHASED',
+    is_granted: grantedCourseIds.has(course.id),
   }));
 }
 

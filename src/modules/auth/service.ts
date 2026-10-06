@@ -1,6 +1,7 @@
 import bcrypt from 'bcrypt';
 
 import { AppDataSource } from '../../config/data-source';
+import { Specialization } from '../../entities/Specialization';
 import { User } from '../../entities/User';
 import { UserRole } from '../../entities/enums';
 import { AppError } from '../../utils/AppError';
@@ -12,6 +13,8 @@ function toUserResponse(user: User) {
     username: user.username,
     full_name: user.fullName,
     role: user.role,
+    specialization_id: user.specialization?.id ?? null,
+    phone: user.phone ?? null,
     is_active: user.isActive,
     is_test: user.isTest,
     balance: user.role === UserRole.STUDENT ? user.balance : undefined,
@@ -33,12 +36,29 @@ async function authenticateCredentials(input: { username: string; password: stri
   return user;
 }
 
-export async function registerStudent(input: { username: string; full_name: string; password: string; device_id: string }) {
+export async function registerStudent(input: {
+  username: string;
+  full_name: string;
+  password: string;
+  phone?: string | null;
+  specialization_id?: number | null;
+  device_id: string;
+}) {
   const userRepository = AppDataSource.getRepository(User);
+  const specializationRepository = AppDataSource.getRepository(Specialization);
   const existingUser = await userRepository.findOne({ where: { username: input.username } });
 
   if (existingUser) {
     throw new AppError(409, 'Username already exists');
+  }
+
+  const specializationId = Number(input.specialization_id ?? 0) || null;
+  const specialization = specializationId
+    ? await specializationRepository.findOne({ where: { id: specializationId, isPublished: true } })
+    : null;
+
+  if (specializationId && !specialization) {
+    throw new AppError(404, 'Selected specialization not found');
   }
 
   const passwordHash = await bcrypt.hash(input.password, 12);
@@ -47,6 +67,8 @@ export async function registerStudent(input: { username: string; full_name: stri
     fullName: input.full_name,
     passwordHash,
     role: UserRole.STUDENT,
+    specialization: specialization ? { id: specialization.id } as Specialization : null,
+    phone: input.phone && input.phone.trim() ? input.phone.trim() : null,
     tokenVersion: 0,
     isTest: false,
     isActive: true,
@@ -109,7 +131,10 @@ export async function loginForPanel(input: { username: string; password: string 
 }
 
 export async function getCurrentUser(userId: number) {
-  const user = await AppDataSource.getRepository(User).findOne({ where: { id: userId } });
+  const user = await AppDataSource.getRepository(User).findOne({
+    where: { id: userId },
+    relations: { specialization: true },
+  });
 
   if (!user) {
     throw new AppError(404, 'User not found');

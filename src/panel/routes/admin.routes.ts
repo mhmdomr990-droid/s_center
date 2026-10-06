@@ -42,11 +42,13 @@ import {
 	createSpecializationAction,
 	createStudentAction,
 	createTeacherAction,
+	grantUserCourseAction,
 	lecturesPage,
 	watchLecturePage,
 	notificationsPage,
 	overviewPage,
 	rejectTopupAction,
+	revokeUserCourseGrantAction,
 	resetUserDeviceAction,
 	resetUserPasswordAction,
 	sendNotificationAction,
@@ -74,6 +76,12 @@ export const panelAdminRoutes = Router();
 const togglePublishSchema = z
 	.object({
 		next_is_published: z.string().min(1),
+	})
+	.strict();
+
+const grantCourseSchema = z
+	.object({
+		course_id: z.coerce.number().int().positive(),
 	})
 	.strict();
 
@@ -116,6 +124,8 @@ panelAdminRoutes.post('/topups/:id/approve', validate({ params: adminIdParamSche
 panelAdminRoutes.post('/topups/:id/reject', validate({ params: adminIdParamSchema, body: rejectTopupSchema }), asyncHandler(rejectTopupAction));
 
 panelAdminRoutes.get('/users', validate({ query: adminUsersQuerySchema }), asyncHandler(usersPage));
+panelAdminRoutes.post('/users/:id/grant-course', validate({ params: adminIdParamSchema, body: grantCourseSchema }), asyncHandler(grantUserCourseAction));
+panelAdminRoutes.post('/users/:id/revoke-course-grant', validate({ params: adminIdParamSchema, body: grantCourseSchema }), asyncHandler(revokeUserCourseGrantAction));
 panelAdminRoutes.post('/users/:id/active', validate({ params: adminIdParamSchema, body: activeUserSchema }), asyncHandler(toggleUserActiveAction));
 panelAdminRoutes.post('/users/:id/reset-device', validate({ params: adminIdParamSchema }), asyncHandler(resetUserDeviceAction));
 panelAdminRoutes.post('/users/:id/reset-password', validate({ params: adminIdParamSchema, body: resetPasswordSchema }), asyncHandler(resetUserPasswordAction));

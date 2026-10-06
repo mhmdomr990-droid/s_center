@@ -23,6 +23,8 @@ import {
   createTeacher,
   createAdmin,
   adjustBalance,
+  grantCourseToUser,
+  revokeCourseGrant,
   listTeacherPayouts,
   listTeachers,
   listCoursesFiltered,
@@ -232,6 +234,24 @@ export const adjustAdminUserBalance = asyncHandler(async (req: Request, res: Res
     },
   });
   res.status(result.status).json(result.body);
+});
+
+export const grantAdminUserCourse = asyncHandler(async (req: Request, res: Response) => {
+  const data = await grantCourseToUser({
+    adminId: req.user!.id,
+    userId: Number(req.params.id),
+    courseId: Number(req.params.courseId),
+  });
+  res.status(201).json({ success: true, data });
+});
+
+export const revokeAdminUserCourseGrant = asyncHandler(async (req: Request, res: Response) => {
+  const data = await revokeCourseGrant({
+    adminId: req.user!.id,
+    userId: Number(req.params.id),
+    courseId: Number(req.params.courseId),
+  });
+  res.status(200).json({ success: true, data });
 });
 
 export const sendAdminNotification = asyncHandler(async (req: Request, res: Response) => {

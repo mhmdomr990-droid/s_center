@@ -61,6 +61,7 @@
               <input type="hidden" name="csrf_token" value="<%= csrfToken %>">
               <button class="panel-btn panel-btn-secondary" type="submit" data-confirm="هل تريد تصفير الجهاز لهذا المستخدم؟">إعادة ضبط الجهاز</button>
             </form>
+            <button class="panel-btn panel-btn-secondary" data-modal-open="user-grant-course-modal" data-modal-action="/panel/admin/users/<%= item.id %>/grant-course" data-modal-fill='<%= JSON.stringify({ user: item }) %>'>منح كورس مجاني</button>
             <button class="panel-btn panel-btn-secondary" data-modal-open="user-reset-password-modal" data-modal-action="/panel/admin/users/<%= item.id %>/reset-password" data-modal-fill='<%= JSON.stringify(item) %>'>إعادة تعيين كلمة المرور</button>
             <button class="panel-btn panel-btn-secondary" data-modal-open="user-adjust-balance-modal" data-modal-action="/panel/admin/users/<%= item.id %>/adjust-balance" data-modal-fill='<%= JSON.stringify(item) %>'>تعديل الرصيد</button>
           </td>
@@ -68,6 +69,62 @@
       <% }) %>
     </tbody>
   </table>
+</div>
+<div class="panel-section" style="margin-top:24px;">
+  <div class="panel-section-header" style="margin-bottom:12px;">
+    <h2 style="margin:0;">الطلاب الذين حصلوا على منح مجانية مني</h2>
+  </div>
+  <% if (!freeGrants.length) { %>
+    <div class="polish-empty" style="padding:20px;">
+      <p>لا توجد منحة مجانية مسجلة لك حتى الآن.</p>
+    </div>
+  <% } else { %>
+    <div class="panel-table">
+      <table>
+        <thead>
+          <tr>
+            <th>اسم المستخدم</th>
+            <th>الاسم الكامل</th>
+            <th>الكورس</th>
+            <th>التخصص</th>
+            <th>تاريخ المنحة</th>
+          </tr>
+        </thead>
+        <tbody>
+          <% freeGrants.forEach((grant) => { %>
+            <tr>
+              <td><%= grant.username %></td>
+              <td><%= grant.full_name %></td>
+              <td><%= grant.course_name %></td>
+              <td><%= grant.specialization_name %></td>
+              <td><%= date(grant.granted_at) %></td>
+            </tr>
+          <% }) %>
+        </tbody>
+      </table>
+    </div>
+  <% } %>
+</div>
+<div class="panel-modal" id="user-grant-course-modal">
+  <div class="panel-modal-content">
+    <div class="panel-modal-header"><h3>منح كورس مجاني</h3><button type="button" class="panel-modal-close" data-modal-close>×</button></div>
+    <form method="post" action="/panel/admin/users/0/grant-course" class="panel-form">
+      <input type="hidden" name="csrf_token" value="<%= csrfToken %>">
+      <div class="panel-form-grid">
+        <div>
+          <label>الكورس</label>
+          <select name="course_id" required>
+            <% courses.forEach((course) => { %>
+              <option value="<%= course.id %>"><%= course.name %> - <%= course.year %> / <%= course.specialization_name || 'غير محدد' %></option>
+            <% }) %>
+          </select>
+        </div>
+      </div>
+      <div class="panel-form-actions">
+        <button class="panel-btn panel-btn-primary" type="submit">حفظ المنحة</button>
+      </div>
+    </form>
+  </div>
 </div>
 <div class="panel-modal" id="student-create-modal">
   <div class="panel-modal-content">
@@ -78,6 +135,16 @@
         <div><label>اسم المستخدم</label><input name="username" required></div>
         <div><label>الاسم الكامل</label><input name="full_name" required></div>
         <div><label>كلمة المرور</label><input name="password" type="password" required></div>
+        <div><label>الهاتف (اختياري)</label><input name="phone" type="tel" placeholder="05xxxxxxxx"></div>
+        <div>
+          <label>التخصص (اختياري)</label>
+          <select name="specialization_id">
+            <option value="">بدون تخصص</option>
+            <% specializations.forEach((spec) => { %>
+              <option value="<%= spec.id %>"><%= spec.name %></option>
+            <% }) %>
+          </select>
+        </div>
         <div><label>معرّف الجهاز (اختياري)</label><input name="device_id" type="text" placeholder="إذا كان الجهاز معروفًا"></div>
       </div>
       <div class="panel-form-actions"><button class="panel-btn panel-btn-primary" type="submit">حفظ</button></div>

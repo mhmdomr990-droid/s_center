@@ -35,7 +35,7 @@ export async function postLogin(req: Request, res: Response, next: (error?: unkn
       httpOnly: true,
       sameSite: 'strict',
       secure: cookieSecureFlag(),
-      path: '/panel',
+      path: '/',
       maxAge: 1000 * 60 * 60 * 24 * 7,
     });
 
@@ -48,9 +48,11 @@ export async function postLogin(req: Request, res: Response, next: (error?: unkn
 
 export async function postLogout(req: Request, res: Response) {
   clearPanelAuthCookies(res);
-  res.clearCookie('panel_csrf_token', { path: '/panel' });
-  res.clearCookie('panel_flash', { path: '/panel' });
-  return res.redirect('/');
+  res.clearCookie('panel_csrf_token', { path: '/panel', httpOnly: true, sameSite: 'strict', secure: cookieSecureFlag(), expires: new Date(0), maxAge: 0 });
+  res.clearCookie('panel_csrf_token', { path: '/', httpOnly: true, sameSite: 'strict', secure: cookieSecureFlag(), expires: new Date(0), maxAge: 0 });
+  res.clearCookie('panel_flash', { path: '/panel', httpOnly: true, sameSite: 'strict', secure: cookieSecureFlag(), expires: new Date(0), maxAge: 0 });
+  res.clearCookie('panel_flash', { path: '/', httpOnly: true, sameSite: 'strict', secure: cookieSecureFlag(), expires: new Date(0), maxAge: 0 });
+  return res.redirect('/panel/login');
 }
 
 export async function getPanelHome(req: Request, res: Response) {

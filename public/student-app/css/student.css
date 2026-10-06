@@ -64,6 +64,12 @@ textarea {
 
 .student-main {
   padding: 16px 14px calc(96px + env(safe-area-inset-bottom));
+  display: grid;
+  gap: 18px;
+}
+
+.student-main > * + * {
+  margin-top: 0;
 }
 
 .student-page-title {
@@ -77,7 +83,7 @@ textarea {
 }
 
 .student-headline {
-  margin-bottom: 14px;
+  margin-bottom: 0;
 }
 
 .student-headline h1,
@@ -98,14 +104,14 @@ textarea {
 .student-grid {
   display: grid;
   grid-template-columns: 1fr;
-  gap: 12px;
+  gap: 18px;
 }
 
 .student-card {
   background: var(--panel);
   border: 1px solid var(--border);
   border-radius: 18px;
-  padding: 14px;
+  padding: 16px;
   box-shadow: var(--shadow);
 }
 
