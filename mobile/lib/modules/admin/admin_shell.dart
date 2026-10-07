@@ -69,7 +69,7 @@ class AdminShell extends StatelessWidget {
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceAround,
                 children: [
-                  _buildNavItem(currentIndex, 0, Icons.payments_outlined, 'الشحن',
+                  _buildNavItem(currentIndex, 0, Icons.payments_outlined, 'الطلبات',
                       badgeCount: Get.isRegistered<AdminShellController>()
                           ? Get.find<AdminShellController>().pendingTopups.value
                           : 0),

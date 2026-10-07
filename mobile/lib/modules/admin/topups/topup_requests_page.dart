@@ -10,6 +10,8 @@ import '../../../widgets/loading_shimmer.dart';
 import '../../../widgets/section_header.dart';
 import '../../../widgets/status_pill.dart';
 import '../../../utils/format.dart';
+import 'swap_requests_controller.dart';
+import 'swap_requests_list.dart';
 import 'topup_requests_controller.dart';
 
 class TopupRequestsPage extends StatelessWidget {
@@ -17,87 +19,145 @@ class TopupRequestsPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return GetBuilder<TopupRequestsController>(
-      init: TopupRequestsController(),
-      builder: (ctrl) {
-        return Scaffold(
-          backgroundColor: AppColors.background,
-          appBar: GradientAppBar(
-            title: 'طلبات الشحن',
-            actions: [
-              IconButton(
-                icon: const Icon(Icons.swap_horiz_rounded, color: Colors.white),
-                tooltip: 'طلبات التبديل',
-                onPressed: () => Get.toNamed(AppRoutes.adminSwaps),
+    return GetBuilder<SwapRequestsAdminController>(
+      init: SwapRequestsAdminController(),
+      builder: (swapCtrl) {
+        return GetBuilder<TopupRequestsController>(
+          init: TopupRequestsController(),
+          builder: (ctrl) {
+            return Scaffold(
+              backgroundColor: AppColors.background,
+              appBar: GradientAppBar(
+                title: 'الطلبات',
+                actions: [
+                  IconButton(
+                    icon: const Icon(Icons.receipt_long_outlined, color: Colors.white),
+                    tooltip: 'عمليات الشراء',
+                    onPressed: () => Get.toNamed(AppRoutes.adminPurchases),
+                  ),
+                ],
               ),
-              IconButton(
-                icon: const Icon(Icons.receipt_long_outlined, color: Colors.white),
-                tooltip: 'عمليات الشراء',
-                onPressed: () => Get.toNamed(AppRoutes.adminPurchases),
-              ),
-            ],
-          ),
-          body: Obx(() {
-            if (ctrl.isLoading.value && ctrl.items.isEmpty) {
-              return const LoadingListShimmer();
-            }
-            return RefreshIndicator(
-              onRefresh: ctrl.load,
-              color: AppColors.primary,
-              child: ListView(
-                padding: const EdgeInsets.only(top: 16),
+              body: Column(
                 children: [
                   Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 16),
+                    padding: const EdgeInsets.fromLTRB(16, 16, 16, 4),
                     child: Row(
                       children: [
-                        _filterChip(ctrl, 'PENDING', 'معلّقة'),
-                        const SizedBox(width: 8),
-                        _filterChip(ctrl, 'APPROVED', 'مقبولة'),
-                        const SizedBox(width: 8),
-                        _filterChip(ctrl, 'REJECTED', 'مرفوضة'),
+                        _segmentButton(ctrl, 0, 'طلبات الشحن', Icons.payments_outlined),
+                        const SizedBox(width: 10),
+                        _segmentButton(ctrl, 1, 'طلبات التبديل', Icons.swap_horiz_rounded),
                       ],
                     ),
                   ),
-                  const SizedBox(height: 16),
-                  SectionHeader(
-                    title: 'الطلبات',
-                    icon: Icons.receipt_long_rounded,
-                    trailing: ctrl.total.value > ctrl.items.length
-                        ? Text('${ctrl.items.length}/${ctrl.total.value}',
-                            style: AppTextStyles.caption)
-                        : null,
+                  Expanded(
+                    child: Obx(() => ctrl.segment.value == 0
+                        ? _topupBody(ctrl)
+                        : SwapRequestsList(ctrl: swapCtrl)),
                   ),
-                  const SizedBox(height: 8),
-                  if (ctrl.items.isEmpty)
-                    const Padding(
-                      padding: EdgeInsets.all(32),
-                      child: EmptyState(
-                        icon: Icons.inbox_rounded,
-                        title: 'لا توجد طلبات هنا',
-                        subtitle: 'ستظهر الطلبات فور وصولها',
-                      ),
-                    )
-                  else
-                    ...ctrl.items.map((req) => _buildRequestCard(ctrl, req)),
-                  if (ctrl.hasMore)
-                    Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                      child: Obx(() => CustomButton(
-                            text: ctrl.isLoadingMore.value ? 'جارٍ التحميل...' : 'المزيد',
-                            isOutlined: true,
-                            isLoading: ctrl.isLoadingMore.value,
-                            onPressed: ctrl.loadMore,
-                          )),
-                    ),
-                  const SizedBox(height: 16),
                 ],
               ),
             );
-          }),
+          },
         );
       },
     );
+  }
+
+  Widget _segmentButton(TopupRequestsController ctrl, int index, String label, IconData icon) {
+    final isSelected = ctrl.segment.value == index;
+    return Expanded(
+      child: GestureDetector(
+        onTap: () => ctrl.setSegment(index),
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 200),
+          padding: const EdgeInsets.symmetric(vertical: 11),
+          decoration: BoxDecoration(
+            color: isSelected ? AppColors.primary : AppColors.courseCard,
+            borderRadius: BorderRadius.circular(10),
+            border: Border.all(
+              color: isSelected ? AppColors.primary : AppColors.cardBorder,
+            ),
+          ),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(icon, size: 16, color: isSelected ? Colors.white : AppColors.textSecondary),
+              const SizedBox(width: 6),
+              Text(
+                label,
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  color: isSelected ? Colors.white : AppColors.textSecondary,
+                  fontWeight: FontWeight.w600,
+                  fontSize: 13,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _topupBody(TopupRequestsController ctrl) {
+    return Obx(() {
+      if (ctrl.isLoading.value && ctrl.items.isEmpty) {
+        return const LoadingListShimmer();
+      }
+      return RefreshIndicator(
+        onRefresh: ctrl.load,
+        color: AppColors.primary,
+        child: ListView(
+          padding: const EdgeInsets.only(top: 12),
+          children: [
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              child: Row(
+                children: [
+                  _filterChip(ctrl, 'PENDING', 'معلّقة'),
+                  const SizedBox(width: 8),
+                  _filterChip(ctrl, 'APPROVED', 'مقبولة'),
+                  const SizedBox(width: 8),
+                  _filterChip(ctrl, 'REJECTED', 'مرفوضة'),
+                ],
+              ),
+            ),
+            const SizedBox(height: 16),
+            SectionHeader(
+              title: 'طلبات الشحن',
+              icon: Icons.receipt_long_rounded,
+              trailing: ctrl.total.value > ctrl.items.length
+                  ? Text('${ctrl.items.length}/${ctrl.total.value}',
+                      style: AppTextStyles.caption)
+                  : null,
+            ),
+            const SizedBox(height: 8),
+            if (ctrl.items.isEmpty)
+              const Padding(
+                padding: EdgeInsets.all(32),
+                child: EmptyState(
+                  icon: Icons.inbox_rounded,
+                  title: 'لا توجد طلبات هنا',
+                  subtitle: 'ستظهر الطلبات فور وصولها',
+                ),
+              )
+            else
+              ...ctrl.items.map((req) => _buildRequestCard(ctrl, req)),
+            if (ctrl.hasMore)
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                child: Obx(() => CustomButton(
+                      text: ctrl.isLoadingMore.value ? 'جارٍ التحميل...' : 'المزيد',
+                      isOutlined: true,
+                      isLoading: ctrl.isLoadingMore.value,
+                      onPressed: ctrl.loadMore,
+                    )),
+              ),
+            const SizedBox(height: 16),
+          ],
+        ),
+      );
+    });
   }
 
   Widget _filterChip(TopupRequestsController ctrl, String status, String label) {

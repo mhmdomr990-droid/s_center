@@ -12,6 +12,14 @@ class TopupRequestsController extends GetxController {
   final items = <Map<String, dynamic>>[].obs;
   final total = 0.obs;
 
+  // 0 = طلبات الشحن، 1 = طلبات التبديل
+  final segment = 0.obs;
+
+  void setSegment(int value) {
+    if (segment.value == value) return;
+    segment.value = value;
+  }
+
   int _page = 1;
   bool _hasMore = true;
   bool get hasMore => _hasMore;

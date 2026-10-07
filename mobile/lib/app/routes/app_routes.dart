@@ -22,5 +22,4 @@ abstract class AppRoutes {
   static const String adminUserDetail = '/admin/user/detail';
   static const String adminTeacherDetail = '/admin/teacher/detail';
   static const String adminPurchases = '/admin/purchases';
-  static const String adminSwaps = '/admin/swaps';
 }

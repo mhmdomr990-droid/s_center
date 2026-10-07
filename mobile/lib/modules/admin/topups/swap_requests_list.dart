@@ -1,54 +1,47 @@
 import 'package:flutter/material.dart';
-import 'package:get/get.dart';
 import '../../../app/theme/app_colors.dart';
 import '../../../app/theme/app_shadows.dart';
 import '../../../app/theme/app_text_styles.dart';
 import '../../../utils/format.dart';
 import '../../../widgets/custom_button.dart';
 import '../../../widgets/empty_state.dart';
-import '../../../widgets/gradient_app_bar.dart';
 import '../../../widgets/loading_shimmer.dart';
 import 'swap_requests_controller.dart';
 
-class SwapRequestsPage extends StatelessWidget {
-  const SwapRequestsPage({super.key});
+class SwapRequestsList extends StatelessWidget {
+  final SwapRequestsAdminController ctrl;
+
+  const SwapRequestsList({super.key, required this.ctrl});
 
   @override
   Widget build(BuildContext context) {
-    return GetBuilder<SwapRequestsAdminController>(
-      init: SwapRequestsAdminController(),
-      builder: (ctrl) {
-        return Scaffold(
-          backgroundColor: AppColors.background,
-          appBar: const GradientAppBar(title: 'طلبات تبديل المواد'),
-          body: Obx(() {
-            if (ctrl.isLoading.value && ctrl.items.isEmpty) {
-              return const LoadingListShimmer();
-            }
-            if (ctrl.items.isEmpty) {
-              return const EmptyState(
-                icon: Icons.swap_horiz_rounded,
-                title: 'لا توجد طلبات تبديل',
-                subtitle: 'لا توجد طلبات بانتظار المراجعة حالياً',
-              );
-            }
-            return RefreshIndicator(
-              onRefresh: ctrl.load,
-              color: AppColors.primary,
-              child: ListView.builder(
-                padding: const EdgeInsets.all(16),
-                itemCount: ctrl.items.length,
-                itemBuilder: (context, i) => _SwapRequestCard(
-                  item: ctrl.items[i],
-                  busy: ctrl.busy.value,
-                  onApprove: () => ctrl.approve(ctrl.items[i]),
-                  onReject: () => ctrl.reject(ctrl.items[i]),
+    if (ctrl.isLoading.value && ctrl.items.isEmpty) {
+      return const LoadingListShimmer();
+    }
+    return RefreshIndicator(
+      onRefresh: ctrl.load,
+      color: AppColors.primary,
+      child: ctrl.items.isEmpty
+          ? ListView(
+              padding: const EdgeInsets.only(top: 48),
+              children: const [
+                EmptyState(
+                  icon: Icons.swap_horiz_rounded,
+                  title: 'لا توجد طلبات تبديل',
+                  subtitle: 'لا توجد طلبات بانتظار المراجعة حالياً',
                 ),
+              ],
+            )
+          : ListView.builder(
+              padding: const EdgeInsets.fromLTRB(16, 16, 16, 24),
+              itemCount: ctrl.items.length,
+              itemBuilder: (context, i) => _SwapRequestCard(
+                item: ctrl.items[i],
+                busy: ctrl.busy.value,
+                onApprove: () => ctrl.approve(ctrl.items[i]),
+                onReject: () => ctrl.reject(ctrl.items[i]),
               ),
-            );
-          }),
-        );
-      },
+            ),
     );
   }
 }
