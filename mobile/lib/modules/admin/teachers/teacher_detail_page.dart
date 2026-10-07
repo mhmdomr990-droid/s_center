@@ -94,10 +94,21 @@ class TeacherDetailPage extends StatelessWidget {
                                   color: AppColors.primary, size: 20),
                               const SizedBox(width: 10),
                               Expanded(
-                                child: Text(c['name'] ?? '',
-                                    style: AppTextStyles.bodyMedium.copyWith(fontSize: 14),
-                                    maxLines: 1,
-                                    overflow: TextOverflow.ellipsis),
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(c['name'] ?? '',
+                                        style: AppTextStyles.bodyMedium
+                                            .copyWith(fontSize: 14),
+                                        maxLines: 1,
+                                        overflow: TextOverflow.ellipsis),
+                                    const SizedBox(height: 2),
+                                    Text(
+                                      'نسبة المعلم: ${_percentLabel('${c['teacher_percent'] ?? '0'}')}%',
+                                      style: AppTextStyles.caption,
+                                    ),
+                                  ],
+                                ),
                               ),
                               Text(formatAmount(c['price']),
                                   style: AppTextStyles.caption
@@ -160,6 +171,14 @@ class TeacherDetailPage extends StatelessWidget {
         );
       },
     );
+  }
+
+  String _percentLabel(String value) {
+    var v = value.trim();
+    if (v.contains('.')) {
+      v = v.replaceFirst(RegExp(r'0+$'), '').replaceFirst(RegExp(r'\.$'), '');
+    }
+    return v.isEmpty ? '0' : v;
   }
 
   Widget _stat(String label, String value, {Color? color}) {

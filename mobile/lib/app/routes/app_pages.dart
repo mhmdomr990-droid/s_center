@@ -30,6 +30,8 @@ import '../../modules/admin/users/user_detail_page.dart';
 import '../../modules/admin/users/user_detail_controller.dart';
 import '../../modules/admin/teachers/teacher_detail_page.dart';
 import '../../modules/admin/teachers/teacher_detail_controller.dart';
+import '../../modules/admin/purchases/purchases_page.dart';
+import '../../modules/admin/purchases/purchases_controller.dart';
 
 class AppPages {
   static final pages = _rawPages
@@ -85,6 +87,9 @@ class AppPages {
     })),
     GetPage(name: AppRoutes.adminTeacherDetail, page: () => const TeacherDetailPage(), binding: BindingsBuilder(() {
       Get.lazyPut(() => TeacherDetailController());
+    })),
+    GetPage(name: AppRoutes.adminPurchases, page: () => const PurchasesPage(), binding: BindingsBuilder(() {
+      Get.lazyPut(() => PurchasesAdminController());
     })),
   ];
 }

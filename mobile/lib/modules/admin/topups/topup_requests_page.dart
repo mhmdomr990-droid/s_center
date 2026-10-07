@@ -4,6 +4,7 @@ import '../../../app/theme/app_colors.dart';
 import '../../../app/theme/app_text_styles.dart';
 import '../../../widgets/custom_button.dart';
 import '../../../widgets/empty_state.dart';
+import '../../../app/routes/app_routes.dart';
 import '../../../widgets/gradient_app_bar.dart';
 import '../../../widgets/loading_shimmer.dart';
 import '../../../widgets/section_header.dart';
@@ -21,7 +22,16 @@ class TopupRequestsPage extends StatelessWidget {
       builder: (ctrl) {
         return Scaffold(
           backgroundColor: AppColors.background,
-          appBar: const GradientAppBar(title: 'طلبات الشحن'),
+          appBar: GradientAppBar(
+            title: 'طلبات الشحن',
+            actions: [
+              IconButton(
+                icon: const Icon(Icons.receipt_long_outlined, color: Colors.white),
+                tooltip: 'عمليات الشراء',
+                onPressed: () => Get.toNamed(AppRoutes.adminPurchases),
+              ),
+            ],
+          ),
           body: Obx(() {
             if (ctrl.isLoading.value && ctrl.items.isEmpty) {
               return const LoadingListShimmer();
