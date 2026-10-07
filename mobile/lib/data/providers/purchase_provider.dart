@@ -21,4 +21,19 @@ class PurchaseProvider {
   Future<Response> getMyPayments() {
     return _api.get('/me/payments');
   }
+
+  // ---- طلبات تبديل المواد ----
+  Future<Response> requestSwap({
+    required int oldPurchaseId,
+    required int newCourseId,
+    String? reason,
+  }) {
+    return _api.post('/course-swap-requests', data: {
+      'old_purchase_id': oldPurchaseId,
+      'new_course_id': newCourseId,
+      if (reason != null && reason.isNotEmpty) 'reason': reason,
+    });
+  }
+
+  Future<Response> mySwapRequests() => _api.get('/course-swap-requests');
 }

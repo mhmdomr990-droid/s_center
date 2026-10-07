@@ -12,9 +12,11 @@ import '../../../widgets/empty_state.dart';
 import '../../../widgets/gradient_app_bar.dart';
 import '../../../widgets/loading_shimmer.dart';
 import '../../../widgets/section_header.dart';
+import '../../../widgets/status_pill.dart';
 import '../../../utils/format.dart';
 import '../../../modules/student/notifications/notifications_controller.dart';
 import 'home_controller.dart';
+import 'swap_sheet.dart';
 
 class HomePage extends StatelessWidget {
   const HomePage({super.key});
@@ -241,6 +243,28 @@ class HomePage extends StatelessWidget {
                                                 color: AppColors.textSecondary)),
                                       ],
                                     ),
+                                    const SizedBox(height: 8),
+                                    SizedBox(
+                                      width: double.infinity,
+                                      height: 30,
+                                      child: OutlinedButton.icon(
+                                        onPressed: () => SwapCourseSheet.show(
+                                            course,
+                                            onSubmitted: ctrl.loadSwapRequests),
+                                        icon: const Icon(Icons.swap_horiz_rounded,
+                                            size: 15),
+                                        label: const Text('تبديل',
+                                            style: TextStyle(fontSize: 12)),
+                                        style: OutlinedButton.styleFrom(
+                                          foregroundColor: AppColors.primary,
+                                          padding: EdgeInsets.zero,
+                                          visualDensity: VisualDensity.compact,
+                                          side: BorderSide(
+                                              color: AppColors.primary
+                                                  .withValues(alpha: 0.45)),
+                                        ),
+                                      ),
+                                    ),
                                   ],
                                 ),
                               ),
@@ -248,6 +272,22 @@ class HomePage extends StatelessWidget {
                           );
                           }).toList(),
                         ),
+                      ),
+                    ),
+                  ],
+                  if (ctrl.swapRequests.isNotEmpty) ...[
+                    const SizedBox(height: 24),
+                    const SectionHeader(
+                      title: 'طلبات التبديل',
+                      icon: Icons.swap_horiz_rounded,
+                    ),
+                    const SizedBox(height: 8),
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 16),
+                      child: Column(
+                        children: ctrl.swapRequests
+                            .map((r) => _SwapRequestTile(request: r))
+                            .toList(),
                       ),
                     ),
                   ],
@@ -289,6 +329,58 @@ class HomePage extends StatelessWidget {
           }),
         );
       },
+    );
+  }
+}
+
+class _SwapRequestTile extends StatelessWidget {
+  final Map<String, dynamic> request;
+
+  const _SwapRequestTile({required this.request});
+
+  (String, Color) get _status => switch ('${request['status']}') {
+        'APPROVED' => ('موافقة', AppColors.success),
+        'REJECTED' => ('مرفوضة', AppColors.error),
+        _ => ('قيد المراجعة', AppColors.warning),
+      };
+
+  @override
+  Widget build(BuildContext context) {
+    final (label, color) = _status;
+    final note = '${request['admin_note'] ?? ''}';
+    return Container(
+      margin: const EdgeInsets.only(bottom: 8),
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: AppColors.courseCard,
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: AppColors.cardBorder),
+        boxShadow: AppShadows.soft,
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Expanded(
+                child: Text('${request['old_course_name'] ?? 'المادة الحالية'}',
+                    style: AppTextStyles.bodyMedium
+                        .copyWith(fontWeight: FontWeight.w700)),
+              ),
+              StatusPill(label: label, color: color),
+            ],
+          ),
+          const SizedBox(height: 4),
+          Text('إلى: ${request['new_course_name'] ?? 'مادة بديلة'}',
+              style: AppTextStyles.caption.copyWith(fontSize: 12)),
+          if (note.isNotEmpty) ...[
+            const SizedBox(height: 4),
+            Text('ملاحظة الإدارة: $note',
+                style: AppTextStyles.caption
+                    .copyWith(fontSize: 11, color: AppColors.textHint)),
+          ],
+        ],
+      ),
     );
   }
 }

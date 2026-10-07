@@ -416,12 +416,7 @@ class UserDetailController extends GetxController {
     if (busy.value) return;
     busy.value = true;
     try {
-      final action = await _provider.grantCourse(userId, courseId);
-      if (!action.ok) {
-        Get.snackbar('خطأ', _grantActionError(action.message),
-            backgroundColor: Colors.red, colorText: Colors.white);
-        return;
-      }
+      await _provider.grantCourse(userId, courseId);
       _ownedCourseIds.add(courseId);
       Get.snackbar('تم', 'تمت المنحة المجانية للطالب',
           backgroundColor: Colors.green, colorText: Colors.white);
@@ -432,22 +427,6 @@ class UserDetailController extends GetxController {
     } finally {
       busy.value = false;
     }
-  }
-
-  String _grantActionError(String? message) {
-    if (message == null || message.isEmpty) {
-      return 'تعذر إتمام العملية — تحقق من تسجيل الدخول';
-    }
-    if (message.contains('specialization')) {
-      return 'الدورة لا تطابق اختصاص المستخدم';
-    }
-    if (message.contains('already has access')) {
-      return 'المستخدم لديه وصول لهذه الدورة';
-    }
-    if (message.contains('not found')) {
-      return 'الدورة غير منشورة أو غير موجودة';
-    }
-    return message;
   }
 
   String _yearLabel(int year) => switch (year) {
@@ -552,26 +531,19 @@ class UserDetailController extends GetxController {
 
     busy.value = true;
     try {
-      final action = await _provider.revokeCourseGrant(userId, courseId);
-      if (!action.ok) {
-        final m = action.message;
-        Get.snackbar(
-            'خطأ',
-            m == null || m.isEmpty
-                ? 'تعذر إتمام العملية — تحقق من تسجيل الدخول'
-                : m.contains('Free grant not found')
-                    ? 'ليست منحة مجانية — ربما شراء مدفوع'
-                    : m,
-            backgroundColor: Colors.red,
-            colorText: Colors.white);
-        return;
-      }
+      await _provider.revokeCourseGrant(userId, courseId);
       Get.snackbar('تم', 'تم إلغاء المنحة',
           backgroundColor: Colors.green, colorText: Colors.white);
       await load();
     } catch (e) {
-      Get.snackbar('خطأ', apiErrorMessage(e),
-          backgroundColor: Colors.red, colorText: Colors.white);
+      final status = e is DioException ? e.response?.statusCode : null;
+      Get.snackbar(
+          'خطأ',
+          status == 404
+              ? 'ليست منحة مجانية — ربما شراء مدفوع'
+              : apiErrorMessage(e),
+          backgroundColor: Colors.red,
+          colorText: Colors.white);
     } finally {
       busy.value = false;
     }

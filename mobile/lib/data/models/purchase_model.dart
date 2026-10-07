@@ -1,6 +1,7 @@
 class PurchaseModel {
   final int id;
   final int courseId;
+  final int? purchaseId;
   final String courseName;
   final int? specializationId;
   final String? specializationName;
@@ -14,6 +15,7 @@ class PurchaseModel {
   PurchaseModel({
     required this.id,
     required this.courseId,
+    this.purchaseId,
     required this.courseName,
     this.specializationId,
     this.specializationName,
@@ -29,6 +31,7 @@ class PurchaseModel {
     return PurchaseModel(
       id: json['id'] ?? 0,
       courseId: json['course_id'] ?? json['id'] ?? 0,
+      purchaseId: json['purchase_id'],
       courseName: json['course_name'] ?? json['name'] ?? '',
       specializationId: json['specialization_id'],
       specializationName: json['specialization_name'],
@@ -36,7 +39,7 @@ class PurchaseModel {
       teacherName: json['teacher_full_name'] ?? json['teacher_name'],
       pricePaid: (json['price_paid'] ?? json['price'] ?? '0.00').toString(),
       teacherShare: (json['teacher_share'] ?? '0.00').toString(),
-      createdAt: json['created_at'] != null ? DateTime.tryParse(json['created_at']) : null,
+      createdAt: json['created_at'] != null ? DateTime.tryParse(json['created_at']) : (json['purchased_at'] != null ? DateTime.tryParse(json['purchased_at']) : null),
       lecturesCount: json['lectures_count'],
     );
   }
@@ -45,6 +48,7 @@ class PurchaseModel {
     return PurchaseModel(
       id: id,
       courseId: courseId,
+      purchaseId: purchaseId,
       courseName: courseName,
       specializationId: specializationId,
       specializationName: name,

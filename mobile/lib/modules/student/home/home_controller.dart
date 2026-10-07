@@ -27,6 +27,7 @@ class HomeController extends GetxController {
   final userName = ''.obs;
   final myCourses = <PurchaseModel>[].obs;
   final latestCourses = <CourseModel>[].obs;
+  final swapRequests = <Map<String, dynamic>>[].obs;
 
   /// هل اختار الطالب اختصاصاً عند التسجيل؟ (رسالة لمن بلا اختصاص)
   bool get hasSpecialization => Get.isRegistered<AuthController>()
@@ -58,6 +59,7 @@ class HomeController extends GetxController {
         _purchaseProvider.getMyCourses(),
         _catalogProvider.getCourses(),
         _catalogProvider.getSpecializations(),
+        _purchaseProvider.mySwapRequests(),
       ]);
 
       balance.value = (results[0].data['data']?['balance'] ?? '0.00').toString();
@@ -105,11 +107,29 @@ class HomeController extends GetxController {
             .take(5)
             .toList();
       }
+
+      _assignSwapRequests(results[4].data['data']);
     } catch (e) {
       Get.snackbar('خطأ', apiErrorMessage(e, fallback: 'فشل تحميل البيانات'),
           backgroundColor: Color(0xFFE53935), colorText: Color(0xFFFFFFFF));
     } finally {
       isLoading.value = false;
+    }
+  }
+
+  void _assignSwapRequests(dynamic data) {
+    if (data is List) {
+      swapRequests.value =
+          data.map<Map<String, dynamic>>((e) => Map<String, dynamic>.from(e as Map)).toList();
+    }
+  }
+
+  Future<void> loadSwapRequests() async {
+    try {
+      final res = await _purchaseProvider.mySwapRequests();
+      _assignSwapRequests(res.data['data']);
+    } catch (_) {
+      // القائمة اختيارية — الفشل لا يمنع الاستخدام
     }
   }
 }

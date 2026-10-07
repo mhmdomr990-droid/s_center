@@ -34,6 +34,8 @@ import '../../modules/admin/teachers/teacher_detail_page.dart';
 import '../../modules/admin/teachers/teacher_detail_controller.dart';
 import '../../modules/admin/purchases/purchases_page.dart';
 import '../../modules/admin/purchases/purchases_controller.dart';
+import '../../modules/admin/swaps/swap_requests_page.dart';
+import '../../modules/admin/swaps/swap_requests_controller.dart';
 
 class AppPages {
   static final pages = _rawPages
@@ -95,6 +97,9 @@ class AppPages {
     })),
     GetPage(name: AppRoutes.adminPurchases, page: () => const PurchasesPage(), binding: BindingsBuilder(() {
       Get.lazyPut(() => PurchasesAdminController());
+    })),
+    GetPage(name: AppRoutes.adminSwaps, page: () => const SwapRequestsPage(), binding: BindingsBuilder(() {
+      Get.lazyPut(() => SwapRequestsAdminController());
     })),
   ];
 }

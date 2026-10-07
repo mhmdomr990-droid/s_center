@@ -26,6 +26,11 @@ class TopupRequestsPage extends StatelessWidget {
             title: 'طلبات الشحن',
             actions: [
               IconButton(
+                icon: const Icon(Icons.swap_horiz_rounded, color: Colors.white),
+                tooltip: 'طلبات التبديل',
+                onPressed: () => Get.toNamed(AppRoutes.adminSwaps),
+              ),
+              IconButton(
                 icon: const Icon(Icons.receipt_long_outlined, color: Colors.white),
                 tooltip: 'عمليات الشراء',
                 onPressed: () => Get.toNamed(AppRoutes.adminPurchases),
