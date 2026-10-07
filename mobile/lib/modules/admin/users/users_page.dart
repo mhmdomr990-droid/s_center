@@ -20,7 +20,16 @@ class UsersPage extends StatelessWidget {
       builder: (ctrl) {
         return Scaffold(
           backgroundColor: AppColors.background,
-          appBar: const GradientAppBar(title: 'المستخدمون'),
+          appBar: GradientAppBar(
+            title: 'المستخدمون',
+            actions: [
+              IconButton(
+                icon: const Icon(Icons.person_add_alt_1_rounded, color: Colors.white),
+                tooltip: 'طالب جديد',
+                onPressed: () => _showCreateStudentDialog(context, ctrl),
+              ),
+            ],
+          ),
           body: Obx(() {
             return RefreshIndicator(
               onRefresh: ctrl.load,
@@ -213,6 +222,144 @@ class UsersPage extends StatelessWidget {
             ],
           ),
         ),
+      ),
+    );
+  }
+
+  static void _showCreateStudentDialog(BuildContext context, UsersController ctrl) {
+    final fullNameCtrl = TextEditingController();
+    final usernameCtrl = TextEditingController();
+    final passwordCtrl = TextEditingController();
+    final phoneCtrl = TextEditingController();
+    int? selectedSpec;
+
+    showDialog<void>(
+      context: context,
+      builder: (dialogContext) => StatefulBuilder(
+        builder: (dialogContext, setState) {
+          final specs = ctrl.specializations;
+          return AlertDialog(
+            title: const Text('طالب جديد'),
+            content: SingleChildScrollView(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  TextField(
+                    controller: fullNameCtrl,
+                    decoration: const InputDecoration(
+                        labelText: 'الاسم الكامل', border: OutlineInputBorder()),
+                  ),
+                  const SizedBox(height: 12),
+                  TextField(
+                    controller: usernameCtrl,
+                    decoration: const InputDecoration(
+                      labelText: 'اسم المستخدم (أحرف صغيرة وأرقام و_)',
+                      border: OutlineInputBorder(),
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  TextField(
+                    controller: passwordCtrl,
+                    obscureText: true,
+                    decoration: const InputDecoration(
+                      labelText: 'كلمة المرور (8 أحرف على الأقل)',
+                      border: OutlineInputBorder(),
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  TextField(
+                    controller: phoneCtrl,
+                    keyboardType: TextInputType.phone,
+                    decoration: const InputDecoration(
+                      labelText: 'رقم الهاتف (اختياري)',
+                      border: OutlineInputBorder(),
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  if (specs.isEmpty)
+                    Row(
+                      children: [
+                        const SizedBox(
+                          width: 16,
+                          height: 16,
+                          child: CircularProgressIndicator(strokeWidth: 2),
+                        ),
+                        const SizedBox(width: 10),
+                        Text('جارٍ تحميل الاختصاصات...',
+                            style: TextStyle(fontSize: 12, color: AppColors.textHint)),
+                        const Spacer(),
+                        TextButton(
+                          onPressed: () async {
+                            await ctrl.loadSpecializations();
+                            setState(() {});
+                          },
+                          child: const Text('إعادة المحاولة', style: TextStyle(fontSize: 12)),
+                        ),
+                      ],
+                    )
+                  else
+                    DropdownButtonFormField<int>(
+                      initialValue: selectedSpec,
+                      decoration: const InputDecoration(
+                        labelText: 'الاختصاص *',
+                        border: OutlineInputBorder(),
+                      ),
+                      items: specs
+                          .map((s) => DropdownMenuItem<int>(
+                                value: (s['id'] as num).toInt(),
+                                child: Text('${s['name'] ?? ''}',
+                                    overflow: TextOverflow.ellipsis),
+                              ))
+                          .toList(),
+                      onChanged: (value) => setState(() => selectedSpec = value),
+                    ),
+                ],
+              ),
+            ),
+            actions: [
+              TextButton(
+                  onPressed: () => Navigator.of(dialogContext).pop(),
+                  child: const Text('إلغاء')),
+              TextButton(
+                onPressed: () {
+                  final username = usernameCtrl.text.trim().toLowerCase();
+                  final fullName = fullNameCtrl.text.trim();
+                  final password = passwordCtrl.text;
+                  final phone = phoneCtrl.text.trim();
+                  if (username.length < 3 ||
+                      !RegExp(r'^[a-z0-9_]+$').hasMatch(username) ||
+                      fullName.length < 2 ||
+                      password.length < 8) {
+                    Get.snackbar('خطأ',
+                        'تحقق من البيانات (المستخدم ≥3 أحرف صغيرة، الاسم ≥2، كلمة المرور ≥8)',
+                        backgroundColor: Colors.red, colorText: Colors.white);
+                    return;
+                  }
+                  if (phone.isNotEmpty &&
+                      !RegExp(r'^\+?[0-9\s\-()]{7,30}$').hasMatch(phone)) {
+                    Get.snackbar('خطأ', 'رقم الهاتف غير صالح',
+                        backgroundColor: Colors.red, colorText: Colors.white);
+                    return;
+                  }
+                  if (selectedSpec == null) {
+                    Get.snackbar('خطأ', 'اختر اختصاص الطالب',
+                        backgroundColor: Colors.red, colorText: Colors.white);
+                    return;
+                  }
+                  Navigator.of(dialogContext).pop();
+                  ctrl.createStudent(
+                    username: username,
+                    fullName: fullName,
+                    password: password,
+                    phone: phone,
+                    specializationId: selectedSpec!,
+                  );
+                },
+                child: const Text('إنشاء'),
+              ),
+            ],
+          );
+        },
       ),
     );
   }

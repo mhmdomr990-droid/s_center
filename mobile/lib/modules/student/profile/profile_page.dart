@@ -131,23 +131,38 @@ class ProfilePage extends StatelessWidget {
                                     ),
                                   ],
                                 ),
-                                if (user?.phone?.isNotEmpty == true) ...[
-                                  const SizedBox(height: 6),
-                                  Row(
-                                    children: [
-                                      const Icon(Icons.phone_outlined,
-                                          color: Colors.white70, size: 16),
-                                      const SizedBox(width: 6),
-                                      Text(
-                                        user!.phone!,
-                                        style: GoogleFonts.cairo(
-                                            color: Colors.white,
-                                            fontSize: 14,
-                                            fontWeight: FontWeight.w600),
-                                      ),
-                                    ],
+                                GestureDetector(
+                                  onTap: ctrl.editPhone,
+                                  behavior: HitTestBehavior.opaque,
+                                  child: Padding(
+                                    padding: const EdgeInsets.symmetric(vertical: 3),
+                                    child: Row(
+                                      children: [
+                                        const Icon(Icons.phone_outlined,
+                                            color: Colors.white70, size: 16),
+                                        const SizedBox(width: 6),
+                                        Expanded(
+                                          child: Text(
+                                            user?.phone?.isNotEmpty == true
+                                                ? user!.phone!
+                                                : 'إضافة رقم الهاتف',
+                                            style: GoogleFonts.cairo(
+                                              color: user?.phone?.isNotEmpty == true
+                                                  ? Colors.white
+                                                  : Colors.white70,
+                                              fontSize: 14,
+                                              fontWeight: FontWeight.w600,
+                                            ),
+                                            maxLines: 1,
+                                            overflow: TextOverflow.ellipsis,
+                                          ),
+                                        ),
+                                        const Icon(Icons.edit_outlined,
+                                            color: Colors.white70, size: 14),
+                                      ],
+                                    ),
                                   ),
-                                ],
+                                ),
                                 if (user?.specializationId != null) ...[
                                   const SizedBox(height: 6),
                                   Row(

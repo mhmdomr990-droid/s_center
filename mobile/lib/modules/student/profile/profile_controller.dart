@@ -33,6 +33,7 @@ class ProfileController extends GetxController {
   final oldPasswordCtrl = TextEditingController();
   final newPasswordCtrl = TextEditingController();
   final confirmPasswordCtrl = TextEditingController();
+  final phoneCtrl = TextEditingController();
 
   final obscureOld = true.obs;
   final obscureNew = true.obs;
@@ -66,6 +67,7 @@ class ProfileController extends GetxController {
     oldPasswordCtrl.dispose();
     newPasswordCtrl.dispose();
     confirmPasswordCtrl.dispose();
+    phoneCtrl.dispose();
     super.onClose();
   }
 
@@ -184,6 +186,47 @@ class ProfileController extends GetxController {
       Get.snackbar('خطأ', apiErrorMessage(e), backgroundColor: Color(0xFFE53935), colorText: Color(0xFFFFFFFF));
     } finally {
       isChangingPassword.value = false;
+    }
+  }
+
+  Future<void> editPhone() async {
+    phoneCtrl.text = user.value?.phone ?? '';
+    final confirmed = await Get.dialog<bool>(
+      AlertDialog(
+        title: const Text('تعديل رقم الهاتف'),
+        content: TextField(
+          controller: phoneCtrl,
+          keyboardType: TextInputType.phone,
+          decoration: const InputDecoration(
+            labelText: 'رقم الهاتف',
+            hintText: 'اتركه فارغاً لحذف الرقم',
+            border: OutlineInputBorder(),
+          ),
+        ),
+        actions: [
+          TextButton(onPressed: () => Get.back(result: false), child: const Text('إلغاء')),
+          TextButton(onPressed: () => Get.back(result: true), child: const Text('حفظ')),
+        ],
+      ),
+      barrierDismissible: true,
+    );
+    if (confirmed != true) return;
+
+    final phone = phoneCtrl.text.trim();
+    if (phone.isNotEmpty && !RegExp(r'^\+?[0-9\s\-()]{7,30}$').hasMatch(phone)) {
+      Get.snackbar('خطأ', 'رقم الهاتف غير صالح',
+          backgroundColor: const Color(0xFFE53935), colorText: const Color(0xFFFFFFFF));
+      return;
+    }
+
+    try {
+      await _authProvider.updateProfile(phone: phone);
+      Get.snackbar('نجاح', 'تم تحديث رقم الهاتف',
+          backgroundColor: const Color(0xFF43A047), colorText: const Color(0xFFFFFFFF));
+      await loadProfile();
+    } catch (e) {
+      Get.snackbar('خطأ', apiErrorMessage(e, fallback: 'تعذر تحديث رقم الهاتف'),
+          backgroundColor: const Color(0xFFE53935), colorText: const Color(0xFFFFFFFF));
     }
   }
 

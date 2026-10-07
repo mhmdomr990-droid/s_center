@@ -1,3 +1,5 @@
+import 'dart:convert';
+import 'dart:math';
 import 'dart:typed_data';
 
 import 'package:dio/dio.dart';
@@ -79,6 +81,83 @@ class AdminProvider {
 
   Future<Response> resetPassword(int id, {required String newPassword}) {
     return _api.post('/admin/users/$id/reset-password', data: {'new_password': newPassword});
+  }
+
+  // إضافة طالب — عبر مسار اللوحة /panel/admin/students الموجود في الباك
+  // (كوكي panel_token = توكن الجلسة نفسه + CSRF عبر الترويسة)
+  // الباك يرد بـ302 + كوكي panel_flash بنجاح/خطأ ⇒ نقرؤه بدلاً من JSON
+  Future<String?> createStudent({
+    required String username,
+    required String fullName,
+    required String password,
+    String? phone,
+    required int specializationId,
+  }) async {
+    final token = await _api.getToken();
+    if (token == null || token.isEmpty) {
+      return 'انتهت الجلسة، أعد تسجيل الدخول';
+    }
+
+    final csrf = _randomHex(48);
+    final body = <String, dynamic>{
+      'username': username,
+      'full_name': fullName,
+      'password': password,
+      'specialization_id': specializationId,
+    };
+    if (phone != null && phone.isNotEmpty) body['phone'] = phone;
+
+    final response = await _api.post(
+      '/panel/admin/students',
+      data: body,
+      options: Options(
+        headers: {
+          'Origin': Uri.parse(ApiClient.baseUrl).origin,
+          'Cookie': 'panel_token=$token; panel_csrf_token=$csrf',
+          'x-csrf-token': csrf,
+        },
+        followRedirects: false,
+        validateStatus: (status) => status != null && status < 500,
+      ),
+    );
+
+    if (response.statusCode != 302) {
+      return 'تعذر إنشاء الطالب، حاول مرة أخرى';
+    }
+
+    final flash = _panelFlash(response);
+    if (flash == null || flash.$1 != 'success') {
+      final message = flash?.$2 ?? 'تعذر إنشاء الطالب، حاول مرة أخرى';
+      if (message == 'Username already exists') return 'اسم المستخدم موجود مسبقاً';
+      return message;
+    }
+    return null;
+  }
+
+  static String _randomHex(int length) {
+    const chars = '0123456789abcdef';
+    final rnd = Random.secure();
+    return List.generate(length, (_) => chars[rnd.nextInt(chars.length)]).join();
+  }
+
+  static (String, String)? _panelFlash(Response response) {
+    final headers = response.headers.map['set-cookie'];
+    if (headers == null) return null;
+    for (final header in headers) {
+      final match = RegExp('panel_flash=([^;]+)').firstMatch(header);
+      if (match == null) continue;
+      try {
+        final decoded =
+            utf8.decode(base64.decode(Uri.decodeComponent(match.group(1)!)));
+        final json = jsonDecode(decoded) as Map<String, dynamic>;
+        final type = json['type']?.toString();
+        if (type == null) continue;
+        return (type, json['message']?.toString() ?? '');
+      } catch (_) {
+        continue;
+      }
+    }
+    return null;
   }
 
   // ---- التخصصات ----

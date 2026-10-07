@@ -3,16 +3,19 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../../../data/providers/admin_provider.dart';
 import '../../../data/providers/api_client.dart';
+import '../../../data/providers/api_exception.dart';
 import '../../../app/routes/app_routes.dart';
 
 class UsersController extends GetxController {
   final AdminProvider _provider;
   final isLoading = false.obs;
   final isLoadingMore = false.obs;
+  final busy = false.obs;
   final items = <Map<String, dynamic>>[].obs;
   final total = 0.obs;
   final roleFilter = ''.obs;
   final searchQuery = ''.obs;
+  final specializations = <Map<String, dynamic>>[].obs;
 
   final searchCtrl = TextEditingController();
   Timer? _debounce;
@@ -27,6 +30,7 @@ class UsersController extends GetxController {
   void onInit() {
     super.onInit();
     load();
+    unawaited(loadSpecializations());
   }
 
   @override
@@ -96,6 +100,53 @@ class UsersController extends GetxController {
 
   void openDetail(int userId) {
     Get.toNamed(AppRoutes.adminUserDetail, arguments: {'userId': userId});
+  }
+
+  Future<void> loadSpecializations() async {
+    try {
+      final response = await _provider.specializations(page: 1, limit: 100);
+      final data = response.data['data'];
+      if (data is List) {
+        specializations.value = data
+            .map<Map<String, dynamic>>((e) => Map<String, dynamic>.from(e as Map))
+            .toList();
+      }
+    } catch (_) {
+      // صامت — الحوار يعيد المحاولة عند الفتح
+    }
+  }
+
+  Future<void> createStudent({
+    required String username,
+    required String fullName,
+    required String password,
+    String? phone,
+    required int specializationId,
+  }) async {
+    if (busy.value) return;
+    busy.value = true;
+    try {
+      final error = await _provider.createStudent(
+        username: username,
+        fullName: fullName,
+        password: password,
+        phone: phone,
+        specializationId: specializationId,
+      );
+      if (error != null) {
+        Get.snackbar('خطأ', error,
+            backgroundColor: const Color(0xFFE53935), colorText: Colors.white);
+        return;
+      }
+      Get.snackbar('نجاح', 'تم إنشاء حساب الطالب',
+          backgroundColor: const Color(0xFF43A047), colorText: Colors.white);
+      await load();
+    } catch (e) {
+      Get.snackbar('خطأ', apiErrorMessage(e, fallback: 'تعذر إنشاء الطالب'),
+          backgroundColor: const Color(0xFFE53935), colorText: Colors.white);
+    } finally {
+      busy.value = false;
+    }
   }
 
   String roleLabel(String role) => switch (role) {

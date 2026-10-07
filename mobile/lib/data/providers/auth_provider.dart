@@ -44,6 +44,10 @@ class AuthProvider {
     });
   }
 
+  Future<Response> updateProfile({String? phone}) {
+    return _api.patch('/auth/profile', data: {'phone': phone});
+  }
+
   Future<Response> logoutAll() {
     return _api.post('/auth/logout-all');
   }
