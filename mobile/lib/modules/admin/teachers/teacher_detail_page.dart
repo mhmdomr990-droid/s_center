@@ -68,7 +68,22 @@ class TeacherDetailPage extends StatelessWidget {
                     ),
                   ),
                   const SizedBox(height: 16),
-                  const SectionHeader(title: 'دورات المعلم', icon: Icons.menu_book_rounded),
+                  SectionHeader(
+                    title: 'دورات المعلم',
+                    icon: Icons.menu_book_rounded,
+                    trailing: Container(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 8, vertical: 2),
+                      decoration: BoxDecoration(
+                        color: AppColors.primary.withValues(alpha: 0.1),
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      child: Text('${ctrl.courses.length}',
+                          style: AppTextStyles.caption.copyWith(
+                              color: AppColors.primary,
+                              fontWeight: FontWeight.w700)),
+                    ),
+                  ),
                   const SizedBox(height: 8),
                   if (ctrl.courses.isEmpty)
                     const Padding(
