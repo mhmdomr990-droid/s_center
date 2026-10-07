@@ -91,7 +91,10 @@ function mapUser(user: User) {
     id: user.id,
     username: user.username,
     full_name: user.fullName,
+    phone: user.phone,
     role: user.role,
+    specialization_id: user.specialization?.id ?? null,
+    specialization_name: user.specialization?.name ?? null,
     is_active: user.isActive,
     balance: user.balance,
     created_at: user.createdAt,
@@ -923,7 +926,11 @@ export async function listUsersFiltered(filters: {
   is_test?: boolean;
 }) {
   const repository = AppDataSource.getRepository(User);
-  const query = repository.createQueryBuilder('user').orderBy('user.created_at', 'DESC').addOrderBy('user.id', 'DESC');
+  const query = repository
+    .createQueryBuilder('user')
+    .leftJoinAndSelect('user.specialization', 'specialization')
+    .orderBy('user.created_at', 'DESC')
+    .addOrderBy('user.id', 'DESC');
 
   if (filters.search) {
     query.andWhere(new Brackets((qb) => {
@@ -1026,7 +1033,7 @@ export async function grantCourseToUser(input: { adminId: number; userId: number
       throw new AppError(404, 'Admin not found');
     }
 
-    const user = await userRepository.findOne({ where: { id: input.userId } });
+    const user = await userRepository.findOne({ where: { id: input.userId }, relations: { specialization: true } });
     if (!user) {
       throw new AppError(404, 'User not found');
     }
@@ -1037,6 +1044,10 @@ export async function grantCourseToUser(input: { adminId: number; userId: number
     });
     if (!course) {
       throw new AppError(404, 'Course not found');
+    }
+
+    if (!user.specialization || user.specialization.id !== course.specialization.id) {
+      throw new AppError(400, 'Course specialization does not match student specialization');
     }
 
     const existing = await purchaseRepository.findOne({ where: { user: { id: user.id }, course: { id: course.id } } });

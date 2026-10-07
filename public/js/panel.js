@@ -152,6 +152,19 @@
     });
   });
 
+  document.addEventListener('click', (event) => {
+    const target = event.target;
+    if (!(target instanceof Node)) {
+      return;
+    }
+
+    document.querySelectorAll('.panel-actions-dropdown[open]').forEach((dropdown) => {
+      if (!dropdown.contains(target)) {
+        dropdown.removeAttribute('open');
+      }
+    });
+  });
+
   document.querySelectorAll('form').forEach((form) => {
     form.addEventListener('submit', () => {
       const submit = form.querySelector('button[type="submit"], input[type="submit"]');

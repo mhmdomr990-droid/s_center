@@ -375,6 +375,7 @@ textarea {
 .panel-flash.error {
   border-color: rgba(178, 59, 59, 0.25);
   background: #faeded;
+  color: #7f1d1d;
 }
 
 .panel-empty {

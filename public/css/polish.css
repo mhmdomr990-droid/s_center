@@ -177,6 +177,8 @@ html[dir='ltr'] .polish-toast-region {
 
 .polish-toast.error {
   border-color: color-mix(in srgb, var(--danger) 45%, var(--border));
+  background: color-mix(in srgb, var(--danger) 11%, var(--panel));
+  color: #7f1d1d;
 }
 
 .polish-toast-close {

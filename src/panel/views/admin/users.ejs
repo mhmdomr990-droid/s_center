@@ -26,6 +26,8 @@
       <tr>
         <th>اسم المستخدم</th>
         <th>الاسم الكامل</th>
+        <th>الهاتف</th>
+        <th>التخصص</th>
         <th>الدور</th>
         <th>الحالة</th>
         <th>الرصيد</th>
@@ -35,7 +37,7 @@
     <tbody>
       <% if (!users.length) { %>
         <tr>
-          <td colspan="6">
+          <td colspan="8">
             <section class="polish-empty">
               <svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M10 4a4 4 0 100 8 4 4 0 000-8zm8 2h-2v2h2V6zm-2 6h2v2h-2v-2zM4 18c0-2.2 3-4 6-4s6 1.8 6 4v2H4v-2z"/></svg>
               <h4>لا توجد نتائج مطابقة</h4>
@@ -48,28 +50,65 @@
         <tr>
           <td><%= item.username %></td>
           <td><%= item.full_name %></td>
+          <td><%= item.phone || '-' %></td>
+          <td><%= item.specialization_name || 'غير محدد' %></td>
           <td><%= item.role %></td>
           <td><%= item.is_active ? 'نشط' : 'موقوف' %></td>
           <td><%= money(item.balance) %></td>
           <td>
-            <form method="post" action="/panel/admin/users/<%= item.id %>/active" style="display:inline;">
-              <input type="hidden" name="csrf_token" value="<%= csrfToken %>">
-              <input type="hidden" name="is_active" value="<%= item.is_active ? 'false' : 'true' %>">
-              <button class="panel-btn panel-btn-secondary" type="submit"><%= item.is_active ? 'إيقاف' : 'تفعيل' %></button>
-            </form>
-            <form method="post" action="/panel/admin/users/<%= item.id %>/reset-device" style="display:inline;">
-              <input type="hidden" name="csrf_token" value="<%= csrfToken %>">
-              <button class="panel-btn panel-btn-secondary" type="submit" data-confirm="هل تريد تصفير الجهاز لهذا المستخدم؟">إعادة ضبط الجهاز</button>
-            </form>
-            <button class="panel-btn panel-btn-secondary" data-modal-open="user-grant-course-modal" data-modal-action="/panel/admin/users/<%= item.id %>/grant-course" data-modal-fill='<%= JSON.stringify({ user: item }) %>'>منح كورس مجاني</button>
-            <button class="panel-btn panel-btn-secondary" data-modal-open="user-reset-password-modal" data-modal-action="/panel/admin/users/<%= item.id %>/reset-password" data-modal-fill='<%= JSON.stringify(item) %>'>إعادة تعيين كلمة المرور</button>
-            <button class="panel-btn panel-btn-secondary" data-modal-open="user-adjust-balance-modal" data-modal-action="/panel/admin/users/<%= item.id %>/adjust-balance" data-modal-fill='<%= JSON.stringify(item) %>'>تعديل الرصيد</button>
+            <details class="panel-actions-dropdown" style="position:relative;display:inline-block;">
+              <summary class="panel-btn panel-btn-secondary" style="list-style:none;cursor:pointer;">الإجراءات</summary>
+              <div style="position:absolute;left:0;top:calc(100% + 6px);background:#fff;border:1px solid #ded7ca;border-radius:10px;box-shadow:0 6px 18px rgba(0,0,0,.08);padding:8px;min-width:220px;z-index:30;">
+                <form method="post" action="/panel/admin/users/<%= item.id %>/active" style="display:block;margin-bottom:6px;">
+                  <input type="hidden" name="csrf_token" value="<%= csrfToken %>">
+                  <input type="hidden" name="is_active" value="<%= item.is_active ? 'false' : 'true' %>">
+                  <button class="panel-btn panel-btn-secondary" style="width:100%;" type="submit"><%= item.is_active ? 'إيقاف الحساب' : 'تفعيل الحساب' %></button>
+                </form>
+                <form method="post" action="/panel/admin/users/<%= item.id %>/reset-device" style="display:block;margin-bottom:6px;">
+                  <input type="hidden" name="csrf_token" value="<%= csrfToken %>">
+                  <button class="panel-btn panel-btn-secondary" style="width:100%;" type="submit" data-confirm="هل تريد تصفير الجهاز لهذا المستخدم؟">إعادة ضبط الجهاز</button>
+                </form>
+                <button class="panel-btn panel-btn-secondary" style="width:100%;margin-bottom:6px;" data-modal-open="user-grant-course-modal-<%= item.id %>">منح كورس مجاني</button>
+                <button class="panel-btn panel-btn-secondary" style="width:100%;margin-bottom:6px;" data-modal-open="user-reset-password-modal" data-modal-action="/panel/admin/users/<%= item.id %>/reset-password" data-modal-fill='<%= JSON.stringify(item) %>'>إعادة تعيين كلمة المرور</button>
+                <button class="panel-btn panel-btn-secondary" style="width:100%;" data-modal-open="user-adjust-balance-modal" data-modal-action="/panel/admin/users/<%= item.id %>/adjust-balance" data-modal-fill='<%= JSON.stringify(item) %>'>تعديل الرصيد</button>
+              </div>
+            </details>
           </td>
         </tr>
       <% }) %>
     </tbody>
   </table>
 </div>
+<% users.forEach((item) => { %>
+  <% const specializationCourses = item.specialization_id
+    ? courses.filter((course) => Number(course.specialization_id) === Number(item.specialization_id))
+    : []; %>
+  <div class="panel-modal" id="user-grant-course-modal-<%= item.id %>">
+    <div class="panel-modal-content">
+      <div class="panel-modal-header"><h3>منح كورس مجاني - <%= item.full_name %></h3><button type="button" class="panel-modal-close" data-modal-close>×</button></div>
+      <form method="post" action="/panel/admin/users/<%= item.id %>/grant-course" class="panel-form">
+        <input type="hidden" name="csrf_token" value="<%= csrfToken %>">
+        <div class="panel-form-grid">
+          <div>
+            <label>الكورس</label>
+            <% if (specializationCourses.length) { %>
+              <select name="course_id" required>
+                <% specializationCourses.forEach((course) => { %>
+                  <option value="<%= course.id %>"><%= course.name %> - <%= course.year %> / <%= course.specialization_name || 'غير محدد' %></option>
+                <% }) %>
+              </select>
+            <% } else { %>
+              <input type="text" value="لا توجد كورسات متاحة ضمن اختصاص هذا الطالب" disabled>
+            <% } %>
+          </div>
+        </div>
+        <div class="panel-form-actions">
+          <button class="panel-btn panel-btn-primary" type="submit" <%= specializationCourses.length ? '' : 'disabled' %>>حفظ المنحة</button>
+        </div>
+      </form>
+    </div>
+  </div>
+<% }) %>
 <div class="panel-section" style="margin-top:24px;">
   <div class="panel-section-header" style="margin-bottom:12px;">
     <h2 style="margin:0;">الطلاب الذين حصلوا على منح مجانية مني</h2>
@@ -88,6 +127,7 @@
             <th>الكورس</th>
             <th>التخصص</th>
             <th>تاريخ المنحة</th>
+            <th>إجراء</th>
           </tr>
         </thead>
         <tbody>
@@ -98,33 +138,19 @@
               <td><%= grant.course_name %></td>
               <td><%= grant.specialization_name %></td>
               <td><%= date(grant.granted_at) %></td>
+              <td>
+                <form method="post" action="/panel/admin/users/<%= grant.user_id %>/revoke-course-grant" style="display:inline;">
+                  <input type="hidden" name="csrf_token" value="<%= csrfToken %>">
+                  <input type="hidden" name="course_id" value="<%= grant.course_id %>">
+                  <button class="panel-btn panel-btn-secondary" type="submit" data-confirm="هل تريد إلغاء هذه المنحة المجانية؟">إلغاء المنحة</button>
+                </form>
+              </td>
             </tr>
           <% }) %>
         </tbody>
       </table>
     </div>
   <% } %>
-</div>
-<div class="panel-modal" id="user-grant-course-modal">
-  <div class="panel-modal-content">
-    <div class="panel-modal-header"><h3>منح كورس مجاني</h3><button type="button" class="panel-modal-close" data-modal-close>×</button></div>
-    <form method="post" action="/panel/admin/users/0/grant-course" class="panel-form">
-      <input type="hidden" name="csrf_token" value="<%= csrfToken %>">
-      <div class="panel-form-grid">
-        <div>
-          <label>الكورس</label>
-          <select name="course_id" required>
-            <% courses.forEach((course) => { %>
-              <option value="<%= course.id %>"><%= course.name %> - <%= course.year %> / <%= course.specialization_name || 'غير محدد' %></option>
-            <% }) %>
-          </select>
-        </div>
-      </div>
-      <div class="panel-form-actions">
-        <button class="panel-btn panel-btn-primary" type="submit">حفظ المنحة</button>
-      </div>
-    </form>
-  </div>
 </div>
 <div class="panel-modal" id="student-create-modal">
   <div class="panel-modal-content">
