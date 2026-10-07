@@ -249,8 +249,12 @@ class HomePage extends StatelessWidget {
                                       height: 30,
                                       child: OutlinedButton.icon(
                                         onPressed: () => SwapCourseSheet.show(
-                                            course,
-                                            onSubmitted: ctrl.loadSwapRequests),
+                                          course,
+                                          ownedCourseIds: ctrl.myCourses
+                                              .map((c) => c.courseId)
+                                              .toSet(),
+                                          onSubmitted: ctrl.loadSwapRequests,
+                                        ),
                                         icon: const Icon(Icons.swap_horiz_rounded,
                                             size: 15),
                                         label: const Text('تبديل',

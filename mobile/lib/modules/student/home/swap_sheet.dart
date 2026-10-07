@@ -14,13 +14,27 @@ import '../../../widgets/custom_text_field.dart';
 // + سبب اختياري ⇐ POST /course-swap-requests
 class SwapCourseSheet extends StatefulWidget {
   final PurchaseModel course;
+  final Set<int> ownedCourseIds;
   final VoidCallback? onSubmitted;
 
-  const SwapCourseSheet({super.key, required this.course, this.onSubmitted});
+  const SwapCourseSheet({
+    super.key,
+    required this.course,
+    required this.ownedCourseIds,
+    this.onSubmitted,
+  });
 
-  static Future<void> show(PurchaseModel course, {VoidCallback? onSubmitted}) {
+  static Future<void> show(
+    PurchaseModel course, {
+    required Set<int> ownedCourseIds,
+    VoidCallback? onSubmitted,
+  }) {
     return Get.bottomSheet(
-      SwapCourseSheet(course: course, onSubmitted: onSubmitted),
+      SwapCourseSheet(
+        course: course,
+        ownedCourseIds: ownedCourseIds,
+        onSubmitted: onSubmitted,
+      ),
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
     );
@@ -39,6 +53,7 @@ class _SwapCourseSheetState extends State<SwapCourseSheet> {
   int? _selectedId;
   bool _loading = true;
   bool _submitting = false;
+  bool _allOwned = false;
 
   @override
   void initState() {
@@ -62,10 +77,15 @@ class _SwapCourseSheetState extends State<SwapCourseSheet> {
       final res = await _catalog.getCourses(specializationId: specId);
       final data = res.data['data'];
       if (data is List) {
-        _alternatives = data
+        final raw = data
             .map<Map<String, dynamic>>((e) => Map<String, dynamic>.from(e as Map))
-            .where((c) => (c['id'] as num?)?.toInt() != widget.course.courseId)
             .toList();
+        _alternatives = raw
+            .where((c) =>
+                (c['id'] as num?)?.toInt() != widget.course.courseId &&
+                !widget.ownedCourseIds.contains((c['id'] as num?)?.toInt()))
+            .toList();
+        _allOwned = raw.isNotEmpty && _alternatives.isEmpty;
       }
     } catch (_) {
       // الرسالة تظهر عند الإرسال إن فشل التحميل
@@ -157,7 +177,9 @@ class _SwapCourseSheetState extends State<SwapCourseSheet> {
                 child: Text(
                   widget.course.specializationId == null
                       ? 'لا يمكن التبديل: لا يوجد اختصاص مرتبط بالدورة'
-                      : 'لا توجد مواد بديلة متاحة حاليًا',
+                      : _allOwned
+                          ? 'لا توجد مواد بديلة — تملك مواد اختصاصك كلها'
+                          : 'لا توجد مواد بديلة متاحة حاليًا',
                   style: AppTextStyles.bodyMedium.copyWith(color: AppColors.textHint),
                 ),
               )
