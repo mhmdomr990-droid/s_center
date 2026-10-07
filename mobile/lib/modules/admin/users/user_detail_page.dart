@@ -66,6 +66,15 @@ class UserDetailPage extends StatelessWidget {
                         const SizedBox(height: 4),
                         Text('@${u['username'] ?? ''} • $roleLabel',
                             style: AppTextStyles.caption),
+                        if ('${u['specialization_name'] ?? ''}'.isNotEmpty) ...[
+                          const SizedBox(height: 4),
+                          Text('الاختصاص: ${u['specialization_name']}',
+                              style: AppTextStyles.caption),
+                        ],
+                        if ('${u['phone'] ?? ''}'.isNotEmpty) ...[
+                          const SizedBox(height: 2),
+                          Text('${u['phone']}', style: AppTextStyles.caption),
+                        ],
                         const SizedBox(height: 12),
                         Row(
                           children: [
@@ -126,6 +135,18 @@ class UserDetailPage extends StatelessWidget {
                       ],
                     ),
                   ),
+                  if (!isTeacher)
+                    Padding(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 16, vertical: 8),
+                      child: CustomButton(
+                        text: 'منح كورس مجاني',
+                        icon: Icons.card_giftcard_outlined,
+                        isOutlined: true,
+                        onPressed:
+                            ctrl.busy.value ? null : ctrl.openGrantSheet,
+                      ),
+                    ),
                   const SizedBox(height: 8),
                   Padding(
                     padding: const EdgeInsets.symmetric(horizontal: 16),
@@ -193,7 +214,7 @@ class UserDetailPage extends StatelessWidget {
                         ),
                       )
                     else
-                      ...ctrl.purchases.map((p) => _purchaseRow(p)),
+                      ...ctrl.purchases.map((p) => _purchaseRow(ctrl, p)),
                   ],
                   const SizedBox(height: 24),
                 ],
@@ -300,8 +321,9 @@ class UserDetailPage extends StatelessWidget {
     );
   }
 
-  Widget _purchaseRow(Map<String, dynamic> p) {
+  Widget _purchaseRow(UserDetailController ctrl, Map<String, dynamic> p) {
     final date = DateTime.tryParse(p['created_at']?.toString() ?? '');
+    final isGrant = double.tryParse('${p['price_paid']}') == 0;
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
       padding: const EdgeInsets.all(12),
@@ -312,14 +334,41 @@ class UserDetailPage extends StatelessWidget {
       ),
       child: Row(
         children: [
-          const Icon(Icons.menu_book_rounded, color: AppColors.primary, size: 22),
+          Icon(isGrant ? Icons.card_giftcard_outlined : Icons.menu_book_rounded,
+              color: isGrant ? AppColors.success : AppColors.primary, size: 22),
           const SizedBox(width: 12),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(p['course_name'] ?? p['description'] ?? 'دورة',
-                    style: AppTextStyles.bodyMedium.copyWith(fontSize: 14)),
+                Row(
+                  children: [
+                    Flexible(
+                      child: Text(
+                          p['course_name'] ?? p['description'] ?? 'دورة',
+                          style: AppTextStyles.bodyMedium
+                              .copyWith(fontSize: 14),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis),
+                    ),
+                    if (isGrant) ...[
+                      const SizedBox(width: 6),
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 6, vertical: 2),
+                        decoration: BoxDecoration(
+                          color: AppColors.success.withValues(alpha: 0.12),
+                          borderRadius: BorderRadius.circular(6),
+                        ),
+                        child: const Text('منحة',
+                            style: TextStyle(
+                                fontSize: 10,
+                                fontWeight: FontWeight.w700,
+                                color: AppColors.success)),
+                      ),
+                    ],
+                  ],
+                ),
                 if (date != null) ...[
                   const SizedBox(height: 2),
                   Text(formatArabicDate(date), style: AppTextStyles.caption),
@@ -327,8 +376,36 @@ class UserDetailPage extends StatelessWidget {
               ],
             ),
           ),
-          Text(formatAmount(p['price_paid'] ?? p['amount']),
-              style: AppTextStyles.bodyMedium.copyWith(fontWeight: FontWeight.w700)),
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.end,
+            children: [
+              Text(formatAmount(p['price_paid'] ?? p['amount']),
+                  style: AppTextStyles.bodyMedium
+                      .copyWith(fontWeight: FontWeight.w700)),
+              if (isGrant)
+                InkWell(
+                  onTap: ctrl.busy.value
+                      ? null
+                      : () =>
+                          ctrl.revokeGrant((p['course_id'] as num).toInt()),
+                  borderRadius: BorderRadius.circular(6),
+                  child: Padding(
+                    padding: const EdgeInsets.only(top: 4),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        const Icon(Icons.delete_outline,
+                            size: 16, color: AppColors.error),
+                        const SizedBox(width: 2),
+                        Text('إلغاء المنحة',
+                            style: AppTextStyles.caption
+                                .copyWith(color: AppColors.error)),
+                      ],
+                    ),
+                  ),
+                ),
+            ],
+          ),
         ],
       ),
     );
