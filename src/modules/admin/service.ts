@@ -832,6 +832,64 @@ export async function rejectTopupRequest(topupRequestId: number, reviewerId: num
   });
 }
 
+export async function listPurchaseHistory(filters: { search?: string; courseName?: string; studentName?: string } = {}) {
+  const repository = AppDataSource.getRepository(Purchase);
+  const query = repository.createQueryBuilder('purchase')
+    .leftJoinAndSelect('purchase.user', 'user')
+    .leftJoinAndSelect('purchase.course', 'course')
+    .leftJoinAndSelect('purchase.teacher', 'teacher')
+    .leftJoinAndSelect('course.specialization', 'specialization')
+    .orderBy('purchase.created_at', 'DESC')
+    .addOrderBy('purchase.id', 'DESC');
+
+  const search = (filters.search || '').trim();
+  const courseName = (filters.courseName || '').trim();
+  const studentName = (filters.studentName || '').trim();
+
+  if (search) {
+    const term = `%${search.toLowerCase()}%`;
+    query.andWhere(
+      `(
+        LOWER(user.username) LIKE :search OR
+        LOWER(user.full_name) LIKE :search OR
+        LOWER(course.name) LIKE :search OR
+        LOWER(COALESCE(teacher.full_name, '')) LIKE :search
+      )`,
+      { search: term },
+    );
+  }
+
+  if (courseName) {
+    query.andWhere('LOWER(course.name) LIKE :courseName', { courseName: `%${courseName.toLowerCase()}%` });
+  }
+
+  if (studentName) {
+    query.andWhere(
+      '(LOWER(user.username) LIKE :studentName OR LOWER(user.full_name) LIKE :studentName)',
+      { studentName: `%${studentName.toLowerCase()}%` },
+    );
+  }
+
+  const purchases = await query.getMany();
+
+  return purchases.map((purchase) => ({
+    id: purchase.id,
+    user_id: purchase.user.id,
+    username: purchase.user.username,
+    full_name: purchase.user.fullName,
+    course_id: purchase.course.id,
+    course_name: purchase.course.name,
+    course_price: purchase.course.price,
+    course_specialization: purchase.course.specialization?.name ?? 'غير محدد',
+    teacher_full_name: purchase.teacher?.fullName ?? null,
+    price_paid: purchase.pricePaid,
+    teacher_share: purchase.teacherShare,
+    source: purchase.source,
+    source_label: purchase.source === PurchaseSource.GRANTED ? 'منحة مجانية' : 'شراء',
+    created_at: purchase.createdAt,
+  }));
+}
+
 export async function listUsers(search?: string) {
   return listUsersFiltered({ search });
 }

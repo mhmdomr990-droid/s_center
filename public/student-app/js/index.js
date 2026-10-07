@@ -90,7 +90,9 @@ function renderCourses(specializationId, year, specializationName, courses) {
       ${courses
         .map((course) => {
           const status = getCourseStatus(course);
-          const detailUrl = `/student/course.html?id=${course.id}&name=${encodeURIComponent(course.name)}&price=${encodeURIComponent(course.price)}&purchased=${course.purchased ? '1' : '0'}&from=catalog&specialization=${encodeURIComponent(specializationId)}&specializationName=${encodeURIComponent(specializationName)}&year=${encodeURIComponent(year)}`;
+          const isAccessible = Boolean(course.purchased || course.is_granted || course.source === 'GRANTED');
+          const detailUrl = `/student/course.html?id=${course.id}&name=${encodeURIComponent(course.name)}&price=${encodeURIComponent(course.price)}&purchased=${isAccessible ? '1' : '0'}&from=catalog&specialization=${encodeURIComponent(specializationId)}&specializationName=${encodeURIComponent(specializationName)}&year=${encodeURIComponent(year)}`;
+          const actionLabel = isAccessible ? 'عرض الدروس' : 'شراء المادة';
           return `
             <article class="student-card">
               <div class="student-card-row">
@@ -100,7 +102,7 @@ function renderCourses(specializationId, year, specializationName, courses) {
               <p>${course.description || 'لا يوجد وصف.'}</p>
               <p class="student-muted">المدرس: ${course.teacher_full_name || 'غير محدد'}</p>
               <p class="student-price">${formatMoney(course.price)} ل.س</p>
-              <a class="student-btn student-btn-primary" href="${detailUrl}">عرض الدروس</a>
+              <a class="student-btn student-btn-primary" href="${detailUrl}">${actionLabel}</a>
             </article>
           `;
         })

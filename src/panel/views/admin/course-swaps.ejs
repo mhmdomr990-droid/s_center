@@ -1,0 +1,72 @@
+<%- include('../layout/header', { title: 'طلبات تبديل المواد' }) %>
+<%- include('../layout/sidebar', { currentUser, csrfToken, pendingTopupsCount, pendingCourseSwapCount }) %>
+<%- include('../partials/flash', { flash }) %>
+<div class="panel-topbar">
+  <div>
+    <h1 style="margin:0;">طلبات تبديل المواد</h1>
+    <p class="panel-muted" style="margin:6px 0 0;">مراجعة طلبات تبديل المقررات من الطلاب</p>
+  </div>
+</div>
+<%
+  const breadcrumbs = [
+    { label: 'لوحة التحكم', href: '/panel/admin/overview' },
+    { label: 'طلبات تبديل المواد', href: '/panel/admin/course-swap-requests' },
+  ];
+%>
+<%- include('../partials/breadcrumb', { items: breadcrumbs }) %>
+<div class="panel-table">
+  <table>
+    <thead>
+      <tr>
+        <th>الطالب</th>
+        <th>المادة الحالية</th>
+        <th>المادة الجديدة</th>
+        <th>السبب</th>
+        <th>تاريخ الطلب</th>
+        <th>الإجراءات</th>
+      </tr>
+    </thead>
+    <tbody>
+      <% if (!requests.length) { %>
+        <tr>
+          <td colspan="6">
+            <section class="polish-empty">
+              <svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M12 2l8 4v6c0 5-3.4 9.6-8 10-4.6-.4-8-5-8-10V6l8-4zm0 6a2 2 0 100 4 2 2 0 000-4zm-2 7h4v2h-4z"/></svg>
+              <h4>لا توجد طلبات تبديل حالياً</h4>
+              <p>عند إرسال طالب لطلب تبديل مادة جديدة ستظهر هنا.</p>
+            </section>
+          </td>
+        </tr>
+      <% } %>
+      <% requests.forEach((item) => { %>
+        <tr>
+          <td><%= item.student_name || item.username || 'طالب' %></td>
+          <td><%= item.old_course_name %></td>
+          <td><%= item.new_course_name %></td>
+          <td><%= item.reason || '-' %></td>
+          <td><%= new Date(item.requested_at).toLocaleString('ar-SA') %></td>
+          <td>
+            <form method="post" action="/panel/admin/course-swap-requests/<%= item.id %>/approve" style="display:inline;">
+              <input type="hidden" name="csrf_token" value="<%= csrfToken %>">
+              <button class="panel-btn panel-btn-primary" type="submit" data-confirm="هل تريد الموافقة على هذا الطلب؟">موافقة</button>
+            </form>
+            <button class="panel-btn panel-btn-secondary" data-modal-open="course-swap-reject-modal" data-modal-action="/panel/admin/course-swap-requests/<%= item.id %>/reject" data-modal-fill='<%= JSON.stringify(item) %>'>رفض</button>
+          </td>
+        </tr>
+      <% }) %>
+    </tbody>
+  </table>
+</div>
+<div class="panel-modal" id="course-swap-reject-modal">
+  <div class="panel-modal-content">
+    <div class="panel-modal-header"><h3>رفض طلب تبديل مادة</h3><button type="button" class="panel-modal-close" data-modal-close>×</button></div>
+    <form method="post" action="/panel/admin/course-swap-requests/0/reject" class="panel-form">
+      <input type="hidden" name="csrf_token" value="<%= csrfToken %>">
+      <div class="panel-form-grid">
+        <div><label>سبب الرفض</label><textarea name="reason" required></textarea></div>
+      </div>
+      <div class="panel-form-actions"><button class="panel-btn panel-btn-danger" type="submit">رفض</button></div>
+    </form>
+  </div>
+</div>
+<%- include('../layout/footer') %>

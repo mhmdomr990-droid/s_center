@@ -3,6 +3,11 @@ import type { Request, Response } from 'express';
 import { asyncHandler } from '../../utils/asyncHandler';
 import { TopupStatus, UserRole } from '../../entities/enums';
 import {
+  approveCourseSwapRequest,
+  listPendingCourseSwapRequests,
+  rejectCourseSwapRequest,
+} from '../purchase/service';
+import {
   getCourseById,
   getLectureById,
   getSpecializationById,
@@ -182,6 +187,21 @@ export const approveAdminTopupRequest = asyncHandler(async (req: Request, res: R
 
 export const rejectAdminTopupRequest = asyncHandler(async (req: Request, res: Response) => {
   const data = await rejectTopupRequest(Number(req.params.id), req.user!.id, req.body.reason);
+  res.status(200).json({ success: true, data });
+});
+
+export const getAdminCourseSwapRequests = asyncHandler(async (_req: Request, res: Response) => {
+  const data = await listPendingCourseSwapRequests();
+  res.status(200).json({ success: true, data });
+});
+
+export const approveAdminCourseSwapRequest = asyncHandler(async (req: Request, res: Response) => {
+  const data = await approveCourseSwapRequest(req.user!.id, Number(req.params.id), req.body.admin_note ?? null);
+  res.status(200).json({ success: true, data });
+});
+
+export const rejectAdminCourseSwapRequest = asyncHandler(async (req: Request, res: Response) => {
+  const data = await rejectCourseSwapRequest(req.user!.id, Number(req.params.id), req.body.reason ?? null);
   res.status(200).json({ success: true, data });
 });
 

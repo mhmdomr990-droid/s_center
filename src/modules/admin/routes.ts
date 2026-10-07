@@ -59,6 +59,9 @@ import {
   getAdminUserById,
   getAdminUserPurchases,
   getAdminUserTransactions,
+  getAdminCourseSwapRequests,
+  approveAdminCourseSwapRequest,
+  rejectAdminCourseSwapRequest,
   getAdminTeachers,
   getAdminUsers,
   grantAdminUserCourse,
@@ -116,6 +119,10 @@ adminRoutes.get('/topup-requests', validate({ query: topupRequestsQuerySchema })
 adminRoutes.get('/topup-requests/:id', validate({ params: adminIdParamSchema }), getAdminTopupRequestById);
 adminRoutes.post('/topup-requests/:id/approve', validate({ params: adminIdParamSchema }), approveAdminTopupRequest);
 adminRoutes.post('/topup-requests/:id/reject', validate({ params: adminIdParamSchema, body: rejectTopupSchema }), rejectAdminTopupRequest);
+
+adminRoutes.get('/course-swap-requests', getAdminCourseSwapRequests);
+adminRoutes.post('/course-swap-requests/:id/approve', validate({ params: adminIdParamSchema }), approveAdminCourseSwapRequest);
+adminRoutes.post('/course-swap-requests/:id/reject', validate({ params: adminIdParamSchema }), rejectAdminCourseSwapRequest);
 
 adminRoutes.get('/users', validate({ query: adminUsersQuerySchema }), getAdminUsers);
 adminRoutes.get('/users/:id', validate({ params: adminIdParamSchema }), getAdminUserById);

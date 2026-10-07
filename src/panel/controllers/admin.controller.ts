@@ -28,6 +28,7 @@ import {
   listTopupRequests,
   listUsers,
   listFreeGrantsByAdmin,
+  listPurchaseHistory,
   overviewStats,
   payoutTeacher,
   rejectTopupRequest,
@@ -43,6 +44,11 @@ import {
   grantCourseToUser,
   revokeCourseGrant,
 } from '../../modules/admin/service';
+import {
+  approveCourseSwapRequest,
+  listPendingCourseSwapRequests,
+  rejectCourseSwapRequest,
+} from '../../modules/purchase/service';
 import { TopupStatus, UserRole } from '../../entities/enums';
 import { setFlash } from '../middlewares/flash';
 
@@ -62,7 +68,8 @@ function paginate<T>(items: T[], page = 1, perPage = 20) {
 
 async function loadAdminCommon() {
   const stats = await overviewStats();
-  return { pendingTopupsCount: stats.pending_topups_count };
+  const pendingCourseSwapRequests = await listPendingCourseSwapRequests();
+  return { pendingTopupsCount: stats.pending_topups_count, pendingCourseSwapCount: pendingCourseSwapRequests.length };
 }
 
 export async function overviewPage(req: Request, res: Response) {
@@ -309,6 +316,53 @@ export async function rejectTopupAction(req: Request, res: Response) {
   await rejectTopupRequest(Number(req.params.id), req.user!.id, req.body.reason);
   setFlash(res, 'success', 'تم رفض الطلب');
   return res.redirect('/panel/admin/topups?status=PENDING');
+}
+
+export async function courseSwapRequestsPage(req: Request, res: Response) {
+  const requests = await listPendingCourseSwapRequests();
+  const common = await loadAdminCommon();
+
+  return res.render('admin/course-swaps', {
+    title: 'طلبات تبديل المواد',
+    currentUser: req.user,
+    flash: res.locals.flash,
+    csrfToken: res.locals.csrfToken,
+    requests,
+    ...common,
+  });
+}
+
+export async function approveCourseSwapRequestAction(req: Request, res: Response) {
+  await approveCourseSwapRequest(req.user!.id, Number(req.params.id), req.body.admin_note ?? null);
+  setFlash(res, 'success', 'تمت الموافقة على طلب تبديل المادة');
+  return res.redirect('/panel/admin/course-swap-requests');
+}
+
+export async function rejectCourseSwapRequestAction(req: Request, res: Response) {
+  await rejectCourseSwapRequest(req.user!.id, Number(req.params.id), req.body.reason ?? null);
+  setFlash(res, 'success', 'تم رفض طلب تبديل المادة');
+  return res.redirect('/panel/admin/course-swap-requests');
+}
+
+export async function purchasesPage(req: Request, res: Response) {
+  const search = typeof req.query.search === 'string' ? req.query.search : '';
+  const courseName = typeof req.query.courseName === 'string' ? req.query.courseName : '';
+  const studentName = typeof req.query.studentName === 'string' ? req.query.studentName : '';
+
+  const purchases = await listPurchaseHistory({ search, courseName, studentName });
+  const common = await loadAdminCommon();
+
+  return res.render('admin/purchases', {
+    title: 'عمليات الشراء',
+    currentUser: req.user,
+    flash: res.locals.flash,
+    csrfToken: res.locals.csrfToken,
+    purchases,
+    search,
+    courseName,
+    studentName,
+    ...common,
+  });
 }
 
 export async function usersPage(req: Request, res: Response) {

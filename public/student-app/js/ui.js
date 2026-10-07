@@ -43,11 +43,17 @@ export function setViewState(container, state) {
 }
 
 export async function withSubmitLock(button, task) {
-  if (!button || button.disabled) {
+  if (!button) {
     return;
   }
 
-  const originalText = button.textContent;
+  if (button.dataset.submitLocked === 'true') {
+    return;
+  }
+
+  const originalText = button.textContent || '';
+  button.dataset.submitLocked = 'true';
+
   if (window.Polish?.setButtonBusy) {
     window.Polish.setButtonBusy(button, true);
   } else {
@@ -57,7 +63,11 @@ export async function withSubmitLock(button, task) {
 
   try {
     await task();
+  } catch (error) {
+    console.error('withSubmitLock task failed', error);
+    throw error;
   } finally {
+    button.dataset.submitLocked = 'false';
     if (window.Polish?.setButtonBusy) {
       window.Polish.setButtonBusy(button, false);
     } else {

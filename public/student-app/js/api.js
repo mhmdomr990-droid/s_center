@@ -10,12 +10,75 @@ export class ApiError extends Error {
   }
 }
 
+function getCookie(name) {
+  const value = `; ${document.cookie}`;
+  const parts = value.split(`; ${name}=`);
+  if (parts.length === 2) {
+    return decodeURIComponent(parts.pop()?.split(';').shift() || '');
+  }
+  return '';
+}
+
+function readStorage(key) {
+  try {
+    if (localStorage.getItem(key) !== null) {
+      return localStorage.getItem(key);
+    }
+  } catch (_error) {
+    // Ignore and fall back below.
+  }
+
+  try {
+    if (sessionStorage.getItem(key) !== null) {
+      return sessionStorage.getItem(key);
+    }
+  } catch (_error) {
+    // Ignore and fall back below.
+  }
+
+  return getCookie(key) || null;
+}
+
+function writeStorage(key, value) {
+  try {
+    localStorage.setItem(key, value);
+    return;
+  } catch (_error) {
+    // Ignore and fall back below.
+  }
+
+  try {
+    sessionStorage.setItem(key, value);
+    return;
+  } catch (_error) {
+    // Ignore and fall back below.
+  }
+
+  document.cookie = `${key}=${encodeURIComponent(value)}; path=/; max-age=${365 * 86400}; SameSite=Lax${location.protocol === 'https:' ? '; Secure' : ''}`;
+}
+
+function removeStorage(key) {
+  try {
+    localStorage.removeItem(key);
+  } catch (_error) {
+    // Ignore and fall back below.
+  }
+
+  try {
+    sessionStorage.removeItem(key);
+  } catch (_error) {
+    // Ignore and fall back below.
+  }
+
+  document.cookie = `${key}=; path=/; max-age=0; SameSite=Lax${location.protocol === 'https:' ? '; Secure' : ''}`;
+}
+
 function getToken() {
-  return localStorage.getItem('access_token');
+  return readStorage('access_token');
 }
 
 function clearToken() {
-  localStorage.removeItem('access_token');
+  removeStorage('access_token');
 }
 
 function toQuery(params = {}) {
@@ -76,6 +139,7 @@ export async function apiRequest(path, options = {}) {
 
   if (requiresAuth) {
     const token = getToken();
+    console.log('[API_DEBUG] token before request', !!token, path, method);
     if (token) {
       requestHeaders.Authorization = `Bearer ${token}`;
     }
@@ -90,6 +154,8 @@ export async function apiRequest(path, options = {}) {
     ? window.setTimeout(() => controller.abort(), timeoutMs)
     : null;
 
+  console.log('[API_DEBUG] sending fetch', path, method, requestHeaders.Authorization ? 'with-token' : 'no-token', body);
+
   let response;
   try {
     response = await fetch(`/api${path}${toQuery(query)}`, {
@@ -98,7 +164,9 @@ export async function apiRequest(path, options = {}) {
       body: body !== undefined ? JSON.stringify(body) : undefined,
       signal: controller?.signal,
     });
+    console.log('[API_DEBUG] fetch resolved', path, method, response.status, response.statusText);
   } catch (error) {
+    console.log('[API_DEBUG] fetch threw', path, method, error);
     if (error instanceof DOMException && error.name === 'AbortError') {
       throw new ApiError('انتهت مهلة الاتصال بالخادم. حاول مرة أخرى.', 408);
     }
@@ -111,6 +179,7 @@ export async function apiRequest(path, options = {}) {
 
   let payload = null;
   const text = await response.text();
+  console.log('[API_DEBUG] raw response for', path, text?.slice(0, 500));
   if (text) {
     try {
       payload = JSON.parse(text);
@@ -130,6 +199,7 @@ export async function apiRequest(path, options = {}) {
       }
     }
 
+    console.log('[API_DEBUG] API error thrown', error);
     throw error;
   }
 

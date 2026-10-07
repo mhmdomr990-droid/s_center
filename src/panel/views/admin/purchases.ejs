@@ -1,0 +1,78 @@
+<%- include('../layout/header', { title: 'عمليات الشراء' }) %>
+<%- include('../layout/sidebar', { currentUser, csrfToken, pendingTopupsCount }) %>
+<%- include('../partials/flash', { flash }) %>
+<div class="panel-topbar">
+  <div>
+    <h1 style="margin:0;">عمليات الشراء</h1>
+  </div>
+  <div class="panel-topbar-actions">
+    <form method="get" action="/panel/admin/purchases" class="panel-topbar-search" style="display:flex; gap:8px; flex-wrap:wrap; align-items:center;">
+      <input type="text" name="search" placeholder="بحث سريع" value="<%= search || '' %>">
+      <input type="text" name="courseName" placeholder="اسم الكورس" value="<%= courseName || '' %>">
+      <input type="text" name="studentName" placeholder="اسم الطالب" value="<%= studentName || '' %>">
+      <button class="panel-btn panel-btn-secondary" type="submit">بحث</button>
+    </form>
+  </div>
+</div>
+<%- include('../partials/breadcrumb', {
+  items: [
+    { label: 'لوحة التحكم', href: '/panel/admin/overview' },
+    { label: 'عمليات الشراء' },
+  ],
+}) %>
+<div class="panel-card" style="padding:0; overflow:hidden;">
+  <div class="panel-table">
+    <div class="panel-table-scroll">
+      <table>
+        <thead>
+          <tr>
+            <th>#</th>
+            <th>اسم الطالب</th>
+            <th>اسم الكورس</th>
+            <th>التخصص</th>
+            <th>السعر</th>
+            <th>نوع العملية</th>
+            <th>التاريخ</th>
+          </tr>
+        </thead>
+        <tbody>
+          <% if (!purchases.length) { %>
+            <tr>
+              <td colspan="7">
+                <section class="polish-empty">
+                  <svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M10 4a4 4 0 100 8 4 4 0 000-8zm8 2h-2v2h2V6zm-2 6h2v2h-2v-2zM4 18c0-2.2 3-4 6-4s6 1.8 6 4v2H4v-2z"/></svg>
+                  <h4>لا توجد عمليات</h4>
+                  <p>لم يتم تسجيل أي شراء أو منحة مجانية بعد.</p>
+                </section>
+              </td>
+            </tr>
+          <% } else { %>
+            <% purchases.forEach((item, index) => { %>
+              <tr>
+                <td><%= index + 1 %></td>
+                <td>
+                  <div class="panel-identity-stack">
+                    <strong><%= item.full_name %></strong>
+                    <small class="panel-muted"><%= item.username %></small>
+                  </div>
+                </td>
+                <td><%= item.course_name %></td>
+                <td><%= item.course_specialization %></td>
+                <td><%= money(item.price_paid) %></td>
+                <td>
+                  <% if (item.source === 'GRANTED') { %>
+                    <span class="panel-badge success" style="background:#ecf9f1;color:#2e7d32;">منحة مجانية</span>
+                  <% } else { %>
+                    <span class="panel-badge" style="background:#eaf2ff;color:#1d4ed8;">شراء</span>
+                  <% } %>
+                </td>
+                <td><%= date(item.created_at) %></td>
+              </tr>
+            <% }) %>
+          <% } %>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+<%- include('../layout/footer') %>

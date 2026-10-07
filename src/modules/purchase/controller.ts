@@ -2,7 +2,13 @@ import type { Request, Response } from 'express';
 
 import { asyncHandler } from '../../utils/asyncHandler';
 import { executeIdempotent } from '../../services/idempotency';
-import { listMyCourses, listMyPayments, purchaseCourse } from './service';
+import {
+  listCourseSwapRequestsForStudent,
+  listMyCourses,
+  listMyPayments,
+  purchaseCourse,
+  requestCourseSwap as createCourseSwapRequestService,
+} from './service';
 
 export const buyCourse = asyncHandler(async (req: Request, res: Response) => {
   const result = await executeIdempotent({
@@ -26,3 +32,14 @@ export const myPayments = asyncHandler(async (req: Request, res: Response) => {
   const data = await listMyPayments(req.user!.id);
   res.status(200).json({ success: true, data });
 });
+
+export const requestCourseSwap = asyncHandler(async (req: Request, res: Response) => {
+  const data = await createCourseSwapRequestService(req.user!.id, req.body.old_purchase_id, req.body.new_course_id, req.body.reason ?? null);
+  res.status(201).json({ success: true, data });
+});
+
+export const myCourseSwapRequests = asyncHandler(async (req: Request, res: Response) => {
+  const data = await listCourseSwapRequestsForStudent(req.user!.id);
+  res.status(200).json({ success: true, data });
+});
+

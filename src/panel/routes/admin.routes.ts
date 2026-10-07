@@ -35,6 +35,8 @@ import { panelAuth } from '../middlewares/panelAuth';
 import {
 	approveTopupAction,
 	adjustUserBalanceAction,
+	approveCourseSwapRequestAction,
+	courseSwapRequestsPage,
 	coursesPage,
 	createAdminAction,
 	createCourseAction,
@@ -47,6 +49,7 @@ import {
 	watchLecturePage,
 	notificationsPage,
 	overviewPage,
+	rejectCourseSwapRequestAction,
 	rejectTopupAction,
 	revokeUserCourseGrantAction,
 	resetUserDeviceAction,
@@ -58,6 +61,7 @@ import {
 	teacherPayoutsPage,
 	teachersPage,
 	topupsPage,
+	purchasesPage,
 	deleteCourseAction,
 	deleteLectureAction,
 	deleteSpecializationAction,
@@ -122,8 +126,11 @@ panelAdminRoutes.post('/lectures/:id/delete', validate({ params: adminIdParamSch
 panelAdminRoutes.get('/topups', validate({ query: topupRequestsQuerySchema }), asyncHandler(topupsPage));
 panelAdminRoutes.post('/topups/:id/approve', validate({ params: adminIdParamSchema }), asyncHandler(approveTopupAction));
 panelAdminRoutes.post('/topups/:id/reject', validate({ params: adminIdParamSchema, body: rejectTopupSchema }), asyncHandler(rejectTopupAction));
-
+panelAdminRoutes.get('/course-swap-requests', asyncHandler(courseSwapRequestsPage));
+panelAdminRoutes.post('/course-swap-requests/:id/approve', validate({ params: adminIdParamSchema }), asyncHandler(approveCourseSwapRequestAction));
+panelAdminRoutes.post('/course-swap-requests/:id/reject', validate({ params: adminIdParamSchema }), asyncHandler(rejectCourseSwapRequestAction));
 panelAdminRoutes.get('/users', validate({ query: adminUsersQuerySchema }), asyncHandler(usersPage));
+panelAdminRoutes.get('/purchases', asyncHandler(purchasesPage));
 panelAdminRoutes.post('/users/:id/grant-course', validate({ params: adminIdParamSchema, body: grantCourseSchema }), asyncHandler(grantUserCourseAction));
 panelAdminRoutes.post('/users/:id/revoke-course-grant', validate({ params: adminIdParamSchema, body: grantCourseSchema }), asyncHandler(revokeUserCourseGrantAction));
 panelAdminRoutes.post('/users/:id/active', validate({ params: adminIdParamSchema, body: activeUserSchema }), asyncHandler(toggleUserActiveAction));

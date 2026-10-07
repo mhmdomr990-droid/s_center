@@ -36,3 +36,9 @@ export enum PurchaseSource {
   PURCHASED = 'PURCHASED',
   GRANTED = 'GRANTED',
 }
+
+export enum CourseSwapStatus {
+  PENDING = 'PENDING',
+  APPROVED = 'APPROVED',
+  REJECTED = 'REJECTED',
+}

@@ -43,3 +43,11 @@ export const changePasswordSchema = z
     new_password: passwordSchema,
   })
   .strict();
+
+export const updateProfileSchema = z
+  .object({
+    full_name: z.string().trim().min(2, 'الاسم الكامل يجب أن يكون 2 أحرف على الأقل').max(120, 'الاسم الكامل لا يمكن أن يتجاوز 120 حرفًا').optional(),
+    phone: phoneSchema.optional(),
+    specialization_id: z.coerce.number().int().positive().nullable().optional(),
+  })
+  .strict();

@@ -287,7 +287,8 @@ textarea {
   border-bottom: 1px solid var(--border);
   text-align: right;
   vertical-align: top;
-  white-space: nowrap;
+  white-space: normal;
+  line-height: 1.7;
 }
 
 .panel-table thead th {
@@ -316,6 +317,23 @@ textarea {
 
 .panel-table td .panel-btn {
   margin: 2px 0;
+}
+
+.panel-identity-stack {
+  display: inline-flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 4px;
+}
+
+.panel-identity-stack strong {
+  display: inline-block;
+  line-height: 1.5;
+}
+
+.panel-identity-stack small {
+  display: inline-block;
+  opacity: 0.82;
 }
 
 .panel-actions-inline {

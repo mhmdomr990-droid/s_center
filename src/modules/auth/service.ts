@@ -162,6 +162,51 @@ export async function changePassword(userId: number, input: { old_password: stri
   return { message: 'Password updated successfully' };
 }
 
+export async function updateMyProfile(
+  userId: number,
+  input: { full_name?: string; phone?: string | null; specialization_id?: number | null },
+) {
+  const userRepository = AppDataSource.getRepository(User);
+  const specializationRepository = AppDataSource.getRepository(Specialization);
+  const user = await userRepository.findOne({ where: { id: userId }, relations: { specialization: true } });
+
+  if (!user) {
+    throw new AppError(404, 'User not found');
+  }
+
+  if (input.full_name !== undefined) {
+    const fullName = input.full_name.trim();
+    if (!fullName || fullName.length < 2) {
+      throw new AppError(400, 'الاسم الكامل يجب أن يتجاوز حرفين على الأقل');
+    }
+    user.fullName = fullName;
+  }
+
+  if (input.phone !== undefined) {
+    const phone = input.phone && input.phone.trim() ? input.phone.trim() : null;
+    if (phone && !/^\+?[0-9\s\-()]{7,30}$/.test(phone)) {
+      throw new AppError(400, 'رقم الهاتف غير صالح');
+    }
+    user.phone = phone;
+  }
+
+  if (input.specialization_id !== undefined) {
+    const specializationId = Number(input.specialization_id ?? 0) || null;
+    const specialization = specializationId
+      ? await specializationRepository.findOne({ where: { id: specializationId, isPublished: true } })
+      : null;
+
+    if (specializationId && !specialization) {
+      throw new AppError(404, 'Selected specialization not found');
+    }
+
+    user.specialization = specialization ? ({ id: specialization.id } as Specialization) : null;
+  }
+
+  const savedUser = await userRepository.save(user);
+  return toUserResponse(savedUser);
+}
+
 export async function logoutAllSessions(userId: number) {
   const userRepository = AppDataSource.getRepository(User);
   const user = await userRepository.findOne({ where: { id: userId } });
