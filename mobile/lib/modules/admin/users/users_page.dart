@@ -183,6 +183,21 @@ class UsersPage extends StatelessWidget {
                     const SizedBox(height: 2),
                     Text('@${u['username'] ?? ''} • ${ctrl.roleLabel(role)}',
                         style: AppTextStyles.caption, maxLines: 1, overflow: TextOverflow.ellipsis),
+                    if (role == 'STUDENT') ...[
+                      const SizedBox(height: 2),
+                      Text(
+                        '${u['specialization_name'] ?? ''}'.isNotEmpty
+                            ? 'الاختصاص: ${u['specialization_name']}'
+                            : 'بلا اختصاص',
+                        style: AppTextStyles.caption.copyWith(
+                          color: '${u['specialization_name'] ?? ''}'.isNotEmpty
+                              ? AppColors.textSecondary
+                              : AppColors.error,
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ],
                   ],
                 ),
               ),

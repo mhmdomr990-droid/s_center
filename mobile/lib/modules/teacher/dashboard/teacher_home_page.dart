@@ -28,6 +28,14 @@ class TeacherHomePage extends StatelessWidget {
                   style:
                       GoogleFonts.cairo(fontWeight: FontWeight.w600, fontSize: 17),
                 )),
+            actions: [
+              IconButton(
+                icon: const Icon(Icons.person_outline_rounded,
+                    color: Colors.white),
+                tooltip: 'حسابي',
+                onPressed: () => Get.toNamed(AppRoutes.teacherAccount),
+              ),
+            ],
           ),
           body: Obx(() {
             if (ctrl.isLoading.value) return const LoadingListShimmer();

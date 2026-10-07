@@ -26,6 +26,8 @@ import '../../modules/teacher/courses/teacher_courses_controller.dart';
 import '../../modules/teacher/lectures/add_edit_lecture_page.dart';
 import '../../modules/teacher/earnings/earnings_page.dart';
 import '../../modules/teacher/earnings/earnings_controller.dart';
+import '../../modules/teacher/account/teacher_account_page.dart';
+import '../../modules/teacher/account/teacher_account_controller.dart';
 import '../../modules/admin/users/user_detail_page.dart';
 import '../../modules/admin/users/user_detail_controller.dart';
 import '../../modules/admin/teachers/teacher_detail_page.dart';
@@ -81,6 +83,9 @@ class AppPages {
     })),
     GetPage(name: AppRoutes.earnings, page: () => const EarningsPage(), binding: BindingsBuilder(() {
       Get.lazyPut(() => EarningsController());
+    })),
+    GetPage(name: AppRoutes.teacherAccount, page: () => const TeacherAccountPage(), binding: BindingsBuilder(() {
+      Get.lazyPut(() => TeacherAccountController());
     })),
     GetPage(name: AppRoutes.adminUserDetail, page: () => const UserDetailPage(), binding: BindingsBuilder(() {
       Get.lazyPut(() => UserDetailController());

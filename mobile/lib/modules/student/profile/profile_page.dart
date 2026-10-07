@@ -7,7 +7,6 @@ import '../../../app/theme/app_text_styles.dart';
 import '../../../app/theme/theme_controller.dart';
 import '../../../utils/format.dart';
 import '../../../widgets/custom_button.dart';
-import '../../../widgets/custom_text_field.dart';
 import '../../../widgets/gradient_app_bar.dart';
 import '../../../widgets/loading_shimmer.dart';
 import '../../../widgets/section_header.dart';
@@ -214,87 +213,15 @@ class ProfilePage extends StatelessWidget {
                     ),
                   ),
                   const SizedBox(height: 24),
-                  const SectionHeader(
-                    title: 'تغيير كلمة المرور',
-                    icon: Icons.lock_reset_rounded,
-                  ),
-                  const SizedBox(height: 12),
                   Padding(
                     padding: const EdgeInsets.symmetric(horizontal: 16),
-                    child: Container(
-                      padding: const EdgeInsets.all(16),
-                      decoration: BoxDecoration(
-                        color: AppColors.courseCard,
-                        borderRadius: BorderRadius.circular(16),
-                        border: Border.all(color: AppColors.cardBorder),
-                        boxShadow: AppShadows.soft,
-                      ),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          CustomTextField(
-                            labelText: 'كلمة المرور الحالية',
-                            prefixIcon: Icons.lock_outline_rounded,
-                            obscureText: ctrl.obscureOld.value,
-                            controller: ctrl.oldPasswordCtrl,
-                            suffixIcon: IconButton(
-                              icon: Icon(
-                                ctrl.obscureOld.value
-                                    ? Icons.visibility_off_outlined
-                                    : Icons.visibility_outlined,
-                                color: AppColors.textHint,
-                                size: 22,
-                              ),
-                              onPressed: () =>
-                                  ctrl.obscureOld.value = !ctrl.obscureOld.value,
-                            ),
-                          ),
-                          const SizedBox(height: 12),
-                          CustomTextField(
-                            labelText: 'كلمة المرور الجديدة',
-                            prefixIcon: Icons.lock_reset_rounded,
-                            obscureText: ctrl.obscureNew.value,
-                            controller: ctrl.newPasswordCtrl,
-                            suffixIcon: IconButton(
-                              icon: Icon(
-                                ctrl.obscureNew.value
-                                    ? Icons.visibility_off_outlined
-                                    : Icons.visibility_outlined,
-                                color: AppColors.textHint,
-                                size: 22,
-                              ),
-                              onPressed: () =>
-                                  ctrl.obscureNew.value = !ctrl.obscureNew.value,
-                            ),
-                          ),
-                          const SizedBox(height: 12),
-                          CustomTextField(
-                            labelText: 'تأكيد كلمة المرور الجديدة',
-                            prefixIcon: Icons.lock_reset_rounded,
-                            obscureText: ctrl.obscureConfirm.value,
-                            controller: ctrl.confirmPasswordCtrl,
-                            suffixIcon: IconButton(
-                              icon: Icon(
-                                ctrl.obscureConfirm.value
-                                    ? Icons.visibility_off_outlined
-                                    : Icons.visibility_outlined,
-                                color: AppColors.textHint,
-                                size: 22,
-                              ),
-                              onPressed: () => ctrl.obscureConfirm.value =
-                                  !ctrl.obscureConfirm.value,
-                            ),
-                          ),
-                          const SizedBox(height: 16),
-                          CustomButton(
-                            text: 'حفظ كلمة المرور الجديدة',
-                            icon: Icons.save_outlined,
-                            isLoading: ctrl.isChangingPassword.value,
-                            onPressed: ctrl.changePassword,
-                          ),
-                        ],
-                      ),
-                    ),
+                    child: Obx(() => CustomButton(
+                          text: 'تغيير كلمة المرور',
+                          icon: Icons.lock_outline,
+                          isOutlined: true,
+                          isLoading: ctrl.isChangingPassword.value,
+                          onPressed: ctrl.changePassword,
+                        )),
                   ),
                   const SizedBox(height: 24),
                   const SectionHeader(

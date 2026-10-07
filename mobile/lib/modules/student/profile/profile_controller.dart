@@ -111,16 +111,59 @@ class ProfileController extends GetxController {
   }
 
   Future<void> changePassword() async {
+    oldPasswordCtrl.clear();
+    newPasswordCtrl.clear();
+    confirmPasswordCtrl.clear();
+
+    final confirmed = await Get.dialog<bool>(
+      AlertDialog(
+        title: const Text('تغيير كلمة المرور'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            TextField(
+              controller: oldPasswordCtrl,
+              obscureText: true,
+              decoration: const InputDecoration(
+                labelText: 'كلمة المرور الحالية',
+                border: OutlineInputBorder(),
+              ),
+            ),
+            const SizedBox(height: 12),
+            TextField(
+              controller: newPasswordCtrl,
+              obscureText: true,
+              decoration: const InputDecoration(
+                labelText: 'كلمة المرور الجديدة (8 أحرف على الأقل)',
+                border: OutlineInputBorder(),
+              ),
+            ),
+            const SizedBox(height: 12),
+            TextField(
+              controller: confirmPasswordCtrl,
+              obscureText: true,
+              decoration: const InputDecoration(
+                labelText: 'تأكيد كلمة المرور الجديدة',
+                border: OutlineInputBorder(),
+              ),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(onPressed: () => Get.back(result: false), child: const Text('إلغاء')),
+          TextButton(onPressed: () => Get.back(result: true), child: const Text('حفظ')),
+        ],
+      ),
+      barrierDismissible: true,
+    );
+    if (confirmed != true) return;
+
     final oldPass = oldPasswordCtrl.text;
     final newPass = newPasswordCtrl.text;
     final confirmPass = confirmPasswordCtrl.text;
 
-    if (oldPass.isEmpty || newPass.isEmpty || confirmPass.isEmpty) {
-      Get.snackbar('خطأ', 'أدخل جميع الحقول', backgroundColor: Color(0xFFE53935), colorText: Color(0xFFFFFFFF));
-      return;
-    }
-    if (newPass.length < 8) {
-      Get.snackbar('خطأ', 'كلمة المرور الجديدة يجب أن تكون 8 أحرف على الأقل',
+    if (oldPass.isEmpty || newPass.length < 8) {
+      Get.snackbar('خطأ', 'أدخل كلمة المرور الحالية والجديدة (8 أحرف على الأقل)',
           backgroundColor: Color(0xFFE53935), colorText: Color(0xFFFFFFFF));
       return;
     }

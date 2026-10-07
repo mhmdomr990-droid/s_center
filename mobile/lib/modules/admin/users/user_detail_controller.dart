@@ -6,7 +6,6 @@ import '../../../app/theme/app_text_styles.dart';
 import '../../../data/providers/admin_provider.dart';
 import '../../../data/providers/api_client.dart';
 import '../../../data/providers/api_exception.dart';
-import '../../../widgets/custom_button.dart';
 import '../../../widgets/custom_text_field.dart';
 import '../../../utils/format.dart';
 
@@ -24,7 +23,7 @@ class UserDetailController extends GetxController {
   final grantSheetLoading = false.obs;
   final grantSearchQuery = ''.obs;
   final grantCourses = <Map<String, dynamic>>[].obs;
-  final Set<int> _ownedCourseIds = {};
+  final _ownedCourseIds = <int>{}.obs;
   late final TextEditingController grantSearchCtrl;
 
   late final int userId;
@@ -58,6 +57,9 @@ class UserDetailController extends GetxController {
     try {
       final response = await _provider.userById(userId);
       user.value = Map<String, dynamic>.from(response.data['data']);
+      if (user.value?['specialization_id'] == null) {
+        await _mergeSpecializationFromList();
+      }
       final role = (user.value?['role'] ?? 'STUDENT').toString();
       if (role == 'TEACHER') {
         await _loadTeacherData();
@@ -70,6 +72,28 @@ class UserDetailController extends GetxController {
     } finally {
       isLoading.value = false;
     }
+  }
+
+  // getUserById في الباك لا يُحمّل relation الاختصاص (تعيد null دائماً) —
+  // نسحبه من قائمة المستخدمين التي تعيد الاختصاص بشكل صحيح.
+  Future<void> _mergeSpecializationFromList() async {
+    try {
+      final username = '${user.value?['username'] ?? ''}';
+      if (username.isEmpty) return;
+      final response = await _provider.users(search: username, limit: 20);
+      final rows = List<Map<String, dynamic>>.from(
+          (response.data['data'] as List).map((e) => Map<String, dynamic>.from(e)));
+      for (final row in rows) {
+        if ((row['id'] as num?)?.toInt() == userId) {
+          user.value = {
+            ...?user.value,
+            'specialization_id': row['specialization_id'],
+            'specialization_name': row['specialization_name'],
+          };
+          return;
+        }
+      }
+    } catch (_) {}
   }
 
   Future<void> _loadTransactions() async {
@@ -324,6 +348,13 @@ class UserDetailController extends GetxController {
                   child: Text('منح كورس مجاني — $userName',
                       style: AppTextStyles.titleMedium),
                 ),
+                Obx(() => busy.value
+                    ? const SizedBox(
+                        width: 18,
+                        height: 18,
+                        child: CircularProgressIndicator(
+                            strokeWidth: 2, color: AppColors.primary))
+                    : const SizedBox.shrink()),
                 IconButton(
                   icon: const Icon(Icons.close_rounded),
                   onPressed: () => Get.back(),
@@ -351,53 +382,25 @@ class UserDetailController extends GetxController {
                         style: AppTextStyles.caption),
                   );
                 }
-                return ListView.builder(
-                  itemCount: list.length,
-                  itemBuilder: (context, index) {
-                    final c = list[index];
-                    final owned = _ownedCourseIds.contains((c['id'] as num).toInt());
-                    return Padding(
-                      padding: const EdgeInsets.symmetric(vertical: 6),
-                      child: Row(
-                        children: [
-                          const Icon(Icons.play_lesson_outlined,
-                              color: AppColors.primary, size: 20),
-                          const SizedBox(width: 10),
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text('${c['name'] ?? ''}',
-                                    style: AppTextStyles.bodyMedium
-                                        .copyWith(fontSize: 14),
-                                    maxLines: 1,
-                                    overflow: TextOverflow.ellipsis),
-                                Text('${formatAmount(c['price'])} SYP',
-                                    style: AppTextStyles.caption),
-                              ],
-                            ),
-                          ),
-                          const SizedBox(width: 8),
-                          if (owned)
-                            const Text('مُتاح',
-                                style: TextStyle(
-                                    color: AppColors.success,
-                                    fontSize: 12,
-                                    fontWeight: FontWeight.w700))
-                          else
-                            SizedBox(
-                              height: 34,
-                              child: CustomButton(
-                                text: 'منح',
-                                isLoading: busy.value,
-                                onPressed:
-                                    busy.value ? null : () => grantCourse((c['id'] as num).toInt()),
-                              ),
-                            ),
-                        ],
+                final years = <int>{
+                  for (final c in list) ((c['year'] as num?)?.toInt() ?? 0)
+                }.toList()
+                  ..sort();
+                return ListView(
+                  children: [
+                    for (final year in years) ...[
+                      Padding(
+                        padding: const EdgeInsets.only(top: 8, bottom: 4),
+                        child: Text(
+                          _yearLabel(year),
+                          style: AppTextStyles.caption.copyWith(
+                              fontWeight: FontWeight.w700,
+                              color: AppColors.primary),
+                        ),
                       ),
-                    );
-                  },
+                      ..._yearCourses(list, year),
+                    ],
+                  ],
                 );
               }),
             ),
@@ -410,10 +413,16 @@ class UserDetailController extends GetxController {
   }
 
   Future<void> grantCourse(int courseId) async {
+    if (busy.value) return;
     busy.value = true;
     try {
-      await _provider.grantCourse(userId, courseId);
-      Get.back(); // إغلاق ورقة المنح
+      final action = await _provider.grantCourse(userId, courseId);
+      if (!action.ok) {
+        Get.snackbar('خطأ', _grantActionError(action.message),
+            backgroundColor: Colors.red, colorText: Colors.white);
+        return;
+      }
+      _ownedCourseIds.add(courseId);
       Get.snackbar('تم', 'تمت المنحة المجانية للطالب',
           backgroundColor: Colors.green, colorText: Colors.white);
       await load();
@@ -423,6 +432,105 @@ class UserDetailController extends GetxController {
     } finally {
       busy.value = false;
     }
+  }
+
+  String _grantActionError(String? message) {
+    if (message == null || message.isEmpty) {
+      return 'تعذر إتمام العملية — تحقق من تسجيل الدخول';
+    }
+    if (message.contains('specialization')) {
+      return 'الدورة لا تطابق اختصاص المستخدم';
+    }
+    if (message.contains('already has access')) {
+      return 'المستخدم لديه وصول لهذه الدورة';
+    }
+    if (message.contains('not found')) {
+      return 'الدورة غير منشورة أو غير موجودة';
+    }
+    return message;
+  }
+
+  String _yearLabel(int year) => switch (year) {
+        1 => 'السنة الأولى',
+        2 => 'السنة الثانية',
+        3 => 'السنة الثالثة',
+        4 => 'السنة الرابعة',
+        5 => 'السنة الخامسة',
+        _ => 'سنة $year',
+      };
+
+  List<Widget> _yearCourses(List<Map<String, dynamic>> list, int year) {
+    final rows = list
+        .where((c) => ((c['year'] as num?)?.toInt() ?? 0) == year)
+        .toList()
+      ..sort((a, b) => '${a['name'] ?? ''}'.compareTo('${b['name'] ?? ''}'));
+    return rows.map(_grantCourseRow).toList();
+  }
+
+  Widget _grantCourseRow(Map<String, dynamic> c) {
+    final owned = _ownedCourseIds.contains((c['id'] as num).toInt());
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 4),
+      child: Material(
+        color: owned
+            ? AppColors.background.withValues(alpha: 0.5)
+            : Colors.transparent,
+        borderRadius: BorderRadius.circular(10),
+        child: InkWell(
+          borderRadius: BorderRadius.circular(10),
+          onTap: owned || busy.value
+              ? null
+              : () => grantCourse((c['id'] as num).toInt()),
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
+            decoration: BoxDecoration(
+              border: Border.all(color: AppColors.cardBorder),
+              borderRadius: BorderRadius.circular(10),
+            ),
+            child: Row(
+              children: [
+                Icon(Icons.play_lesson_outlined,
+                    color: owned ? AppColors.textHint : AppColors.primary,
+                    size: 20),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text('${c['name'] ?? ''}',
+                          style: AppTextStyles.bodyMedium.copyWith(
+                              fontSize: 14,
+                              color: owned ? AppColors.textHint : null),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis),
+                      Text('${formatAmount(c['price'])} SYP',
+                          style: AppTextStyles.caption),
+                    ],
+                  ),
+                ),
+                const SizedBox(width: 8),
+                if (owned)
+                  const Text('مُتاح',
+                      style: TextStyle(
+                          color: AppColors.success,
+                          fontSize: 12,
+                          fontWeight: FontWeight.w700))
+                else ...[
+                  Text('منح',
+                      style: TextStyle(
+                          color: AppColors.primary,
+                          fontSize: 12,
+                          fontWeight: FontWeight.w700)),
+                  const SizedBox(width: 4),
+                  const Icon(Icons.add_circle_outline,
+                      color: AppColors.primary, size: 20),
+                ],
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
   }
 
   Future<void> revokeGrant(int courseId) async {
@@ -444,19 +552,26 @@ class UserDetailController extends GetxController {
 
     busy.value = true;
     try {
-      await _provider.revokeCourseGrant(userId, courseId);
+      final action = await _provider.revokeCourseGrant(userId, courseId);
+      if (!action.ok) {
+        final m = action.message;
+        Get.snackbar(
+            'خطأ',
+            m == null || m.isEmpty
+                ? 'تعذر إتمام العملية — تحقق من تسجيل الدخول'
+                : m.contains('Free grant not found')
+                    ? 'ليست منحة مجانية — ربما شراء مدفوع'
+                    : m,
+            backgroundColor: Colors.red,
+            colorText: Colors.white);
+        return;
+      }
       Get.snackbar('تم', 'تم إلغاء المنحة',
           backgroundColor: Colors.green, colorText: Colors.white);
       await load();
     } catch (e) {
-      final status = e is DioException ? e.response?.statusCode : null;
-      Get.snackbar(
-          'خطأ',
-          status == 404
-              ? 'ليست منحة مجانية — ربما شراء مدفوع'
-              : apiErrorMessage(e),
-          backgroundColor: Colors.red,
-          colorText: Colors.white);
+      Get.snackbar('خطأ', apiErrorMessage(e),
+          backgroundColor: Colors.red, colorText: Colors.white);
     } finally {
       busy.value = false;
     }

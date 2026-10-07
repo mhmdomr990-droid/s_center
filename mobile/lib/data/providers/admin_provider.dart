@@ -1,7 +1,16 @@
+import 'dart:convert';
 import 'dart:typed_data';
 
 import 'package:dio/dio.dart';
 import 'api_client.dart';
+
+// نتيجة فعل لوحة الويب (/panel): النجاح والخطأ يقرآن من كوكي panel_flash
+// لأن الاستجابة دائماً 302 تحويل — انظر grantCourse/revokeCourseGrant.
+class PanelAction {
+  final bool ok;
+  final String? message;
+  const PanelAction(this.ok, this.message);
+}
 
 // جميع مسارات /api/admin/* — محمية بـ requireRole(ADMIN) في الباك إند
 class AdminProvider {
@@ -43,11 +52,62 @@ class AdminProvider {
 
   Future<Response> userPurchases(int id) => _api.get('/admin/users/$id/purchases');
 
-  Future<Response> grantCourse(int userId, int courseId) =>
-      _api.post('/admin/users/$userId/grant-course/$courseId');
+  // مسار /api للمنح معطوب في الباك (سكيما .strict() ببارامتر id على مسار
+  // يحمل id+courseId) — لذلك نسلك مسار لوحة الويب نفسه الذي يستخدمه الويب.
+  Future<PanelAction> grantCourse(int userId, int courseId) =>
+      _panelAction('users/$userId/grant-course', courseId);
 
-  Future<Response> revokeCourseGrant(int userId, int courseId) =>
-      _api.delete('/admin/users/$userId/grant-course/$courseId');
+  Future<PanelAction> revokeCourseGrant(int userId, int courseId) =>
+      _panelAction('users/$userId/revoke-course-grant', courseId);
+
+  Future<PanelAction> _panelAction(String path, int courseId) async {
+    final origin = Uri.parse(ApiClient.baseUrl).origin;
+    final token = await _api.getToken();
+    final csrf =
+        '${DateTime.now().microsecondsSinceEpoch.toRadixString(16)}${DateTime.now().microsecond.toRadixString(16)}';
+    final res = await _api.dio.post(
+      '$origin/panel/admin/$path',
+      data: {'course_id': courseId},
+      options: Options(
+        followRedirects: false,
+        validateStatus: (_) => true,
+        headers: {
+          'Origin': origin,
+          'x-csrf-token': csrf,
+          'Cookie': 'panel_token=${token ?? ''}; panel_csrf_token=$csrf',
+          'Content-Type': 'application/json',
+        },
+      ),
+    );
+    final flash = _panelFlash(res);
+    if (flash != null) {
+      return PanelAction(flash.type == 'success', flash.message);
+    }
+    // 302 بلا فلش يعني إعادة توجيه لتسجيل الدخول (مصادقة مرفوضة)
+    return const PanelAction(false, null);
+  }
+
+  ({String type, String message})? _panelFlash(Response res) {
+    final cookies = res.headers.map['set-cookie'];
+    if (cookies == null) return null;
+    for (final cookie in cookies) {
+      if (!cookie.contains('panel_flash=')) continue;
+      final raw = cookie.split('panel_flash=').last.split(';').first;
+      if (raw.isEmpty || raw.contains('1970')) continue;
+      try {
+        final decoded =
+            jsonDecode(utf8.decode(base64.decode(Uri.decodeComponent(raw))));
+        final type = decoded['type'];
+        final message = decoded['message'];
+        if (type is String && message is String) {
+          return (type: type, message: message);
+        }
+      } catch (_) {
+        return null;
+      }
+    }
+    return null;
+  }
 
   Future<Response> setUserActive(int id, {required bool isActive}) {
     return _api.patch('/admin/users/$id/active', data: {'is_active': isActive});

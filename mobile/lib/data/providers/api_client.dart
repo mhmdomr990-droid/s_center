@@ -40,6 +40,8 @@ class ApiClient {
 
   Dio get dio => _dio;
 
+  Future<String?> getToken() => _storage.getToken();
+
   Future<Response> get(String path, {Map<String, dynamic>? queryParameters}) {
     return _dio.get(path, queryParameters: queryParameters);
   }
