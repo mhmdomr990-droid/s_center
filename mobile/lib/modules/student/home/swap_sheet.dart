@@ -15,25 +15,21 @@ import '../../../widgets/custom_text_field.dart';
 class SwapCourseSheet extends StatefulWidget {
   final PurchaseModel course;
   final Set<int> ownedCourseIds;
-  final VoidCallback? onSubmitted;
 
   const SwapCourseSheet({
     super.key,
     required this.course,
     required this.ownedCourseIds,
-    this.onSubmitted,
   });
 
   static Future<void> show(
     PurchaseModel course, {
     required Set<int> ownedCourseIds,
-    VoidCallback? onSubmitted,
   }) {
     return Get.bottomSheet(
       SwapCourseSheet(
         course: course,
         ownedCourseIds: ownedCourseIds,
-        onSubmitted: onSubmitted,
       ),
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
@@ -121,7 +117,6 @@ class _SwapCourseSheetState extends State<SwapCourseSheet> {
       Get.back();
       Get.snackbar('تم', 'تم إرسال طلب تبديل المادة. بانتظار موافقة الإدارة',
           backgroundColor: Colors.green, colorText: Colors.white);
-      widget.onSubmitted?.call();
     } catch (e) {
       Get.snackbar('خطأ', apiErrorMessage(e, fallback: 'تعذر إرسال طلب التبديل'),
           backgroundColor: Colors.red, colorText: Colors.white);

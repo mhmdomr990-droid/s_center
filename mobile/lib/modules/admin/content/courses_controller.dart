@@ -161,34 +161,4 @@ class CoursesController extends GetxController {
       busy.value = false;
     }
   }
-
-  Future<void> delete(Map<String, dynamic> item) async {
-    final confirmed = await Get.dialog<bool>(
-      AlertDialog(
-        title: const Text('حذف الدورة'),
-        content: Text('سيتم حذف "${item['name']}" نهائياً مع محاضراتها. متابعة؟'),
-        actions: [
-          TextButton(onPressed: () => Get.back(result: false), child: const Text('إلغاء')),
-          TextButton(
-            onPressed: () => Get.back(result: true),
-            child: const Text('حذف', style: TextStyle(color: Colors.red)),
-          ),
-        ],
-      ),
-      barrierDismissible: true,
-    );
-    if (confirmed != true) return;
-
-    busy.value = true;
-    try {
-      await _provider.deleteCourse(item['id'] as int);
-      Get.snackbar('تم', 'تم حذف الدورة', backgroundColor: Colors.green, colorText: Colors.white);
-      await load();
-      _refreshLecturesCourses();
-    } catch (_) {
-      Get.snackbar('خطأ', 'فشل حذف الدورة', backgroundColor: Colors.red, colorText: Colors.white);
-    } finally {
-      busy.value = false;
-    }
-  }
 }

@@ -49,7 +49,9 @@ class _ContentPageState extends State<ContentPage> {
           Expanded(
             child: IndexedStack(
               index: _segment,
-              children: const [
+              // أبناء غير const: وإلا تُتجاوز إعادة البناء عند تبديل الثيم
+              // (التطابق التام للكائنات const) وتبقى البطاقات بألوان قديمة
+              children: [
                 _SpecializationsView(),
                 _CoursesView(),
                 _LecturesView(),
@@ -174,12 +176,6 @@ class _SpecializationsView extends StatelessWidget {
                               size: 21,
                             ),
                             onPressed: () => ctrl.togglePublished(item),
-                          ),
-                          IconButton(
-                            tooltip: 'حذف',
-                            icon: const Icon(Icons.delete_outline,
-                                color: AppColors.error, size: 21),
-                            onPressed: () => ctrl.delete(item),
                           ),
                         ],
                       ),
@@ -345,11 +341,6 @@ class _CoursesView extends StatelessWidget {
                                   size: 20,
                                 ),
                                 onPressed: () => ctrl.togglePublished(course),
-                              ),
-                              IconButton(
-                                icon: const Icon(Icons.delete_outline,
-                                    color: AppColors.error, size: 20),
-                                onPressed: () => ctrl.delete(course),
                               ),
                             ],
                           ),

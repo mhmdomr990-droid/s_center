@@ -35,5 +35,4 @@ class PurchaseProvider {
     });
   }
 
-  Future<Response> mySwapRequests() => _api.get('/course-swap-requests');
 }

@@ -184,8 +184,6 @@ class AdminProvider {
     return _api.patch('/admin/specializations/$id/published', data: {'is_published': isPublished});
   }
 
-  Future<Response> deleteSpecialization(int id) => _api.delete('/admin/specializations/$id');
-
   // ---- الكورسات ----
   Future<Response> courses({int? specializationId, int? year, String? search, int page = 1, int limit = 20}) {
     return _api.get('/admin/courses', queryParameters: {
@@ -206,8 +204,6 @@ class AdminProvider {
   Future<Response> setCoursePublished(int id, {required bool isPublished}) {
     return _api.patch('/admin/courses/$id/published', data: {'is_published': isPublished});
   }
-
-  Future<Response> deleteCourse(int id) => _api.delete('/admin/courses/$id');
 
   // ---- المحاضرات ----
   Future<Response> lectures({int? courseId, int page = 1, int limit = 50}) {

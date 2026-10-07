@@ -92,37 +92,6 @@ class SpecializationsController extends GetxController {
     }
   }
 
-  Future<void> delete(Map<String, dynamic> item) async {
-    final confirmed = await Get.dialog<bool>(
-      AlertDialog(
-        title: const Text('حذف التخصص'),
-        content: Text('سيتم حذف "${item['name']}" نهائياً. متابعة؟'),
-        actions: [
-          TextButton(onPressed: () => Get.back(result: false), child: const Text('إلغاء')),
-          TextButton(
-            onPressed: () => Get.back(result: true),
-            child: const Text('حذف', style: TextStyle(color: Colors.red)),
-          ),
-        ],
-      ),
-      barrierDismissible: true,
-    );
-    if (confirmed != true) return;
-
-    busy.value = true;
-    try {
-      await _provider.deleteSpecialization(item['id'] as int);
-      Get.snackbar('تم', 'تم حذف التخصص', backgroundColor: Colors.green, colorText: Colors.white);
-      await load();
-      _refreshCoursesMeta();
-    } catch (_) {
-      Get.snackbar('خطأ', 'لا يمكن حذف التخصص (قد يكون مرتبطاً بدورات)',
-          backgroundColor: Colors.red, colorText: Colors.white);
-    } finally {
-      busy.value = false;
-    }
-  }
-
   void _refreshCoursesMeta() {
     if (Get.isRegistered<CoursesController>()) {
       Get.find<CoursesController>().loadMeta();
