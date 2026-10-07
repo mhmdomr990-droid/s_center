@@ -107,8 +107,10 @@ class AdminProvider {
     };
     if (phone != null && phone.isNotEmpty) body['phone'] = phone;
 
+    // مسار خارج /api — Dio يلصق المسار مع baseUrl (=/api) فلا نستعمل المسار النسبي
+    final panelUrl = '${Uri.parse(ApiClient.baseUrl).origin}/panel/admin/students';
     final response = await _api.post(
-      '/panel/admin/students',
+      panelUrl,
       data: body,
       options: Options(
         headers: {
@@ -129,6 +131,7 @@ class AdminProvider {
     if (flash == null || flash.$1 != 'success') {
       final message = flash?.$2 ?? 'تعذر إنشاء الطالب، حاول مرة أخرى';
       if (message == 'Username already exists') return 'اسم المستخدم موجود مسبقاً';
+      if (message.contains('Required')) return 'حقول مطلوبة ناقصة — أكمل البيانات';
       return message;
     }
     return null;
