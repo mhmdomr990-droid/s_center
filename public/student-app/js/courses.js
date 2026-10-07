@@ -33,7 +33,11 @@ document.addEventListener('DOMContentLoaded', async () => {
         query: { specializationId: course.specialization_id },
       });
 
-      const validAlternatives = (Array.isArray(alternatives) ? alternatives : []).filter((item) => Number(item.id) !== Number(course.id));
+      const validAlternatives = (Array.isArray(alternatives) ? alternatives : []).filter((item) => {
+        const isCurrentCourse = Number(item.id) === Number(course.id);
+        const isAlreadyOwned = Boolean(item.purchased || item.is_granted || item.source === 'GRANTED');
+        return !isCurrentCourse && !isAlreadyOwned;
+      });
 
       if (!validAlternatives.length) {
         showToast('لا توجد مواد بديلة متاحة حاليًا.', 'error');

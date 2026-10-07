@@ -243,6 +243,14 @@ export async function requestCourseSwap(userId: number, oldPurchaseId: number, n
     throw new AppError(400, 'لا يمكن تبديل المادة بنفس المادة الحالية');
   }
 
+  const existingReplacement = await purchaseRepository.findOne({
+    where: { user: { id: userId }, course: { id: replacement.id } },
+  });
+
+  if (existingReplacement) {
+    throw new AppError(409, 'الطالب يملك هذه المادة مسبقاً ولا يمكن التبديل إليها');
+  }
+
   const existingRequest = await requestRepository.findOne({
     where: {
       student: { id: userId },
@@ -414,7 +422,7 @@ export async function approveCourseSwapRequest(adminId: number, requestId: numbe
       where: { user: { id: request.student.id }, course: { id: request.newCourse.id } },
     });
 
-    if (existingReplacement && existingReplacement.id !== oldPurchase.id) {
+    if (existingReplacement) {
       throw new AppError(409, 'Student already owns the replacement course');
     }
 
