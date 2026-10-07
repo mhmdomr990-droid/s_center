@@ -257,19 +257,23 @@ export const adjustAdminUserBalance = asyncHandler(async (req: Request, res: Res
 });
 
 export const grantAdminUserCourse = asyncHandler(async (req: Request, res: Response) => {
+  const body = req.body as { course_id?: number; courseId?: number };
+  const courseId = Number(req.params.courseId ?? body.course_id ?? body.courseId);
   const data = await grantCourseToUser({
     adminId: req.user!.id,
     userId: Number(req.params.id),
-    courseId: Number(req.params.courseId),
+    courseId,
   });
   res.status(201).json({ success: true, data });
 });
 
 export const revokeAdminUserCourseGrant = asyncHandler(async (req: Request, res: Response) => {
+  const body = req.body as { course_id?: number; courseId?: number };
+  const courseId = Number(req.params.courseId ?? body.course_id ?? body.courseId);
   const data = await revokeCourseGrant({
     adminId: req.user!.id,
     userId: Number(req.params.id),
-    courseId: Number(req.params.courseId),
+    courseId,
   });
   res.status(200).json({ success: true, data });
 });

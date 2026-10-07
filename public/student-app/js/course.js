@@ -10,6 +10,7 @@ function getCourseContext() {
     id: Number(params.get('id') || 0),
     name: params.get('name') || 'تفاصيل المادة',
     price: params.get('price') || null,
+    purchased: params.get('purchased') === '1',
     from: params.get('from') || '',
     specializationId: params.get('specialization') || '',
     specializationName: params.get('specializationName') || '',
@@ -183,8 +184,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     void hydrateVideoPlayers(list);
     setViewState(state, null);
 
-    const hasLocked = lectures.some((lecture) => lecture.locked);
-    if (hasLocked) {
+    if (!context.purchased) {
       buyPanel.hidden = false;
       buyButton.textContent = context.price
         ? `شراء المادة (${formatMoney(context.price)} ل.س)`
@@ -213,6 +213,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         }
 
         await apiPost(`/courses/${context.id}/purchase`, {}, { idempotent: true });
+        context.purchased = true;
         buyMessage.textContent = 'تم الشراء بنجاح، يتم الآن فتح الدروس.';
         buyMessage.className = 'student-inline-message success';
         showToast('تم شراء المادة بنجاح.', 'success');

@@ -17,6 +17,7 @@ import {
   adminTopCoursesStatsSchema,
   adminNotificationSchema,
   adminUsersQuerySchema,
+  grantCourseBodySchema,
   activeUserSchema,
   adminCreateSchema,
   courseCreateSchema,
@@ -128,7 +129,9 @@ adminRoutes.get('/users', validate({ query: adminUsersQuerySchema }), getAdminUs
 adminRoutes.get('/users/:id', validate({ params: adminIdParamSchema }), getAdminUserById);
 adminRoutes.get('/users/:id/transactions', validate({ params: adminIdParamSchema }), getAdminUserTransactions);
 adminRoutes.get('/users/:id/purchases', validate({ params: adminIdParamSchema }), getAdminUserPurchases);
+adminRoutes.post('/users/:id/grant-course', validate({ params: adminIdParamSchema, body: grantCourseBodySchema }), grantAdminUserCourse);
 adminRoutes.post('/users/:id/grant-course/:courseId', validate({ params: adminIdParamSchema }), grantAdminUserCourse);
+adminRoutes.delete('/users/:id/grant-course', validate({ params: adminIdParamSchema, body: grantCourseBodySchema }), revokeAdminUserCourseGrant);
 adminRoutes.delete('/users/:id/grant-course/:courseId', validate({ params: adminIdParamSchema }), revokeAdminUserCourseGrant);
 adminRoutes.patch('/users/:id/active', validate({ params: adminIdParamSchema, body: activeUserSchema }), patchAdminUserActive);
 adminRoutes.post('/users/:id/reset-device', validate({ params: adminIdParamSchema }), resetAdminUserDevice);

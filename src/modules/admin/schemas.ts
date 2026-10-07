@@ -154,6 +154,16 @@ export const adminUsersQuerySchema = z
   })
   .strict();
 
+export const grantCourseBodySchema = z
+  .object({
+    course_id: z.coerce.number().int().positive().optional(),
+    courseId: z.coerce.number().int().positive().optional(),
+  })
+  .strict()
+  .refine((value) => value.course_id !== undefined || value.courseId !== undefined, {
+    message: 'course_id or courseId is required',
+  });
+
 export const adminCoursesQuerySchema = z
   .object({
     specializationId: z.coerce.number().int().positive().optional(),

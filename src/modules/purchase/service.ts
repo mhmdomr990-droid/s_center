@@ -360,108 +360,146 @@ export async function listPendingCourseSwapRequests() {
 }
 
 export async function approveCourseSwapRequest(adminId: number, requestId: number, adminNote: string | null) {
-  const requestRepository = AppDataSource.getRepository(CourseSwapRequest);
-  const purchaseRepository = AppDataSource.getRepository(Purchase);
+  return AppDataSource.transaction(async (manager) => {
+    const requestRepository = manager.getRepository(CourseSwapRequest);
+    const purchaseRepository = manager.getRepository(Purchase);
+    const userRepository = manager.getRepository(User);
+    const transactionRepository = manager.getRepository(Transaction);
 
-  const request = await requestRepository.findOne({
-    where: { id: requestId },
-    relations: {
-      student: true,
-      oldPurchase: { teacher: true, course: true },
-      oldCourse: true,
-      newCourse: { teacher: true },
-      oldTeacher: true,
-      newTeacher: true,
-    },
+    const request = await requestRepository.findOne({
+      where: { id: requestId },
+      relations: {
+        student: true,
+        oldPurchase: { teacher: true, course: true },
+        oldCourse: true,
+        newCourse: { teacher: true },
+        oldTeacher: true,
+        newTeacher: true,
+      },
+    });
+
+    if (!request) {
+      throw new AppError(404, 'Course swap request not found');
+    }
+
+    if (request.status !== CourseSwapStatus.PENDING) {
+      throw new AppError(409, 'This course swap request is no longer pending');
+    }
+
+    const eligibility = evaluateCourseSwapRequest({
+      purchaseCreatedAt: request.oldPurchase?.createdAt ?? new Date(),
+      currentCourseId: request.oldCourse.id,
+      replacementCourseId: request.newCourse.id,
+    });
+
+    if (!eligibility.allowed) {
+      throw new AppError(400, eligibility.reason || 'The swap window has expired');
+    }
+
+    const oldPurchase = request.oldPurchase;
+    if (!oldPurchase) {
+      throw new AppError(404, 'Original purchase record not found');
+    }
+
+    const student = await userRepository.findOne({
+      where: { id: request.student.id },
+      lock: { mode: 'pessimistic_write' },
+    });
+
+    if (!student) {
+      throw new AppError(404, 'Student not found');
+    }
+
+    const existingReplacement = await purchaseRepository.findOne({
+      where: { user: { id: request.student.id }, course: { id: request.newCourse.id } },
+    });
+
+    if (existingReplacement && existingReplacement.id !== oldPurchase.id) {
+      throw new AppError(409, 'Student already owns the replacement course');
+    }
+
+    const replacementFields = resolveSwapReplacementPurchaseFields({
+      oldSource: oldPurchase.source,
+      replacementPrice: request.newCourse.price,
+      replacementTeacherShare: request.newTeacherShare,
+    });
+
+    const replacementPurchase = purchaseRepository.create({
+      user: { id: request.student.id } as User,
+      course: { id: request.newCourse.id } as Course,
+      teacher: request.newTeacher ? ({ id: request.newTeacher.id } as User) : request.newCourse.teacher ? ({ id: request.newCourse.teacher.id } as User) : null,
+      source: replacementFields.source,
+      grantedBy: oldPurchase.grantedBy ?? null,
+      pricePaid: replacementFields.pricePaid,
+      teacherShare: replacementFields.teacherShare,
+    });
+
+    await purchaseRepository.remove(oldPurchase);
+    await purchaseRepository.save(replacementPurchase);
+
+    const oldPaidCents = toCents(oldPurchase.pricePaid ?? '0.00');
+    const newPaidCents = toCents(replacementFields.pricePaid ?? '0.00');
+    const refundCents = oldPurchase.source === PurchaseSource.PURCHASED ? oldPaidCents - newPaidCents : 0n;
+    const refundedAmount = refundCents > 0n ? centsToMoney(refundCents) : '0.00';
+
+    if (refundCents > 0n) {
+      const balanceAfter = centsToMoney(toCents(student.balance) + refundCents);
+      student.balance = balanceAfter;
+      await userRepository.save(student);
+
+      const refundTransaction = transactionRepository.create({
+        user: { id: student.id } as User,
+        type: TransactionType.TOPUP,
+        amount: refundedAmount,
+        balanceAfter,
+        description: `Refund from course swap: ${request.oldCourse.name} -> ${request.newCourse.name}`,
+        referenceType: 'COURSE_SWAP_REFUND',
+        referenceId: request.id,
+      });
+      await transactionRepository.save(refundTransaction);
+    }
+
+    request.status = CourseSwapStatus.APPROVED;
+    request.adminNote = adminNote && adminNote.trim() ? adminNote.trim() : null;
+    request.approvedBy = { id: adminId } as User;
+    request.approvedAt = new Date();
+    await requestRepository.save(request);
+
+    await logAuditEvent({
+      action: 'COURSE_SWAP_APPROVED',
+      actorId: adminId,
+      entityType: 'CourseSwapRequest',
+      entityId: request.id,
+      metadata: {
+        studentId: request.student.id,
+        oldPurchaseId: oldPurchase.id,
+        oldCourseId: request.oldCourse.id,
+        newCourseId: request.newCourse.id,
+        oldTeacherId: request.oldTeacher?.id ?? oldPurchase.teacher?.id ?? null,
+        newTeacherId: request.newTeacher?.id ?? request.newCourse.teacher?.id ?? null,
+        oldTeacherShare: request.oldTeacherShare,
+        newTeacherShare: request.newTeacherShare,
+        refundedAmount,
+      },
+    });
+
+    const refundNote = refundCents > 0n ? ` وتمت إعادة فرق السعر (${refundedAmount}) إلى رصيدك.` : '';
+    await notify(request.student.id, 'تمت الموافقة على تبديل المادة', `تم نقل اشتراكك من ${request.oldCourse.name} إلى ${request.newCourse.name}.${refundNote}`, manager);
+    if (request.oldTeacher && request.newTeacher && request.oldTeacher.id !== request.newTeacher.id) {
+      await notify(request.oldTeacher.id, 'إعادة توزيع الحصة الدراسية', `تمت إعادة تخصيص قرار المادة ${request.oldCourse.name} إلى مادة أخرى، وتم نقل الحصة إلى مدرس جديد.`, manager);
+      await notify(request.newTeacher.id, 'إضافة مادة جديدة في توزيعك', `تمت إضافة مادة ${request.newCourse.name} إلى حسابك بناءً على طلب تبديل المادة.`, manager);
+    }
+
+    return {
+      id: request.id,
+      status: request.status,
+      approved_by: adminId,
+      approved_at: request.approvedAt,
+      old_course_id: request.oldCourse.id,
+      new_course_id: request.newCourse.id,
+      refunded_amount: refundedAmount,
+    };
   });
-
-  if (!request) {
-    throw new AppError(404, 'Course swap request not found');
-  }
-
-  if (request.status !== CourseSwapStatus.PENDING) {
-    throw new AppError(409, 'This course swap request is no longer pending');
-  }
-
-  const eligibility = evaluateCourseSwapRequest({
-    purchaseCreatedAt: request.oldPurchase?.createdAt ?? new Date(),
-    currentCourseId: request.oldCourse.id,
-    replacementCourseId: request.newCourse.id,
-  });
-
-  if (!eligibility.allowed) {
-    throw new AppError(400, eligibility.reason || 'The swap window has expired');
-  }
-
-  const oldPurchase = request.oldPurchase;
-  if (!oldPurchase) {
-    throw new AppError(404, 'Original purchase record not found');
-  }
-
-  const existingReplacement = await purchaseRepository.findOne({
-    where: { user: { id: request.student.id }, course: { id: request.newCourse.id } },
-  });
-
-  if (existingReplacement && existingReplacement.id !== oldPurchase.id) {
-    throw new AppError(409, 'Student already owns the replacement course');
-  }
-
-  const replacementFields = resolveSwapReplacementPurchaseFields({
-    oldSource: oldPurchase.source,
-    replacementPrice: request.newCourse.price,
-    replacementTeacherShare: request.newTeacherShare,
-  });
-
-  const replacementPurchase = purchaseRepository.create({
-    user: { id: request.student.id } as User,
-    course: { id: request.newCourse.id } as Course,
-    teacher: request.newTeacher ? ({ id: request.newTeacher.id } as User) : request.newCourse.teacher ? ({ id: request.newCourse.teacher.id } as User) : null,
-    source: replacementFields.source,
-    grantedBy: oldPurchase.grantedBy ?? null,
-    pricePaid: replacementFields.pricePaid,
-    teacherShare: replacementFields.teacherShare,
-  });
-
-  await purchaseRepository.remove(oldPurchase);
-  await purchaseRepository.save(replacementPurchase);
-
-  request.status = CourseSwapStatus.APPROVED;
-  request.adminNote = adminNote && adminNote.trim() ? adminNote.trim() : null;
-  request.approvedBy = { id: adminId } as User;
-  request.approvedAt = new Date();
-  await requestRepository.save(request);
-
-  await logAuditEvent({
-    action: 'COURSE_SWAP_APPROVED',
-    actorId: adminId,
-    entityType: 'CourseSwapRequest',
-    entityId: request.id,
-    metadata: {
-      studentId: request.student.id,
-      oldPurchaseId: oldPurchase.id,
-      oldCourseId: request.oldCourse.id,
-      newCourseId: request.newCourse.id,
-      oldTeacherId: request.oldTeacher?.id ?? oldPurchase.teacher?.id ?? null,
-      newTeacherId: request.newTeacher?.id ?? request.newCourse.teacher?.id ?? null,
-      oldTeacherShare: request.oldTeacherShare,
-      newTeacherShare: request.newTeacherShare,
-    },
-  });
-
-  await notify(request.student.id, 'تمت الموافقة على تبديل المادة', `تم نقل اشتراكك من ${request.oldCourse.name} إلى ${request.newCourse.name}.`);
-  if (request.oldTeacher && request.newTeacher && request.oldTeacher.id !== request.newTeacher.id) {
-    await notify(request.oldTeacher.id, 'إعادة توزيع الحصة الدراسية', `تمت إعادة تخصيص قرار المادة ${request.oldCourse.name} إلى مادة أخرى، وتم نقل الحصة إلى مدرس جديد.`);
-    await notify(request.newTeacher.id, 'إضافة مادة جديدة في توزيعك', `تمت إضافة مادة ${request.newCourse.name} إلى حسابك بناءً على طلب تبديل المادة.`);
-  }
-
-  return {
-    id: request.id,
-    status: request.status,
-    approved_by: adminId,
-    approved_at: request.approvedAt,
-    old_course_id: request.oldCourse.id,
-    new_course_id: request.newCourse.id,
-  };
 }
 
 export async function rejectCourseSwapRequest(adminId: number, requestId: number, reason: string | null) {
