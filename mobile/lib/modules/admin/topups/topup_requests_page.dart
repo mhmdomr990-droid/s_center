@@ -39,16 +39,16 @@ class TopupRequestsPage extends StatelessWidget {
               ),
               body: Column(
                 children: [
-                  Padding(
-                    padding: const EdgeInsets.fromLTRB(16, 16, 16, 4),
-                    child: Row(
-                      children: [
-                        _segmentButton(ctrl, 0, 'طلبات الشحن', Icons.payments_outlined),
-                        const SizedBox(width: 10),
-                        _segmentButton(ctrl, 1, 'طلبات التبديل', Icons.swap_horiz_rounded),
-                      ],
-                    ),
-                  ),
+                  Obx(() => Padding(
+                        padding: const EdgeInsets.fromLTRB(16, 16, 16, 4),
+                        child: Row(
+                          children: [
+                            _segmentButton(ctrl, 0, 'طلبات الشحن', Icons.payments_outlined),
+                            const SizedBox(width: 10),
+                            _segmentButton(ctrl, 1, 'طلبات التبديل', Icons.swap_horiz_rounded),
+                          ],
+                        ),
+                      )),
                   Expanded(
                     child: Obx(() => ctrl.segment.value == 0
                         ? _topupBody(ctrl)
