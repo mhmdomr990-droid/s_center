@@ -60,11 +60,17 @@ class _CustomButtonState extends State<CustomButton> {
                     Icon(widget.icon, size: 20),
                     const SizedBox(width: 8)
                   ],
-                  Text(widget.text,
-                      style: GoogleFonts.cairo(
-                          fontSize: 16,
-                          fontWeight: FontWeight.w600,
-                          color: AppColors.primary)),
+                  Flexible(
+                    child: FittedBox(
+                      fit: BoxFit.scaleDown,
+                      child: Text(widget.text,
+                          maxLines: 1,
+                          style: GoogleFonts.cairo(
+                              fontSize: 16,
+                              fontWeight: FontWeight.w600,
+                              color: AppColors.primary)),
+                    ),
+                  ),
                 ],
               ),
       );
@@ -91,11 +97,17 @@ class _CustomButtonState extends State<CustomButton> {
                     Icon(widget.icon, size: 20, color: Colors.white),
                     const SizedBox(width: 8)
                   ],
-                  Text(widget.text,
-                      style: GoogleFonts.cairo(
-                          fontSize: 16,
-                          fontWeight: FontWeight.w600,
-                          color: Colors.white)),
+                  Flexible(
+                    child: FittedBox(
+                      fit: BoxFit.scaleDown,
+                      child: Text(widget.text,
+                          maxLines: 1,
+                          style: GoogleFonts.cairo(
+                              fontSize: 16,
+                              fontWeight: FontWeight.w600,
+                              color: Colors.white)),
+                    ),
+                  ),
                 ],
               ),
       );

@@ -83,13 +83,17 @@ class TopupRequestsPage extends StatelessWidget {
             children: [
               Icon(icon, size: 16, color: isSelected ? Colors.white : AppColors.textSecondary),
               const SizedBox(width: 6),
-              Text(
-                label,
-                textAlign: TextAlign.center,
-                style: TextStyle(
-                  color: isSelected ? Colors.white : AppColors.textSecondary,
-                  fontWeight: FontWeight.w600,
-                  fontSize: 13,
+              Flexible(
+                child: Text(
+                  label,
+                  textAlign: TextAlign.center,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                    color: isSelected ? Colors.white : AppColors.textSecondary,
+                    fontWeight: FontWeight.w600,
+                    fontSize: 13,
+                  ),
                 ),
               ),
             ],

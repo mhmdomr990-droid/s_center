@@ -214,11 +214,15 @@ class _VideoFullscreenPageState extends State<VideoFullscreenPage> {
                                       size: 34,
                                     ),
                                   ),
-                                  Text(
-                                    '${ctrl.formatDuration(ctrl.isScrubbing.value ? ctrl.scrubPosition.value : ctrl.position.value)} / ${ctrl.formatDuration(ctrl.duration.value)}',
-                                    style: GoogleFonts.cairo(
-                                      color: Colors.white70,
-                                      fontSize: 13,
+                                  Flexible(
+                                    child: Text(
+                                      '${ctrl.formatDuration(ctrl.isScrubbing.value ? ctrl.scrubPosition.value : ctrl.position.value)} / ${ctrl.formatDuration(ctrl.duration.value)}',
+                                      maxLines: 1,
+                                      overflow: TextOverflow.ellipsis,
+                                      style: GoogleFonts.cairo(
+                                        color: Colors.white70,
+                                        fontSize: 13,
+                                      ),
                                     ),
                                   ),
                                   const Spacer(),

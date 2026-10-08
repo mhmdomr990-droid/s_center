@@ -181,16 +181,20 @@ class CourseDetailPage extends StatelessWidget {
                                 ),
                               ),
                               const SizedBox(width: 12),
-                              Container(
-                                padding: const EdgeInsets.symmetric(
-                                    horizontal: 10, vertical: 4),
-                                decoration: BoxDecoration(
-                                  color: Colors.white.withValues(alpha: 0.2),
-                                  borderRadius: BorderRadius.circular(8),
+                              Flexible(
+                                child: Container(
+                                  padding: const EdgeInsets.symmetric(
+                                      horizontal: 10, vertical: 4),
+                                  decoration: BoxDecoration(
+                                    color: Colors.white.withValues(alpha: 0.2),
+                                    borderRadius: BorderRadius.circular(8),
+                                  ),
+                                  child: Text(course.specializationName,
+                                      overflow: TextOverflow.ellipsis,
+                                      maxLines: 1,
+                                      style: const TextStyle(
+                                          color: Colors.white, fontSize: 12)),
                                 ),
-                                child: Text(course.specializationName,
-                                    style: const TextStyle(
-                                        color: Colors.white, fontSize: 12)),
                               ),
                             ],
                           ),
@@ -213,9 +217,13 @@ class CourseDetailPage extends StatelessWidget {
                                 const Icon(Icons.person_rounded,
                                     color: Colors.white70, size: 18),
                                 const SizedBox(width: 6),
-                                Text(course.teacherName!,
-                                    style: const TextStyle(
-                                        color: Colors.white70, fontSize: 14)),
+                                Flexible(
+                                  child: Text(course.teacherName!,
+                                      overflow: TextOverflow.ellipsis,
+                                      maxLines: 1,
+                                      style: const TextStyle(
+                                          color: Colors.white70, fontSize: 14)),
+                                ),
                               ],
                             ),
                           ],
@@ -228,11 +236,14 @@ class CourseDetailPage extends StatelessWidget {
                                 crossAxisAlignment: CrossAxisAlignment.baseline,
                                 textBaseline: TextBaseline.alphabetic,
                                 children: [
-                                  Text(formatAmount(course.price),
-                                      style: GoogleFonts.cairo(
-                                          fontSize: 28,
-                                          fontWeight: FontWeight.bold,
-                                          color: Colors.white)),
+                                  Flexible(
+                                    child: Text(formatAmount(course.price),
+                                        maxLines: 1,
+                                        style: GoogleFonts.cairo(
+                                            fontSize: 28,
+                                            fontWeight: FontWeight.bold,
+                                            color: Colors.white)),
+                                  ),
                                   const SizedBox(width: 6),
                                   const Text('SYP',
                                       style: TextStyle(

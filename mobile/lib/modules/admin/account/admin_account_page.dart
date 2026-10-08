@@ -4,7 +4,6 @@ import '../../../app/theme/app_colors.dart';
 import '../../../app/theme/app_shadows.dart';
 import '../../../app/theme/app_text_styles.dart';
 import '../../../app/theme/theme_controller.dart';
-import '../../../data/providers/api_client.dart';
 import '../../../widgets/custom_button.dart';
 import '../../../widgets/gradient_app_bar.dart';
 import '../../../widgets/section_header.dart';
@@ -100,24 +99,6 @@ class AdminAccountPage extends StatelessWidget {
                 icon: Icons.logout_rounded,
                 backgroundColor: AppColors.error,
                 onPressed: ctrl.logout,
-              ),
-              const SizedBox(height: 24),
-              Container(
-                padding: const EdgeInsets.all(14),
-                decoration: BoxDecoration(
-                  color: AppColors.courseCard,
-                  borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: AppColors.cardBorder),
-                ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text('عنوان الخادم', style: AppTextStyles.caption),
-                    const SizedBox(height: 4),
-                    SelectableText(ApiClient.baseUrl,
-                        style: AppTextStyles.bodyMedium.copyWith(fontSize: 14)),
-                  ],
-                ),
               ),
             ],
           ),

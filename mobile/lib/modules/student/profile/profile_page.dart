@@ -92,24 +92,32 @@ class ProfilePage extends StatelessWidget {
                                     const Icon(Icons.school_rounded,
                                         color: Colors.white70, size: 16),
                                     const SizedBox(width: 6),
-                                    Obx(() => Text(
-                                          '${ctrl.teacherCoursesCount.value} دورات',
-                                          style: GoogleFonts.cairo(
-                                              color: Colors.white,
-                                              fontSize: 14,
-                                              fontWeight: FontWeight.w600),
-                                        )),
+                                    Flexible(
+                                      child: Obx(() => Text(
+                                            '${ctrl.teacherCoursesCount.value} دورات',
+                                            overflow: TextOverflow.ellipsis,
+                                            maxLines: 1,
+                                            style: GoogleFonts.cairo(
+                                                color: Colors.white,
+                                                fontSize: 14,
+                                                fontWeight: FontWeight.w600),
+                                          )),
+                                    ),
                                     const SizedBox(width: 16),
                                     const Icon(Icons.payments_outlined,
                                         color: Colors.white70, size: 16),
                                     const SizedBox(width: 6),
-                                    Obx(() => Text(
-                                          '${ctrl.teacherTotalEarned.value} SYP أرباح',
-                                          style: GoogleFonts.cairo(
-                                              color: Colors.white,
-                                              fontSize: 14,
-                                              fontWeight: FontWeight.w600),
-                                        )),
+                                    Flexible(
+                                      child: Obx(() => Text(
+                                            '${ctrl.teacherTotalEarned.value} SYP أرباح',
+                                            overflow: TextOverflow.ellipsis,
+                                            maxLines: 1,
+                                            style: GoogleFonts.cairo(
+                                                color: Colors.white,
+                                                fontSize: 14,
+                                                fontWeight: FontWeight.w600),
+                                          )),
+                                    ),
                                   ],
                                 ),
                               ],
@@ -122,12 +130,16 @@ class ProfilePage extends StatelessWidget {
                                         color: Colors.white70,
                                         size: 16),
                                     const SizedBox(width: 6),
-                                    Text(
-                                      '${formatAmount(user?.balance ?? '0.00')} SYP',
-                                      style: GoogleFonts.cairo(
-                                          color: Colors.white,
-                                          fontSize: 14,
-                                          fontWeight: FontWeight.w600),
+                                    Flexible(
+                                      child: Text(
+                                        '${formatAmount(user?.balance ?? '0.00')} SYP',
+                                        overflow: TextOverflow.ellipsis,
+                                        maxLines: 1,
+                                        style: GoogleFonts.cairo(
+                                            color: Colors.white,
+                                            fontSize: 14,
+                                            fontWeight: FontWeight.w600),
+                                      ),
                                     ),
                                   ],
                                 ),

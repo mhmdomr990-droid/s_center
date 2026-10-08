@@ -230,11 +230,15 @@ class HomePage extends StatelessWidget {
                                           CrossAxisAlignment.baseline,
                                       textBaseline: TextBaseline.alphabetic,
                                       children: [
-                                        Text(formatAmount(course.pricePaid),
-                                            style: GoogleFonts.cairo(
-                                                fontSize: 14,
-                                                color: AppColors.primary,
-                                                fontWeight: FontWeight.bold)),
+                                        Flexible(
+                                          child: Text(formatAmount(course.pricePaid),
+                                              maxLines: 1,
+                                              overflow: TextOverflow.ellipsis,
+                                              style: GoogleFonts.cairo(
+                                                  fontSize: 14,
+                                                  color: AppColors.primary,
+                                                  fontWeight: FontWeight.bold)),
+                                        ),
                                         const SizedBox(width: 4),
                                         Text('SYP',
                                             style: TextStyle(

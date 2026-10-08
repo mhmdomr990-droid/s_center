@@ -291,8 +291,12 @@ class UsersPage extends StatelessWidget {
                             child: CircularProgressIndicator(strokeWidth: 2),
                           ),
                           const SizedBox(width: 10),
-                          Text('جارٍ تحميل الاختصاصات...',
-                              style: TextStyle(fontSize: 12, color: AppColors.textHint)),
+                          Flexible(
+                            child: Text('جارٍ تحميل الاختصاصات...',
+                                overflow: TextOverflow.ellipsis,
+                                style:
+                                    TextStyle(fontSize: 12, color: AppColors.textHint)),
+                          ),
                           const Spacer(),
                           TextButton(
                             onPressed: () async {

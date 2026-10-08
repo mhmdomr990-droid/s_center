@@ -64,7 +64,11 @@ class BalanceCard extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.baseline,
                 textBaseline: TextBaseline.alphabetic,
                 children: [
-                  Text(formatAmount(balance), style: AppTextStyles.balanceLarge),
+                  Flexible(
+                    child: Text(formatAmount(balance),
+                        maxLines: 1,
+                        style: AppTextStyles.balanceLarge),
+                  ),
                   const SizedBox(width: 8),
                   Text('SYP', style: AppTextStyles.balanceLabel),
                 ],
