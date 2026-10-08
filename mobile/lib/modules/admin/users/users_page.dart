@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../../../app/theme/app_colors.dart';
@@ -233,11 +234,14 @@ class UsersPage extends StatelessWidget {
     final phoneCtrl = TextEditingController();
     int? selectedSpec;
 
+    // تحميل طازج عند كل فتح — حتى يظهر أي تخصص أُضيف حديثاً
+    // من تبويب المحتوى دون الحاجة لتسجيل الخروج والدخول
+    unawaited(ctrl.loadSpecializations());
+
     showDialog<void>(
       context: context,
       builder: (dialogContext) => StatefulBuilder(
         builder: (dialogContext, setState) {
-          final specs = ctrl.specializations;
           return AlertDialog(
             title: const Text('طالب جديد'),
             content: SingleChildScrollView(
@@ -276,30 +280,32 @@ class UsersPage extends StatelessWidget {
                     ),
                   ),
                   const SizedBox(height: 16),
-                  if (specs.isEmpty)
-                    Row(
-                      children: [
-                        const SizedBox(
-                          width: 16,
-                          height: 16,
-                          child: CircularProgressIndicator(strokeWidth: 2),
-                        ),
-                        const SizedBox(width: 10),
-                        Text('جارٍ تحميل الاختصاصات...',
-                            style: TextStyle(fontSize: 12, color: AppColors.textHint)),
-                        const Spacer(),
-                        TextButton(
-                          onPressed: () async {
-                            await ctrl.loadSpecializations();
-                            setState(() {});
-                          },
-                          child: const Text('إعادة المحاولة', style: TextStyle(fontSize: 12)),
-                        ),
-                      ],
-                    )
-                  else
-                    DropdownButtonFormField<int>(
+                  Obx(() {
+                    final specs = ctrl.specializations;
+                    if (specs.isEmpty) {
+                      return Row(
+                        children: [
+                          const SizedBox(
+                            width: 16,
+                            height: 16,
+                            child: CircularProgressIndicator(strokeWidth: 2),
+                          ),
+                          const SizedBox(width: 10),
+                          Text('جارٍ تحميل الاختصاصات...',
+                              style: TextStyle(fontSize: 12, color: AppColors.textHint)),
+                          const Spacer(),
+                          TextButton(
+                            onPressed: () async {
+                              await ctrl.loadSpecializations();
+                            },
+                            child: const Text('إعادة المحاولة', style: TextStyle(fontSize: 12)),
+                          ),
+                        ],
+                      );
+                    }
+                    return DropdownButtonFormField<int>(
                       initialValue: selectedSpec,
+                      isExpanded: true,
                       decoration: const InputDecoration(
                         labelText: 'الاختصاص *',
                         border: OutlineInputBorder(),
@@ -312,7 +318,8 @@ class UsersPage extends StatelessWidget {
                               ))
                           .toList(),
                       onChanged: (value) => setState(() => selectedSpec = value),
-                    ),
+                    );
+                  }),
                 ],
               ),
             ),

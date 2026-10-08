@@ -112,6 +112,7 @@ class RegisterPage extends StatelessWidget {
                           }
                           return DropdownButtonFormField<int>(
                             initialValue: ctrl.registerSpecializationId.value,
+                            isExpanded: true,
                             style: GoogleFonts.cairo(
                                 fontSize: 15, color: AppColors.textPrimary),
                             icon: Icon(Icons.keyboard_arrow_down_rounded,

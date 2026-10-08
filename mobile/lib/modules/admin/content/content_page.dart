@@ -388,6 +388,7 @@ class _CoursesView extends StatelessWidget {
                 const SizedBox(height: 12),
                 DropdownButtonFormField<int?>(
                   initialValue: specId,
+                  isExpanded: true,
                   decoration:
                       const InputDecoration(labelText: 'التخصص', border: OutlineInputBorder()),
                   items: ctrl.specializations
@@ -401,6 +402,7 @@ class _CoursesView extends StatelessWidget {
                 const SizedBox(height: 12),
                 DropdownButtonFormField<int?>(
                   initialValue: year,
+                  isExpanded: true,
                   decoration:
                       const InputDecoration(labelText: 'السنة الدراسية', border: OutlineInputBorder()),
                   items: List.generate(
@@ -426,6 +428,7 @@ class _CoursesView extends StatelessWidget {
                 const SizedBox(height: 12),
                 DropdownButtonFormField<int?>(
                   initialValue: teacherId,
+                  isExpanded: true,
                   decoration:
                       const InputDecoration(labelText: 'المعلم (اختياري)', border: OutlineInputBorder()),
                   items: [
