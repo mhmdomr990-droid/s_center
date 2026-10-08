@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_foreground_task/flutter_foreground_task.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:get/get.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -8,12 +9,15 @@ import 'app/theme/theme_controller.dart';
 import 'app/routes/app_pages.dart';
 import 'app/routes/app_routes.dart';
 import 'data/providers/api_client.dart';
+import 'data/providers/teacher_provider.dart';
 import 'data/services/storage_service.dart';
 import 'data/services/device_service.dart';
 import 'data/services/download_manager.dart';
 import 'data/services/screen_guard.dart';
+import 'data/services/upload_manager.dart';
 import 'modules/auth/auth_controller.dart';
 import 'widgets/app_scroll_behavior.dart';
+import 'widgets/upload_overlay.dart';
 
 /// تحميل وتسميع خطوط Cairo الخمسة قبل runApp.
 /// المفاتيح تُشتق من `.fontFamily` نفسه الذي ستستخدمه google_fonts
@@ -43,6 +47,33 @@ Future<void> _preloadCairoFonts() async {
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
+  // خدمة أمامية: استمرار رفع المحاضرات في الخلفية + إشعار عند الاكتمال
+  try {
+    FlutterForegroundTask.initCommunicationPort();
+    FlutterForegroundTask.init(
+      androidNotificationOptions: AndroidNotificationOptions(
+        channelId: 'lecture_upload',
+        channelName: 'رفع المحاضرات',
+        channelDescription:
+            'استمرار رفع الملفات في الخلفية وإشعار عند الاكتمال',
+        channelImportance: NotificationChannelImportance.LOW,
+        priority: NotificationPriority.LOW,
+        onlyAlertOnce: true,
+      ),
+      iosNotificationOptions: const IOSNotificationOptions(
+        showNotification: false,
+      ),
+      foregroundTaskOptions: ForegroundTaskOptions(
+        eventAction: ForegroundTaskEventAction.nothing(),
+        autoRunOnBoot: false,
+        allowWakeLock: true,
+        allowWifiLock: true,
+      ),
+    );
+  } catch (e) {
+    debugPrint('FGS_INIT_FAIL $e');
+  }
+
   // خطوط Cairo مضمّنة في assets/fonts/ — لا تنزيل من الشبكة إطلاقاً
   // (يمنع ظهور مربعات □□□ في الـ splash قبل وصول الخط وقت التشغيل)
   GoogleFonts.config.allowRuntimeFetching = false;
@@ -65,6 +96,7 @@ void main() async {
   Get.put(themeController);
   Get.put(AuthController());
   Get.put(DownloadManager(), permanent: true);
+  Get.put(UploadManager(TeacherProvider(apiClient)), permanent: true);
 
   await ScreenGuard.instance.protect();
 
@@ -97,7 +129,13 @@ class SCenterApp extends StatelessWidget {
         builder: (context, child) {
           return Directionality(
             textDirection: TextDirection.rtl,
-            child: child ?? const SizedBox.shrink(),
+            child: Stack(
+              children: [
+                child ?? const SizedBox.shrink(),
+                // شريط تقدم الرفع العائم — يبقى فوق أي صفحة
+                const UploadOverlay(),
+              ],
+            ),
           );
         },
         initialRoute: AppRoutes.splash,

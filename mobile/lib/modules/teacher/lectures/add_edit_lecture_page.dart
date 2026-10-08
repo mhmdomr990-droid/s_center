@@ -10,6 +10,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../../../app/theme/app_colors.dart';
 import '../../../app/theme/app_text_styles.dart';
 import '../../../data/models/lecture_model.dart';
+import '../../../data/services/upload_manager.dart';
 import '../../../widgets/custom_button.dart';
 import '../../../widgets/custom_text_field.dart';
 import '../../../widgets/gradient_app_bar.dart';
@@ -60,6 +61,8 @@ class _AddEditLecturePageState extends State<AddEditLecturePage> {
   @override
   void initState() {
     super.initState();
+    // الشريط العائم مخفي هنا — تعرض الصفحة تقدمها بنفسها
+    Get.find<UploadManager>().overlaySuppressed.value = true;
     final args = Get.arguments as Map<String, dynamic>;
     courseId = args['courseId'] as int;
     lecture = args['lecture'] as LectureModel?;
@@ -84,6 +87,8 @@ class _AddEditLecturePageState extends State<AddEditLecturePage> {
 
   @override
   void dispose() {
+    // عد الشريط العائم — إن بقي الرفع مستمراً بعد الخروج من الصفحة
+    Get.find<UploadManager>().overlaySuppressed.value = false;
     _draftTimer?.cancel();
     // أي تغييرات معلقة تُحفظ لحظة الخروج — إلا أثناء/بعد إرسال ناجح
     // (عندها تُمسح المسودة من الكونترولر ولا نُعيد كتابتها هنا)
@@ -468,10 +473,11 @@ class _AddEditLecturePageState extends State<AddEditLecturePage> {
             GetBuilder<TeacherCoursesController>(
               builder: (ctrl) {
                 return Obx(() {
-                  final compressing = ctrl.compressing.value;
-                  final compressProgress = ctrl.compressProgress.value;
-                  final compressEta = ctrl.compressEta.value;
-                  final uploading = ctrl.uploadProgress.value;
+                  final um = Get.find<UploadManager>();
+                  final compressing = um.compressing.value;
+                  final compressProgress = um.compressProgress.value;
+                  final compressEta = um.compressEta.value;
+                  final uploading = um.progress.value;
                   final willSendFile = selectedType.value == 'VIDEO'
                       ? (selectedVideoPath.value != null ||
                           selectedVideoBytes.value != null)
