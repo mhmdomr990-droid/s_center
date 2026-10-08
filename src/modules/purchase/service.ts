@@ -36,6 +36,29 @@ export function resolveSwapReplacementPurchaseFields(input: {
   };
 }
 
+export function calculateCourseSwapBalanceDelta(input: { oldCoursePrice: string | number | bigint; newCoursePrice: string | number | bigint }) {
+  const coerceCents = (value: string | number | bigint | null | undefined) => {
+    if (typeof value === 'bigint') {
+      return value;
+    }
+    return toCents(String(value ?? '0.00'));
+  };
+
+  const oldCents = coerceCents(input.oldCoursePrice);
+  const newCents = coerceCents(input.newCoursePrice);
+  const deltaCents = newCents - oldCents;
+
+  if (deltaCents > 0n) {
+    return { deltaCents, direction: 'charge' as const };
+  }
+
+  if (deltaCents < 0n) {
+    return { deltaCents: -deltaCents, direction: 'refund' as const };
+  }
+
+  return { deltaCents: 0n, direction: 'none' as const };
+}
+
 export function evaluateCourseSwapRequest(input: {
   purchaseCreatedAt: Date | string;
   currentCourseId: number;
@@ -447,8 +470,28 @@ export async function approveCourseSwapRequest(adminId: number, requestId: numbe
 
     const oldPaidCents = toCents(oldPurchase.pricePaid ?? '0.00');
     const newPaidCents = toCents(replacementFields.pricePaid ?? '0.00');
-    const refundCents = oldPurchase.source === PurchaseSource.PURCHASED ? oldPaidCents - newPaidCents : 0n;
+    const swapDelta = calculateCourseSwapBalanceDelta({ oldCoursePrice: oldPaidCents, newCoursePrice: newPaidCents });
+    const refundCents = oldPurchase.source === PurchaseSource.PURCHASED && swapDelta.direction === 'refund' ? swapDelta.deltaCents : 0n;
+    const chargeCents = oldPurchase.source === PurchaseSource.PURCHASED && swapDelta.direction === 'charge' ? swapDelta.deltaCents : 0n;
     const refundedAmount = refundCents > 0n ? centsToMoney(refundCents) : '0.00';
+    const chargedAmount = chargeCents > 0n ? centsToMoney(chargeCents) : '0.00';
+
+    if (chargeCents > 0n) {
+      const balanceAfter = centsToMoney(toCents(student.balance) - chargeCents);
+      student.balance = balanceAfter;
+      await userRepository.save(student);
+
+      const chargeTransaction = transactionRepository.create({
+        user: { id: student.id } as User,
+        type: TransactionType.PURCHASE,
+        amount: chargedAmount,
+        balanceAfter,
+        description: `Course swap charge: ${request.oldCourse.name} -> ${request.newCourse.name}`,
+        referenceType: 'COURSE_SWAP_CHARGE',
+        referenceId: request.id,
+      });
+      await transactionRepository.save(chargeTransaction);
+    }
 
     if (refundCents > 0n) {
       const balanceAfter = centsToMoney(toCents(student.balance) + refundCents);
@@ -491,8 +534,9 @@ export async function approveCourseSwapRequest(adminId: number, requestId: numbe
       },
     });
 
+    const chargeNote = chargeCents > 0n ? ` وتم خصم فرق السعر (${chargedAmount}) من رصيدك.` : '';
     const refundNote = refundCents > 0n ? ` وتمت إعادة فرق السعر (${refundedAmount}) إلى رصيدك.` : '';
-    await notify(request.student.id, 'تمت الموافقة على تبديل المادة', `تم نقل اشتراكك من ${request.oldCourse.name} إلى ${request.newCourse.name}.${refundNote}`, manager);
+    await notify(request.student.id, 'تمت الموافقة على تبديل المادة', `تم نقل اشتراكك من ${request.oldCourse.name} إلى ${request.newCourse.name}.${chargeNote}${refundNote}`, manager);
     if (request.oldTeacher && request.newTeacher && request.oldTeacher.id !== request.newTeacher.id) {
       await notify(request.oldTeacher.id, 'إعادة توزيع الحصة الدراسية', `تمت إعادة تخصيص قرار المادة ${request.oldCourse.name} إلى مادة أخرى، وتم نقل الحصة إلى مدرس جديد.`, manager);
       await notify(request.newTeacher.id, 'إضافة مادة جديدة في توزيعك', `تمت إضافة مادة ${request.newCourse.name} إلى حسابك بناءً على طلب تبديل المادة.`, manager);
