@@ -59,6 +59,17 @@ class AuthController extends GetxController {
   final isLoadingSpecializations = false.obs;
   final specializationsError = Rxn<String>();
 
+  /// تفريغ نموذج التسجيل — بعد إنشاء الحساب أو عند الخروج،
+  /// وإلا تبقى بيانات آخر تسجيل ظاهرة عند فتح النموذج مرة أخرى
+  void _clearRegisterForm() {
+    registerUsernameCtrl.clear();
+    registerFullNameCtrl.clear();
+    registerPasswordCtrl.clear();
+    registerConfirmCtrl.clear();
+    registerPhoneCtrl.clear();
+    registerSpecializationId.value = null;
+  }
+
   late final CatalogProvider _catalogProvider;
 
   @override
@@ -216,6 +227,7 @@ class AuthController extends GetxController {
       await _storage.saveUser(userData);
       user.value = userData;
       _syncScope(userData);
+      _clearRegisterForm();
 
       Get.offAll(() => const StudentShell());
     } catch (e) {
@@ -294,6 +306,7 @@ class AuthController extends GetxController {
     user.value = null;
     loginUsernameCtrl.clear();
     loginPasswordCtrl.clear();
+    _clearRegisterForm();
     Get.offAllNamed(AppRoutes.login);
   }
 }
