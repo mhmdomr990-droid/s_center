@@ -61,8 +61,14 @@ class _AddEditLecturePageState extends State<AddEditLecturePage> {
   @override
   void initState() {
     super.initState();
-    // الشريط العائم مخفي هنا — تعرض الصفحة تقدمها بنفسها
-    Get.find<UploadManager>().overlaySuppressed.value = true;
+    // الشريط العائم مخفي هنا — تعرض الصفحة تقدمها بنفسها.
+    // التأجيل خارج طور البناء إلزامي: كتابة Rx أثناء build تُثير
+    // «setState() or markNeedsBuild() called during build» على Obx الشريط
+    Future.microtask(() {
+      if (!mounted) return;
+      final um = Get.find<UploadManager>();
+      if (!um.overlaySuppressed.value) um.overlaySuppressed.value = true;
+    });
     final args = Get.arguments as Map<String, dynamic>;
     courseId = args['courseId'] as int;
     lecture = args['lecture'] as LectureModel?;
@@ -87,8 +93,11 @@ class _AddEditLecturePageState extends State<AddEditLecturePage> {
 
   @override
   void dispose() {
-    // عد الشريط العائم — إن بقي الرفع مستمراً بعد الخروج من الصفحة
-    Get.find<UploadManager>().overlaySuppressed.value = false;
+    // عد الشريط العائم — مؤجَّل خارج طور البناء (نفس سبب initState)
+    Future.microtask(() {
+      final um = Get.find<UploadManager>();
+      if (um.overlaySuppressed.value) um.overlaySuppressed.value = false;
+    });
     _draftTimer?.cancel();
     // أي تغييرات معلقة تُحفظ لحظة الخروج — إلا أثناء/بعد إرسال ناجح
     // (عندها تُمسح المسودة من الكونترولر ولا نُعيد كتابتها هنا)

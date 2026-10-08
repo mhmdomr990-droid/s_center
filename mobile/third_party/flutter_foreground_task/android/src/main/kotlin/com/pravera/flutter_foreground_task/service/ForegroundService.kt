@@ -39,6 +39,9 @@ class ForegroundService : Service() {
         private const val ACTION_RECEIVE_DATA = "onReceiveData"
         private const val INTENT_DATA_NAME = "intentData"
 
+        // (مُهجن) id إشعار «الوداع» عند إغلاق التطبيق — مختلف عن serviceId
+        private const val FAREWELL_NOTIFICATION_ID = 9911
+
         private val _isRunningServiceState = MutableStateFlow(false)
         val isRunningServiceState = _isRunningServiceState.asStateFlow()
 
@@ -220,8 +223,61 @@ class ForegroundService : Service() {
         if (ForegroundServiceUtils.isSetStopWithTaskFlag(this)) {
             stopSelf()
         } else {
-            RestartReceiver.setRestartAlarm(this, 1000)
+            // (مُهجن لتطبيق Student Center) بدل إعادة التشغيل بعد سحب التطبيق:
+            // رسالة وداع في إشعار مستقل (id مختلف — ينجو من إزالة إشعار الخدمة)
+            // ثم إيقاف الخدمة نظيفاً بلا منبه إعادة تشغيل — وإلا بقي إشعار متجمّد
+            try {
+                showTaskRemovedNotification()
+            } catch (e: Exception) {
+                Log.e(TAG, "showTaskRemovedNotification: ${e.message}", e)
+            }
+            // «توقف صحيح» حتى لا يعيد onDestroy تشغيل الخدمة بعد 5 ثوانٍ
+            ForegroundServiceStatus.setData(this, ForegroundServiceAction.API_STOP)
+            if (::foregroundServiceStatus.isInitialized) {
+                foregroundServiceStatus = ForegroundServiceStatus(action = ForegroundServiceAction.API_STOP)
+            }
+            stopForegroundService()
         }
+    }
+
+    private fun showTaskRemovedNotification() {
+        if (!::notificationOptions.isInitialized) return
+
+        val nm = getSystemService(NotificationManager::class.java) ?: return
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            createNotificationChannel()
+        }
+
+        val message = "توقف الرفع — تم إغلاق التطبيق"
+        var iconResId = 0
+        var contentIntent: PendingIntent? = null
+        if (::notificationContent.isInitialized) {
+            iconResId = getIconResId(notificationContent.icon)
+            try {
+                contentIntent = getContentIntent()
+            } catch (_: Exception) {
+            }
+        }
+        if (iconResId == 0) {
+            iconResId = android.R.drawable.stat_notify_sync
+        }
+
+        val builder = NotificationCompat.Builder(this, notificationOptions.channelId)
+            .setSmallIcon(iconResId)
+            .setContentTitle(message)
+            .setContentText("")
+            .setStyle(NotificationCompat.BigTextStyle().bigText(message))
+            .setOngoing(false)
+            .setAutoCancel(true)
+            .setShowWhen(notificationOptions.showWhen)
+            .setVisibility(notificationOptions.visibility)
+            .setPriority(notificationOptions.priority)
+        if (contentIntent != null) {
+            builder.setContentIntent(contentIntent)
+        }
+
+        // id مختلف عن id إشعار الخدمة (serviceId) — stopForeground(true) لا يلغيه
+        nm.notify(FAREWELL_NOTIFICATION_ID, builder.build())
     }
 
     override fun onTimeout(startId: Int) {

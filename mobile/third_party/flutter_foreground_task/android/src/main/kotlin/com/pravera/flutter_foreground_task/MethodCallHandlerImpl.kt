@@ -1,10 +1,19 @@
 package com.pravera.flutter_foreground_task
 
 import android.app.Activity
+import android.app.NotificationChannel
+import android.app.NotificationManager
+import android.app.PendingIntent
 import android.content.Context
 import android.content.Intent
+import android.content.pm.PackageManager
+import android.os.Build
+
+import androidx.core.app.NotificationCompat
 
 import com.pravera.flutter_foreground_task.errors.ActivityNotAttachedException
+import com.pravera.flutter_foreground_task.models.NotificationContent
+import com.pravera.flutter_foreground_task.models.NotificationOptions
 import com.pravera.flutter_foreground_task.models.NotificationPermission
 import com.pravera.flutter_foreground_task.service.NotificationPermissionCallback
 import com.pravera.flutter_foreground_task.service.ServiceProvider
@@ -72,6 +81,14 @@ class MethodCallHandlerImpl(private val context: Context, private val provider: 
 
                 "stopService" -> {
                     provider.getForegroundServiceManager().stop(context)
+                    result.success(true)
+                }
+
+                "showStandaloneNotification" -> {
+                    val map = args as? Map<*, *>
+                    val title = map?.get("title") as? String ?: ""
+                    val text = map?.get("text") as? String ?: ""
+                    showStandaloneNotification(title, text)
                     result.success(true)
                 }
 
@@ -200,5 +217,79 @@ class MethodCallHandlerImpl(private val context: Context, private val provider: 
             throw ActivityNotAttachedException()
         }
         return activity!!
+    }
+
+    private fun showStandaloneNotification(title: String, text: String) {
+        val nm = context.getSystemService(NotificationManager::class.java) ?: return
+        val options = NotificationOptions.getData(context)
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O &&
+            nm.getNotificationChannel(options.channelId) == null
+        ) {
+            val channel =
+                NotificationChannel(options.channelId, options.channelName, options.channelImportance)
+                    .apply {
+                        options.channelDescription?.let { description = it }
+                        enableVibration(options.enableVibration)
+                        if (!options.playSound) setSound(null, null)
+                        setShowBadge(options.showBadge)
+                    }
+            nm.createNotificationChannel(channel)
+        }
+
+        val content = NotificationContent.getData(context)
+        var iconResId = 0
+        try {
+            val appInfo = context.packageManager.getApplicationInfo(
+                context.packageName, PackageManager.GET_META_DATA)
+            iconResId = if (content.icon == null) {
+                appInfo.icon
+            } else {
+                appInfo.metaData?.getInt(content.icon.metaDataName) ?: 0
+            }
+        } catch (_: Exception) {
+        }
+        if (iconResId == 0) {
+            iconResId = android.R.drawable.stat_notify_sync
+        }
+
+        val contentIntent: PendingIntent? = try {
+            val intent = context.packageManager.getLaunchIntentForPackage(context.packageName)
+            var flags = PendingIntent.FLAG_UPDATE_CURRENT
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+                flags = flags or PendingIntent.FLAG_IMMUTABLE
+            }
+            PendingIntent.getActivity(context, RequestCode.NOTIFICATION_PRESSED, intent, flags)
+        } catch (_: Exception) {
+            null
+        }
+
+        val bigText = if (text.isEmpty()) title else "$title\n$text"
+        val builder = NotificationCompat.Builder(context, options.channelId)
+            .setSmallIcon(iconResId)
+            .setContentTitle(title)
+            .setContentText(text)
+            .setStyle(NotificationCompat.BigTextStyle().bigText(bigText))
+            .setOngoing(false)
+            .setAutoCancel(true)
+            .setShowWhen(options.showWhen)
+            .setVisibility(options.visibility)
+            .setPriority(options.priority)
+        if (contentIntent != null) {
+            builder.setContentIntent(contentIntent)
+        }
+        builder.notifyOrLog(nm, STANDALONE_NOTIFICATION_ID)
+    }
+
+    private fun NotificationCompat.Builder.notifyOrLog(
+        nm: NotificationManager, id: Int) {
+        try {
+            nm.notify(id, build())
+        } catch (_: Exception) {
+        }
+    }
+
+    companion object {
+        private const val STANDALONE_NOTIFICATION_ID = 9912
     }
 }

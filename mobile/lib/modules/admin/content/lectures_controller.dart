@@ -3,17 +3,12 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../../../data/providers/admin_provider.dart';
 import '../../../data/providers/api_client.dart';
-import '../../../data/providers/api_exception.dart';
-import '../../../data/services/video_compressor.dart';
+import '../../../data/services/upload_manager.dart';
 
 class LecturesController extends GetxController {
   final AdminProvider _provider;
   final isLoading = false.obs;
   final busy = false.obs;
-  final uploadProgress = 0.0.obs;
-  final compressing = false.obs;
-  final compressProgress = 0.0.obs;
-  final compressEta = 0.obs;
   final items = <Map<String, dynamic>>[].obs;
   final courses = <Map<String, dynamic>>[].obs;
   final selectedCourseId = RxnInt();
@@ -69,70 +64,38 @@ class LecturesController extends GetxController {
     bool compress = true,
   }) async {
     busy.value = true;
-    uploadProgress.value = 0;
-    compressing.value = false;
-    compressProgress.value = 0;
-    compressEta.value = 0;
-    var uploadPath = videoFilePath;
-    String? compressSummary;
     try {
-      if (compress && videoFilePath != null && type == 'VIDEO' && !kIsWeb) {
-        compressing.value = true;
-        final outcome = await VideoCompressor.compressForUpload(
-          videoFilePath,
-          onProgress: (p) => compressProgress.value = p,
-          onEta: (s) => compressEta.value = s,
-        );
-        compressing.value = false;
-        compressProgress.value = 0;
-    compressEta.value = 0;
-        uploadPath = outcome.path ?? videoFilePath;
-        compressSummary = outcome.summary;
-        debugPrint(
-            'compress: ${outcome.reason} ${outcome.sourceSize} -> ${outcome.outputSize ?? '-'} ${outcome.error ?? ''}');
-      }
-      await _provider.createLecture(
+      final ok = await Get.find<UploadManager>().run(UploadTask(
         courseId: courseId,
         title: title,
         type: type,
         url: url,
         content: content,
         sortOrder: sortOrder,
-        videoFilePath: uploadPath,
+        videoFilePath: videoFilePath,
         fileBytes: fileBytes,
         fileName: fileName,
-        onSendProgress: uploadPath != null
-            ? (sent, total) {
-                if (total > 0) uploadProgress.value = (sent / total).clamp(0.0, 1.0);
-              }
-            : null,
-      );
-      Get.snackbar(
-        'تم',
-        videoFilePath != null
-            ? 'تم رفع الملف بنجاح ✓${compressSummary == null ? '' : '\n$compressSummary'}'
-            : 'تم إنشاء المحاضرة',
-        backgroundColor: Colors.green,
-        colorText: Colors.white,
-      );
-      await loadLectures();
-      return true;
-    } catch (e) {
-      Get.snackbar(
-        'خطأ',
-        apiErrorMessage(e,
-            fallback: videoFilePath != null ? 'فشل رفع الملف' : 'فشل إنشاء المحاضرة'),
-        backgroundColor: Colors.red,
-        colorText: Colors.white,
-      );
-      return false;
+        compress: compress,
+        successMessage:
+            videoFilePath != null ? 'تم رفع الملف بنجاح ✓' : 'تم إنشاء المحاضرة',
+        failMessage: videoFilePath != null ? 'فشل رفع الملف' : 'فشل إنشاء المحاضرة',
+        upload: (path, onSend) => _provider.createLecture(
+          courseId: courseId,
+          title: title,
+          type: type,
+          url: url,
+          content: content,
+          sortOrder: sortOrder,
+          videoFilePath: path,
+          fileBytes: fileBytes,
+          fileName: fileName,
+          onSendProgress: onSend,
+        ),
+      ));
+      if (ok) await loadLectures();
+      return ok;
     } finally {
       busy.value = false;
-      uploadProgress.value = 0;
-      compressing.value = false;
-      compressProgress.value = 0;
-    compressEta.value = 0;
-      if (videoFilePath != null) await VideoCompressor.deleteCache();
     }
   }
 
@@ -149,70 +112,40 @@ class LecturesController extends GetxController {
     bool compress = true,
   }) async {
     busy.value = true;
-    uploadProgress.value = 0;
-    compressing.value = false;
-    compressProgress.value = 0;
-    compressEta.value = 0;
-    var uploadPath = videoFilePath;
-    String? compressSummary;
     try {
-      if (compress && videoFilePath != null && type == 'VIDEO' && !kIsWeb) {
-        compressing.value = true;
-        final outcome = await VideoCompressor.compressForUpload(
-          videoFilePath,
-          onProgress: (p) => compressProgress.value = p,
-          onEta: (s) => compressEta.value = s,
-        );
-        compressing.value = false;
-        compressProgress.value = 0;
-    compressEta.value = 0;
-        uploadPath = outcome.path ?? videoFilePath;
-        compressSummary = outcome.summary;
-        debugPrint(
-            'compress: ${outcome.reason} ${outcome.sourceSize} -> ${outcome.outputSize ?? '-'} ${outcome.error ?? ''}');
-      }
-      await _provider.updateLecture(
-        id,
+      final ok = await Get.find<UploadManager>().run(UploadTask(
+        isEdit: true,
+        lectureId: id,
+        courseId: 0,
         title: title,
         type: type,
         url: url,
         content: content,
         sortOrder: sortOrder,
-        videoFilePath: uploadPath,
+        videoFilePath: videoFilePath,
         fileBytes: fileBytes,
         fileName: fileName,
-        onSendProgress: uploadPath != null
-            ? (sent, total) {
-                if (total > 0) uploadProgress.value = (sent / total).clamp(0.0, 1.0);
-              }
-            : null,
-      );
-      Get.snackbar(
-        'تم',
-        videoFilePath != null
-            ? 'تم رفع الملف بنجاح ✓${compressSummary == null ? '' : '\n$compressSummary'}'
-            : 'تم تحديث المحاضرة',
-        backgroundColor: Colors.green,
-        colorText: Colors.white,
-      );
-      await loadLectures();
-      return true;
-    } catch (e) {
-      Get.snackbar(
-        'خطأ',
-        apiErrorMessage(e,
-            fallback: videoFilePath != null ? 'فشل رفع الملف' : 'فشل تحديث المحاضرة'),
-        backgroundColor: Colors.red,
-        colorText: Colors.white,
-      );
-      return false;
+        compress: compress,
+        successMessage:
+            videoFilePath != null ? 'تم رفع الملف بنجاح ✓' : 'تم تحديث المحاضرة',
+        failMessage: videoFilePath != null ? 'فشل رفع الملف' : 'فشل تحديث المحاضرة',
+        upload: (path, onSend) => _provider.updateLecture(
+          id,
+          title: title,
+          type: type,
+          url: url,
+          content: content,
+          sortOrder: sortOrder,
+          videoFilePath: path,
+          fileBytes: fileBytes,
+          fileName: fileName,
+          onSendProgress: onSend,
+        ),
+      ));
+      if (ok) await loadLectures();
+      return ok;
     } finally {
       busy.value = false;
-      uploadProgress.value = 0;
-      compressing.value = false;
-      compressProgress.value = 0;
-    compressEta.value = 0;
-      if (videoFilePath != null) await VideoCompressor.deleteCache();
     }
   }
 

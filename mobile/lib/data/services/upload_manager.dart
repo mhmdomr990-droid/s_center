@@ -29,6 +29,7 @@ class UploadTask {
     this.fileBytes,
     this.fileName,
     this.compress = true,
+    this.upload,
   });
 
   final bool isEdit;
@@ -43,6 +44,11 @@ class UploadTask {
   final Uint8List? fileBytes;
   final String? fileName;
   final bool compress;
+
+  /// مسار رفع مخصّص (مثل الأدمن: endpoints مختلفة) — إن وُجد استُبدل به
+  /// المسار الافتراضي عبر TeacherProvider.
+  final Future<void> Function(String? videoFilePath, void Function(int, int)? onSendProgress)?
+      upload;
   final String successMessage;
   final String failMessage;
 }
@@ -126,7 +132,9 @@ class UploadManager extends GetxController {
           ? null
           : (int sent, int total) => _onSendProgress(task, sent, total);
 
-      if (task.isEdit) {
+      if (task.upload != null) {
+        await task.upload!(uploadPath, onSend);
+      } else if (task.isEdit) {
         await _provider.updateLecture(
           task.lectureId!,
           title: task.title,
@@ -242,13 +250,12 @@ class UploadManager extends GetxController {
   Future<void> _finishService(
       {required bool ok, required String text}) async {
     try {
+      final clean = text.length > 120 ? text.substring(0, 120) : text;
+      await FlutterForegroundTask.showStandaloneNotification(
+        title: ok ? 'اكتمل رفع المحاضرة ✓' : 'فشل رفع المحاضرة ✗',
+        text: clean.replaceAll('\n', ' '),
+      );
       if (await FlutterForegroundTask.isRunningService) {
-        final clean = text.length > 120 ? text.substring(0, 120) : text;
-        await FlutterForegroundTask.updateService(
-          notificationTitle: ok ? 'اكتمل رفع المحاضرة ✓' : 'فشل رفع المحاضرة ✗',
-          notificationText: clean.replaceAll('\n', ' '),
-        );
-        await Future.delayed(const Duration(seconds: 5));
         await FlutterForegroundTask.stopService();
       }
     } catch (_) {}

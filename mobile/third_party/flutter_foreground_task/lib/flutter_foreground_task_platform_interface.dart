@@ -69,6 +69,12 @@ abstract class FlutterForegroundTaskPlatform extends PlatformInterface {
     throw UnimplementedError('stopService() has not been implemented.');
   }
 
+  Future<void> showStandaloneNotification(
+      {required String title, String text = ''}) {
+    throw UnimplementedError(
+        'showStandaloneNotification() has not been implemented.');
+  }
+
   Future<bool> get isRunningService {
     throw UnimplementedError('isRunningService has not been implemented.');
   }

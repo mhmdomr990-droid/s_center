@@ -6,6 +6,7 @@ import '../../../app/routes/app_routes.dart';
 import '../../../app/theme/app_colors.dart';
 import '../../../app/theme/app_text_styles.dart';
 import '../../../data/models/lecture_model.dart';
+import '../../../data/services/upload_manager.dart';
 import '../../../widgets/custom_text_field.dart';
 import '../../../widgets/empty_state.dart';
 import '../../../widgets/gradient_app_bar.dart';
@@ -323,6 +324,18 @@ class _CoursesView extends StatelessWidget {
                           Text('${formatAmount(course['price'])} SYP',
                               style: AppTextStyles.caption
                                   .copyWith(fontWeight: FontWeight.w700)),
+                          const SizedBox(height: 4),
+                          Row(
+                            children: [
+                              Icon(Icons.people_outline,
+                                  size: 15, color: AppColors.textSecondary),
+                              const SizedBox(width: 5),
+                              Text(
+                                  'المشترون: ${course['purchases_count'] ?? 0}',
+                                  style: AppTextStyles.caption
+                                      .copyWith(color: AppColors.textSecondary)),
+                            ],
+                          ),
                           Row(
                             mainAxisAlignment: MainAxisAlignment.end,
                             children: [
@@ -699,6 +712,9 @@ class _LecturesView extends StatelessWidget {
     void err(String msg) => Get.snackbar('خطأ', msg,
         backgroundColor: Colors.red, colorText: Colors.white);
 
+    final um = Get.find<UploadManager>();
+    final prevSuppressed = um.overlaySuppressed.value;
+    Future.microtask(() => um.overlaySuppressed.value = true);
     showDialog<void>(
       context: context,
       builder: (dialogContext) => StatefulBuilder(
@@ -1055,10 +1071,10 @@ class _LecturesView extends StatelessWidget {
                           border: OutlineInputBorder()),
                     ),
                     Obx(() {
-                      final compressing = ctrl.compressing.value;
-                      final cp = ctrl.compressProgress.value;
-                      final eta = ctrl.compressEta.value;
-                      final up = ctrl.uploadProgress.value;
+                      final compressing = um.compressing.value;
+                      final cp = um.compressProgress.value;
+                      final eta = um.compressEta.value;
+                      final up = um.progress.value;
                       final busy = ctrl.busy.value;
                       final willSendFile = selectedType == 'VIDEO'
                           ? (videoPath != null || videoBytes != null)
@@ -1119,6 +1135,7 @@ class _LecturesView extends StatelessWidget {
           );
         },
       ),
-    );
+    ).whenComplete(() =>
+        Future.microtask(() => um.overlaySuppressed.value = prevSuppressed));
   }
 }

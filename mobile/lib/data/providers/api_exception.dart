@@ -58,16 +58,18 @@ String apiErrorMessage(Object error, {String fallback = 'حدث خطأ، حاو�
       error.type == DioExceptionType.unknown) {
     // المستخدم يرى سطراً واحداً فقط — والتفاصيل (العنوان/السبب/النوع/
     // الفحص) تبقى حصراً في نسخ التطوير للتشخيص
-    const short = 'تعذر الاتصال بالخادم، تحقق من الشبكة';
-    if (!kDebugMode) return short;
-    final origin = error.requestOptions.uri.origin;
-    final where = origin.isEmpty ? '' : '\nالعنوان: $origin';
-    var cause = error.error?.toString() ?? '';
-    if (cause.length > 160) cause = cause.substring(0, 160);
-    final why = cause.isEmpty ? '' : '\nالسبب: $cause';
-    final hint = _netHint(cause);
-    final hintLine = hint.isEmpty ? '' : '\n$hint';
-    return '$short$where$why\nالنوع: ${error.type.name}$hintLine';
+    if (kDebugMode) {
+      final origin = error.requestOptions.uri.origin;
+      final where = origin.isEmpty ? '' : '\nالعنوان: $origin';
+      var cause = error.error?.toString() ?? '';
+      if (cause.length > 160) cause = cause.substring(0, 160);
+      final why = cause.isEmpty ? '' : '\nالسبب: $cause';
+      final hint = _netHint(cause);
+      final hintLine = hint.isEmpty ? '' : '\n$hint';
+      debugPrint(
+          'انقطاع شبكة:$where$why\nالنوع: ${error.type.name}$hintLine');
+    }
+    return 'فشل الاتصال بالخادم';
   }
 
   if (status != null && status >= 500) {

@@ -204,6 +204,13 @@ class FlutterForegroundTask {
     }
   }
 
+  static Future<void> showStandaloneNotification(
+      {required String title, String text = ''}) async {
+    try {
+      await _platform.showStandaloneNotification(title: title, text: text);
+    } catch (_) {}
+  }
+
   @visibleForTesting
   static Future<void> checkServiceStateChange({required bool target}) async {
     // official doc: Once the service has been created, the service must call its startForeground() method within 5 seconds.

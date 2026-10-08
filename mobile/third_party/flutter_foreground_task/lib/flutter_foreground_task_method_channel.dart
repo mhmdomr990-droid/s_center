@@ -97,6 +97,15 @@ class MethodChannelFlutterForegroundTask extends FlutterForegroundTaskPlatform {
   }
 
   @override
+  Future<void> showStandaloneNotification(
+      {required String title, String text = ''}) async {
+    await mMDChannel.invokeMethod('showStandaloneNotification', {
+      'title': title,
+      'text': text,
+    });
+  }
+
+  @override
   Future<bool> get isRunningService async {
     return await mMDChannel.invokeMethod('isRunningService');
   }
