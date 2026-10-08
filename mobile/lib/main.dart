@@ -76,28 +76,33 @@ class SCenterApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return GetMaterialApp(
-      title: 'Student Center',
-      debugShowCheckedModeBanner: false,
-      theme: AppTheme.lightTheme,
-      darkTheme: AppTheme.darkTheme,
-      themeMode: Get.find<ThemeController>().themeMode.value,
-      scrollBehavior: AppScrollBehavior(),
-      locale: const Locale('ar'),
-      supportedLocales: const [Locale('ar')],
-      localizationsDelegates: const [
-        GlobalMaterialLocalizations.delegate,
-        GlobalWidgetsLocalizations.delegate,
-        GlobalCupertinoLocalizations.delegate,
-      ],
-      builder: (context, child) {
-        return Directionality(
-          textDirection: TextDirection.rtl,
-          child: child ?? const SizedBox.shrink(),
-        );
-      },
-      initialRoute: AppRoutes.splash,
-      getPages: AppPages.pages,
-    );
+    // Obx: يعيد تقييم AppTheme.*Theme (getters تلتقط ثوابت AppColors)
+    // عند تبديل الثيم — وإلا بقيت ThemeData المخزّنة وقت الإقلاع
+    // بألوان الافتراضي فيظل الحوار وحقول Material فاتحة بالوضع الداكن
+    return Obx(() {
+      return GetMaterialApp(
+        title: 'Student Center',
+        debugShowCheckedModeBanner: false,
+        theme: AppTheme.lightTheme,
+        darkTheme: AppTheme.darkTheme,
+        themeMode: Get.find<ThemeController>().themeMode.value,
+        scrollBehavior: AppScrollBehavior(),
+        locale: const Locale('ar'),
+        supportedLocales: const [Locale('ar')],
+        localizationsDelegates: const [
+          GlobalMaterialLocalizations.delegate,
+          GlobalWidgetsLocalizations.delegate,
+          GlobalCupertinoLocalizations.delegate,
+        ],
+        builder: (context, child) {
+          return Directionality(
+            textDirection: TextDirection.rtl,
+            child: child ?? const SizedBox.shrink(),
+          );
+        },
+        initialRoute: AppRoutes.splash,
+        getPages: AppPages.pages,
+      );
+    });
   }
 }
