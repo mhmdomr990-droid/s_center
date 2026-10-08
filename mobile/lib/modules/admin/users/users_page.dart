@@ -131,6 +131,9 @@ class UsersPage extends StatelessWidget {
   Widget _buildUserCard(UsersController ctrl, Map<String, dynamic> u) {
     final isActive = u['is_active'] ?? true;
     final role = (u['role'] ?? 'STUDENT') as String;
+    final teacherTotals = role == 'TEACHER'
+        ? ctrl.teacherTotalsById[(u['id'] as num?)?.toInt()]
+        : null;
     final roleColor = switch (role) {
       'ADMIN' => AppColors.error,
       'TEACHER' => AppColors.primary,
@@ -214,8 +217,21 @@ class UsersPage extends StatelessWidget {
               Column(
                 crossAxisAlignment: CrossAxisAlignment.end,
                 children: [
-                  Text('${formatAmount(u['balance'])} SYP',
-                      style: AppTextStyles.caption.copyWith(fontWeight: FontWeight.w700)),
+                  if (teacherTotals != null) ...[
+                    Text('الأرباح: ${formatAmount(teacherTotals['earned'])} SYP',
+                        style:
+                            AppTextStyles.caption.copyWith(fontWeight: FontWeight.w700)),
+                    const SizedBox(height: 2),
+                    Text('الباقي: ${formatAmount(teacherTotals['remaining'])} SYP',
+                        style: AppTextStyles.caption.copyWith(
+                          color: (double.tryParse('${teacherTotals['remaining']}') ?? 0) > 0
+                              ? AppColors.success
+                              : AppColors.textSecondary,
+                        )),
+                  ] else
+                    Text('${formatAmount(u['balance'])} SYP',
+                        style:
+                            AppTextStyles.caption.copyWith(fontWeight: FontWeight.w700)),
                   const SizedBox(height: 2),
                   Icon(Icons.chevron_left_rounded, color: AppColors.textHint, size: 22),
                 ],

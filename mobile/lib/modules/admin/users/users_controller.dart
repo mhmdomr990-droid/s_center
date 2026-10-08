@@ -16,6 +16,8 @@ class UsersController extends GetxController {
   final roleFilter = ''.obs;
   final searchQuery = ''.obs;
   final specializations = <Map<String, dynamic>>[].obs;
+  // مجاميع المعلمين من GET /admin/teachers — teacher_id → earned/paid/remaining
+  final teacherTotalsById = <int, Map<String, dynamic>>{}.obs;
 
   final searchCtrl = TextEditingController();
   Timer? _debounce;
@@ -30,6 +32,7 @@ class UsersController extends GetxController {
   void onInit() {
     super.onInit();
     load();
+    unawaited(_loadTeacherTotals());
     unawaited(loadSpecializations());
   }
 
@@ -46,6 +49,18 @@ class UsersController extends GetxController {
       searchQuery.value = value.trim();
       load();
     });
+  }
+
+  Future<void> _loadTeacherTotals() async {
+    try {
+      final response = await _provider.teachers();
+      final rows = List<Map<String, dynamic>>.from(
+          (response.data['data'] as List).map((e) => Map<String, dynamic>.from(e)));
+      teacherTotalsById
+        ..clear()
+        ..addEntries(rows.map((row) =>
+            MapEntry((row['teacher_id'] as num).toInt(), row)));
+    } catch (_) {}
   }
 
   Future<void> load() async {

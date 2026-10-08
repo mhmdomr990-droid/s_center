@@ -28,6 +28,8 @@ class UserDetailPage extends StatelessWidget {
             final isActive = u['is_active'] ?? true;
             final role = (u['role'] ?? 'STUDENT') as String;
             final isTeacher = role == 'TEACHER';
+            final teacherTotals =
+                isTeacher ? ctrl.teacherTotals.value : null;
             final roleLabel = switch (role) {
               'ADMIN' => 'إداري',
               'TEACHER' => 'معلم',
@@ -76,16 +78,46 @@ class UserDetailPage extends StatelessWidget {
                           Text('${u['phone']}', style: AppTextStyles.caption),
                         ],
                         const SizedBox(height: 12),
-                        Row(
-                          children: [
-                            Expanded(child: _stat('الرصيد', '${formatAmount(u['balance'])} SYP')),
-                            Expanded(child: _stat('المشتريات', '${u['purchases_count'] ?? 0}')),
-                            Expanded(
-                              child: _stat('الحالة', isActive ? 'مفعّل' : 'معطّل',
-                                  color: isActive ? AppColors.success : AppColors.error),
-                            ),
-                          ],
-                        ),
+                        if (teacherTotals != null) ...[
+                          Row(
+                            children: [
+                              Expanded(
+                                  child: _stat('الأرباح',
+                                      '${formatAmount(teacherTotals['earned'])} SYP')),
+                              Expanded(
+                                  child: _stat('المدفوع',
+                                      '${formatAmount(teacherTotals['paid'])} SYP')),
+                              Expanded(
+                                  child: _stat('الباقي',
+                                      '${formatAmount(teacherTotals['remaining'])} SYP')),
+                            ],
+                          ),
+                          const SizedBox(height: 10),
+                          Row(
+                            children: [
+                              Expanded(
+                                  child: _stat('المشتريات',
+                                      '${teacherTotals['purchases_count'] ?? 0}')),
+                              Expanded(
+                                child: _stat('الحالة',
+                                    isActive ? 'مفعّل' : 'معطّل',
+                                    color: isActive
+                                        ? AppColors.success
+                                        : AppColors.error),
+                              ),
+                            ],
+                          ),
+                        ] else
+                          Row(
+                            children: [
+                              Expanded(child: _stat('الرصيد', '${formatAmount(u['balance'])} SYP')),
+                              Expanded(child: _stat('المشتريات', '${u['purchases_count'] ?? 0}')),
+                              Expanded(
+                                child: _stat('الحالة', isActive ? 'مفعّل' : 'معطّل',
+                                    color: isActive ? AppColors.success : AppColors.error),
+                              ),
+                            ],
+                          ),
                       ],
                     ),
                   ),

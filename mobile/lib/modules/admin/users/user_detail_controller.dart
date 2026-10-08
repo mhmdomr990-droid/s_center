@@ -17,6 +17,7 @@ class UserDetailController extends GetxController {
   final purchases = <Map<String, dynamic>>[].obs;
   final teacherPayouts = <Map<String, dynamic>>[].obs;
   final teacherCourses = <Map<String, dynamic>>[].obs;
+  final teacherTotals = Rxn<Map<String, dynamic>>();
   final tab = 0.obs; // طالب: 0 = حركات، 1 = مشتريات | معلم: 0 = دفعات، 1 = دورات
   final busy = false.obs;
 
@@ -54,6 +55,7 @@ class UserDetailController extends GetxController {
 
   Future<void> load() async {
     isLoading.value = true;
+    teacherTotals.value = null;
     try {
       final response = await _provider.userById(userId);
       user.value = Map<String, dynamic>.from(response.data['data']);
@@ -116,6 +118,9 @@ class UserDetailController extends GetxController {
     try {
       final response = await _provider.teacherById(userId);
       final data = Map<String, dynamic>.from(response.data['data']);
+      final totals = data['totals'];
+      teacherTotals.value =
+          totals == null ? null : Map<String, dynamic>.from(totals);
       teacherPayouts.assignAll(List<Map<String, dynamic>>.from(
           ((data['payouts'] ?? []) as List).map((e) => Map<String, dynamic>.from(e))));
       teacherCourses.assignAll(List<Map<String, dynamic>>.from(
