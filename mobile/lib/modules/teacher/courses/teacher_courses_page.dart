@@ -58,7 +58,7 @@ class TeacherCoursesPage extends StatelessWidget {
                                 ctrl.selectedSpecializationId.value == null,
                                 () => ctrl.selectSpecialization(null),
                               ),
-                              ...ctrl.specializations.map((spec) => _buildFilterChip(
+                              ...ctrl.chipSpecializations.map((spec) => _buildFilterChip(
                                     spec.name,
                                     ctrl.selectedSpecializationId.value == spec.id,
                                     () => ctrl.selectSpecialization(spec.id),
