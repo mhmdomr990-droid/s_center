@@ -15,6 +15,9 @@ String apiErrorMessage(Object error, {String fallback = 'حدث خطأ، حاو�
   // ونعتمد الرسالة المختصرة حسب الحالة أدناه
   if (serverMsg != null && serverMsg.length > 120) serverMsg = null;
 
+  // رفض لحجم الملف/الطلب — رسالة واضحة مهما جاء نص الخادم (أو HTML من الشبكة)
+  if (status == 413) return 'حجم الملف يتجاوز الحد المسموح على الخادم';
+
   if (serverMsg != null && serverMsg.isNotEmpty) {
     final m = serverMsg.toLowerCase();
     if (m.contains('insufficient')) return 'الرصيد غير كافٍ';
