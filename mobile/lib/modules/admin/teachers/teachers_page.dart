@@ -128,32 +128,34 @@ class TeachersPage extends StatelessWidget {
       context: context,
       builder: (dialogContext) => AlertDialog(
         title: const Text('معلم جديد'),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            TextField(
-              controller: fullNameCtrl,
-              decoration:
-                  const InputDecoration(labelText: 'الاسم الكامل', border: OutlineInputBorder()),
-            ),
-            const SizedBox(height: 12),
-            TextField(
-              controller: usernameCtrl,
-              decoration: const InputDecoration(
-                labelText: 'اسم المستخدم (أحرف صغيرة وأرقام و_)',
-                border: OutlineInputBorder(),
+        content: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              TextField(
+                controller: fullNameCtrl,
+                decoration:
+                    const InputDecoration(labelText: 'الاسم الكامل', border: OutlineInputBorder()),
               ),
-            ),
-            const SizedBox(height: 12),
-            TextField(
-              controller: passwordCtrl,
-              obscureText: true,
-              decoration: const InputDecoration(
-                labelText: 'كلمة المرور (8 أحرف على الأقل)',
-                border: OutlineInputBorder(),
+              const SizedBox(height: 12),
+              TextField(
+                controller: usernameCtrl,
+                decoration: const InputDecoration(
+                  labelText: 'اسم المستخدم (أحرف صغيرة وأرقام و_)',
+                  border: OutlineInputBorder(),
+                ),
               ),
-            ),
-          ],
+              const SizedBox(height: 12),
+              TextField(
+                controller: passwordCtrl,
+                obscureText: true,
+                decoration: const InputDecoration(
+                  labelText: 'كلمة المرور (8 أحرف على الأقل)',
+                  border: OutlineInputBorder(),
+                ),
+              ),
+            ],
+          ),
         ),
         actions: [
           TextButton(
