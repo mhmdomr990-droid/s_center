@@ -370,8 +370,12 @@ class _CoursesView extends StatelessWidget {
     );
   }
 
-  static void _showCourseDialog(BuildContext context, CoursesController ctrl,
-      {Map<String, dynamic>? course}) {
+  static Future<void> _showCourseDialog(BuildContext context, CoursesController ctrl,
+      {Map<String, dynamic>? course}) async {
+    // يعيد جلب المعلمين والتخصصات عند كل فتح — حتى يظهر المعلم المضاف
+    // للتو دون الحاجة لتسجيل الخروج والدخول
+    await ctrl.loadMeta();
+    if (!context.mounted) return;
     final isEdit = course != null;
     final nameCtrl = TextEditingController(text: course?['name'] ?? '');
     final priceCtrl =
