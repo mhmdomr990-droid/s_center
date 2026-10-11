@@ -119,22 +119,24 @@ class TopupRequestsController extends GetxController {
     final confirmed = await Get.dialog<bool>(
       AlertDialog(
         title: const Text('رفض طلب الشحن'),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text('الطلب: ${req['amount']} SYP — ${req['full_name']}',
-                style: const TextStyle(fontSize: 13)),
-            const SizedBox(height: 12),
-            TextField(
-              controller: rejectReasonCtrl,
-              maxLines: 3,
-              decoration: const InputDecoration(
-                labelText: 'سبب الرفض (إلزامي)',
-                border: OutlineInputBorder(),
+        content: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text('الطلب: ${req['amount']} SYP — ${req['full_name']}',
+                  style: const TextStyle(fontSize: 13)),
+              const SizedBox(height: 12),
+              TextField(
+                controller: rejectReasonCtrl,
+                maxLines: 3,
+                decoration: const InputDecoration(
+                  labelText: 'سبب الرفض (إلزامي)',
+                  border: OutlineInputBorder(),
+                ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
         actions: [
           TextButton(onPressed: () => Get.back(result: false), child: const Text('إلغاء')),

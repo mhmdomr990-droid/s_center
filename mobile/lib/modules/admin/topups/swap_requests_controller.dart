@@ -87,23 +87,25 @@ class SwapRequestsAdminController extends GetxController {
       StatefulBuilder(
         builder: (context, setState) => AlertDialog(
           title: const Text('رفض طلب التبديل'),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                  'تبديل «${item['old_course_name']}» بـ«${item['new_course_name']}»'),
-              const SizedBox(height: 12),
-              TextField(
-                controller: reasonCtrl,
-                maxLines: 3,
-                decoration: InputDecoration(
-                  labelText: 'سبب الرفض *',
-                  border: const OutlineInputBorder(),
-                  errorText: errorText,
+          content: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                    'تبديل «${item['old_course_name']}» بـ«${item['new_course_name']}»'),
+                const SizedBox(height: 12),
+                TextField(
+                  controller: reasonCtrl,
+                  maxLines: 3,
+                  decoration: InputDecoration(
+                    labelText: 'سبب الرفض *',
+                    border: const OutlineInputBorder(),
+                    errorText: errorText,
+                  ),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
           actions: [
             TextButton(

@@ -32,36 +32,38 @@ class TeacherAccountController extends GetxController {
     final confirmed = await Get.dialog<bool>(
       AlertDialog(
         title: const Text('تغيير كلمة المرور'),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            TextField(
-              controller: oldPasswordCtrl,
-              obscureText: true,
-              decoration: const InputDecoration(
-                labelText: 'كلمة المرور الحالية',
-                border: OutlineInputBorder(),
+        content: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              TextField(
+                controller: oldPasswordCtrl,
+                obscureText: true,
+                decoration: const InputDecoration(
+                  labelText: 'كلمة المرور الحالية',
+                  border: OutlineInputBorder(),
+                ),
               ),
-            ),
-            const SizedBox(height: 12),
-            TextField(
-              controller: newPasswordCtrl,
-              obscureText: true,
-              decoration: const InputDecoration(
-                labelText: 'كلمة المرور الجديدة (8 أحرف على الأقل)',
-                border: OutlineInputBorder(),
+              const SizedBox(height: 12),
+              TextField(
+                controller: newPasswordCtrl,
+                obscureText: true,
+                decoration: const InputDecoration(
+                  labelText: 'كلمة المرور الجديدة (8 أحرف على الأقل)',
+                  border: OutlineInputBorder(),
+                ),
               ),
-            ),
-            const SizedBox(height: 12),
-            TextField(
-              controller: confirmCtrl,
-              obscureText: true,
-              decoration: const InputDecoration(
-                labelText: 'تأكيد كلمة المرور الجديدة',
-                border: OutlineInputBorder(),
+              const SizedBox(height: 12),
+              TextField(
+                controller: confirmCtrl,
+                obscureText: true,
+                decoration: const InputDecoration(
+                  labelText: 'تأكيد كلمة المرور الجديدة',
+                  border: OutlineInputBorder(),
+                ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
         actions: [
           TextButton(onPressed: () => Get.back(result: false), child: const Text('إلغاء')),

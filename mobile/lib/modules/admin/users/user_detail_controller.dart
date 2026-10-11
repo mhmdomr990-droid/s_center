@@ -183,26 +183,28 @@ class UserDetailController extends GetxController {
     final confirmed = await Get.dialog<bool>(
       AlertDialog(
         title: const Text('تسوية الرصيد'),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            TextField(
-              controller: adjustAmountCtrl,
-              keyboardType: const TextInputType.numberWithOptions(signed: true, decimal: true),
-              decoration: const InputDecoration(
-                labelText: 'المبلغ (سالب للخصم)',
-                border: OutlineInputBorder(),
+        content: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              TextField(
+                controller: adjustAmountCtrl,
+                keyboardType: const TextInputType.numberWithOptions(signed: true, decimal: true),
+                decoration: const InputDecoration(
+                  labelText: 'المبلغ (سالب للخصم)',
+                  border: OutlineInputBorder(),
+                ),
               ),
-            ),
-            const SizedBox(height: 12),
-            TextField(
-              controller: adjustDescCtrl,
-              decoration: const InputDecoration(
-                labelText: 'الوصف (إلزامي)',
-                border: OutlineInputBorder(),
+              const SizedBox(height: 12),
+              TextField(
+                controller: adjustDescCtrl,
+                decoration: const InputDecoration(
+                  labelText: 'الوصف (إلزامي)',
+                  border: OutlineInputBorder(),
+                ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
         actions: [
           TextButton(onPressed: () => Get.back(result: false), child: const Text('إلغاء')),

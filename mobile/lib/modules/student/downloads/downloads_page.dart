@@ -39,31 +39,6 @@ class DownloadsPage extends StatelessWidget {
     });
   }
 
-  Future<void> _confirmDelete(
-      BuildContext context, DownloadManager dm, DownloadRecord rec) async {
-    final confirmed = await showDialog<bool>(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        title: const Text('حذف التنزيل'),
-        content: Text(
-            'هل تريد حذف "${rec.title ?? 'محاضرة #${rec.lectureId}'}" من الجهاز؟'),
-        actions: [
-          TextButton(
-              onPressed: () => Navigator.pop(ctx, false),
-              child: const Text('إلغاء')),
-          TextButton(
-            onPressed: () => Navigator.pop(ctx, true),
-            child: const Text('حذف', style: TextStyle(color: AppColors.error)),
-          ),
-        ],
-      ),
-    );
-    if (confirmed == true) {
-      await dm.removeDownload(rec.lectureId);
-    }
-  }
-
   @override
   Widget build(BuildContext context) {
     final dm = Get.find<DownloadManager>();
@@ -137,12 +112,6 @@ class DownloadsPage extends StatelessWidget {
                       overflow: TextOverflow.ellipsis,
                     ),
                   ],
-                ),
-                trailing: IconButton(
-                  tooltip: 'حذف من الجهاز',
-                  icon: const Icon(Icons.delete_outline,
-                      color: AppColors.error, size: 22),
-                  onPressed: () => _confirmDelete(context, dm, rec),
                 ),
               ),
             );

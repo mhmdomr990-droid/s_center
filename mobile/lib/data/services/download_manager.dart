@@ -68,6 +68,7 @@ class DownloadRecord {
 class DownloadManager extends GetxController {
   static const _prefsKeyLegacy = 'lecture_downloads_v1';
   static const _prefsKeyPrefix = 'lecture_downloads_v1__u';
+  static const _everKeyPrefix = 'lecture_ever_downloaded_v1__u';
   static const _keyStorageKey = 'lecture_aes_key_v1';
   static const _chunkSize = 64 * 1024;
   static const _headerMagic = [0x53, 0x43, 0x56, 0x31]; // SCV1
@@ -84,11 +85,16 @@ class DownloadManager extends GetxController {
   final Set<int> downloadingIds = <int>{}.obs;
   final RxBool ready = false.obs;
 
+  /// معرّفات المحاضرات التي حُمِّلت من قبل هذا الحساب — تبقى بعد انتهاء
+  /// المهلة أو الحذف اليدوي فلا يُسمح بإعادة التحميل (التحميل مرة واحدة).
+  final Set<int> everDownloaded = <int>{};
+
   /// مالك التنزيلات الحالي — لا قراءة ولا كتابة بلا نطاق نشط،
   /// فتبقى تنزيلات كل حساب منفصلة تماماً.
   int? _userId;
 
   String? get _scopedKey => _userId == null ? null : '$_prefsKeyPrefix$_userId';
+  String? get _everScopedKey => _userId == null ? null : '$_everKeyPrefix$_userId';
 
   final Dio _mediaDio = Dio(BaseOptions(
     connectTimeout: const Duration(seconds: 60),
@@ -108,6 +114,7 @@ class DownloadManager extends GetxController {
     if (_userId == userId) return;
     _userId = userId;
     records.clear();
+    everDownloaded.clear();
     await _clearTempPlaintext();
     await _migrateLegacyScope();
     await _load();
@@ -117,6 +124,7 @@ class DownloadManager extends GetxController {
   Future<void> clearScope() async {
     _userId = null;
     records.clear();
+    everDownloaded.clear();
     await _clearTempPlaintext();
   }
 
@@ -208,6 +216,23 @@ class DownloadManager extends GetxController {
       } else {
         records.clear();
       }
+
+      // تحميل سجل «حُمِّل من قبل» + ترقية: أي سجل قائمة الآن يُعامَل
+      // كأنه حُمِّل من قبل (يُدمج ولا يُمسح)
+      everDownloaded.clear();
+      everDownloaded.addAll(records.keys);
+      final everKey = _everScopedKey;
+      if (everKey != null) {
+        final everRaw = prefs.getString(everKey);
+        if (everRaw != null && everRaw.isNotEmpty) {
+          try {
+            final everList = jsonDecode(everRaw) as List<dynamic>;
+            everDownloaded.addAll(everList.map((e) => (e as num).toInt()));
+          } catch (_) {
+            debugPrint('EVER_DL_BAD $everRaw');
+          }
+        }
+      }
     } catch (e) {
       // لا نمسح الذاكرة عند فشل القراءة — والملف لا يُعاد كتابته إلا
       // بعد عملية صريحة (تحميل/حذف)، فلا يضيع سجل سليم بسبب خطأ قراءة
@@ -225,6 +250,13 @@ class DownloadManager extends GetxController {
     await prefs.setString(key, jsonEncode(list));
   }
 
+  Future<void> _saveEverDownloaded() async {
+    final key = _everScopedKey;
+    if (key == null) return;
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString(key, jsonEncode(everDownloaded.toList()));
+  }
+
   DownloadRecord? recordFor(int lectureId) {
     final rec = records[lectureId];
     if (rec == null || rec.isExpired) return null;
@@ -232,6 +264,9 @@ class DownloadManager extends GetxController {
   }
 
   bool isDownloaded(int lectureId) => recordFor(lectureId) != null;
+
+  /// هل حُمِّلت هذه المحاضرة من قبل هذا الحساب (حتى لو حُذف الملف الآن)؟
+  bool isEverDownloaded(int lectureId) => everDownloaded.contains(lectureId);
 
   Future<void> cleanupExpired() async {
     final key = _scopedKey;
@@ -389,6 +424,8 @@ class DownloadManager extends GetxController {
         sizeBytes: sizeBytes,
       );
       records[lectureId] = rec;
+      everDownloaded.add(lectureId);
+      await _saveEverDownloaded();
       await _save();
       progress[lectureId] = 1;
     } catch (e) {

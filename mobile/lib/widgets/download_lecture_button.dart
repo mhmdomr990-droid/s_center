@@ -35,25 +35,28 @@ class _DownloadLectureButtonState extends State<DownloadLectureButton> {
     if (_dm.downloadingIds.contains(widget.lectureId)) return;
 
     if (_dm.isDownloaded(widget.lectureId)) {
-      final confirmed = await showDialog<bool>(
-        context: context,
-        builder: (ctx) => AlertDialog(
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-          title: const Text('حذف التنزيل'),
-          content: const Text('هل تريد حذف النسخة المحفوظة على الجهاز؟'),
-          actions: [
-            TextButton(
-                onPressed: () => Navigator.pop(ctx, false),
-                child: const Text('إلغاء')),
-            TextButton(
-                onPressed: () => Navigator.pop(ctx, true),
-                child: const Text('حذف', style: TextStyle(color: AppColors.error))),
-          ],
-        ),
-      );
-      if (confirmed == true) {
-        await _dm.removeDownload(widget.lectureId);
-        if (mounted) setState(() {});
+      // الملف محفوظ بعد أول تحميل — لا يمكن حذفه يدوياً
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('الملف محفوظ على الجهاز — لا يمكن حذفه'),
+            backgroundColor: AppColors.error,
+          ),
+        );
+      }
+      return;
+    }
+
+    // التحميل متاح مرة واحدة لكل محاضرة — إن حُمِّلت من قبل (حتى بعد
+    // حذف الملف أو انتهاء المهلة) يُمنع الإعادة وتظهر رسالة توضيحية
+    if (_dm.isEverDownloaded(widget.lectureId)) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('لقد قمت بتحميل هذا الملف سابقاً — التحميل متاح مرة واحدة فقط'),
+            backgroundColor: AppColors.error,
+          ),
+        );
       }
       return;
     }
@@ -91,6 +94,7 @@ class _DownloadLectureButtonState extends State<DownloadLectureButton> {
         final downloading = dm.downloadingIds.contains(widget.lectureId);
         final p = dm.progress[widget.lectureId];
         final downloaded = dm.isDownloaded(widget.lectureId);
+        final everDownloaded = dm.isEverDownloaded(widget.lectureId);
 
         if (downloading) {
           return SizedBox(
@@ -127,17 +131,22 @@ class _DownloadLectureButtonState extends State<DownloadLectureButton> {
           tooltip: kIsWeb
               ? 'التحميل متاح على تطبيق أندرويد'
               : downloaded
-                  ? 'محفوظة — اضغط للحذف'
-                  : 'تحميل للمشاهدة دون اتصال',
+                  ? 'محفوظة — لا يمكن حذفها'
+                  : everDownloaded
+                      ? 'لقد قمت بتحميل هذا الملف سابقاً — التحميل متاح مرة واحدة فقط'
+                      : 'تحميل للمشاهدة دون اتصال',
           icon: downloaded
               ? const Icon(Icons.download_done, color: AppColors.success, size: 26)
-              : Icon(
-                  Icons.download_rounded,
-                  color: widget.enabled && !kIsWeb
-                      ? AppColors.primary
-                      : AppColors.textHint,
-                  size: 26,
-                ),
+              : everDownloaded
+                  ? Icon(Icons.downloading_outlined,
+                      color: AppColors.textHint, size: 26)
+                  : Icon(
+                      Icons.download_rounded,
+                      color: widget.enabled && !kIsWeb
+                          ? AppColors.primary
+                          : AppColors.textHint,
+                      size: 26,
+                    ),
         );
       },
     );

@@ -38,12 +38,15 @@ class LoadingListShimmer extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Column(
-      children: List.generate(
-        itemCount,
-        (index) => Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
-          child: LoadingShimmer(height: 80, borderRadius: 16),
+    return SingleChildScrollView(
+      physics: const NeverScrollableScrollPhysics(),
+      child: Column(
+        children: List.generate(
+          itemCount,
+          (index) => Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+            child: LoadingShimmer(height: 80, borderRadius: 16),
+          ),
         ),
       ),
     );
@@ -57,12 +60,14 @@ class CourseCardSkeleton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Column(
-      children: List.generate(
-        itemCount,
-        (index) => Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
-          child: Shimmer.fromColors(
+    return SingleChildScrollView(
+      physics: const NeverScrollableScrollPhysics(),
+      child: Column(
+        children: List.generate(
+          itemCount,
+          (index) => Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+            child: Shimmer.fromColors(
             baseColor: AppColors.shimmerBase,
             highlightColor: AppColors.shimmerHighlight,
             child: Container(
@@ -118,6 +123,7 @@ class CourseCardSkeleton extends StatelessWidget {
           ),
         ),
       ),
+      ),
     );
   }
 }
@@ -129,20 +135,24 @@ class NotificationRowSkeleton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Column(
-      children: List.generate(
-        itemCount,
-        (index) => Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-          child: Shimmer.fromColors(
-            baseColor: AppColors.shimmerBase,
-            highlightColor: AppColors.shimmerHighlight,
-            child: Container(
-              height: 92,
-              padding: const EdgeInsets.all(14),
-              decoration: BoxDecoration(
-                color: AppColors.shimmerBase,
-                borderRadius: BorderRadius.circular(12),
+    // SingleChildScrollView: يمنع overflow على الشاشات القصيرة
+    // (6 بطاقات ≈ 600px قد تتجاوز ارتفاع الجهاز أثناء التحميل)
+    return SingleChildScrollView(
+      physics: const NeverScrollableScrollPhysics(),
+      child: Column(
+        children: List.generate(
+          itemCount,
+          (index) => Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+            child: Shimmer.fromColors(
+              baseColor: AppColors.shimmerBase,
+              highlightColor: AppColors.shimmerHighlight,
+              child: Container(
+                height: 92,
+                padding: const EdgeInsets.all(14),
+                decoration: BoxDecoration(
+                  color: AppColors.shimmerBase,
+                  borderRadius: BorderRadius.circular(12),
               ),
               child: Row(
                 children: [
@@ -178,6 +188,7 @@ class NotificationRowSkeleton extends StatelessWidget {
             ),
           ),
         ),
+      ),
       ),
     );
   }

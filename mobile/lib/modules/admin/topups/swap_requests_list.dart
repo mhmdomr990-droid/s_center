@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:get/get.dart';
 import '../../../app/theme/app_colors.dart';
 import '../../../app/theme/app_shadows.dart';
 import '../../../app/theme/app_text_styles.dart';
@@ -15,34 +16,38 @@ class SwapRequestsList extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    if (ctrl.isLoading.value && ctrl.items.isEmpty) {
-      return const LoadingListShimmer();
-    }
-    return RefreshIndicator(
-      onRefresh: ctrl.load,
-      color: AppColors.primary,
-      child: ctrl.items.isEmpty
-          ? ListView(
-              padding: const EdgeInsets.only(top: 48),
-              children: const [
-                EmptyState(
-                  icon: Icons.swap_horiz_rounded,
-                  title: 'لا توجد طلبات تبديل',
-                  subtitle: 'لا توجد طلبات بانتظار المراجعة حالياً',
+    // Obx داخلي: كاردها تتحدث فوراً عند تغيّر items/busy بعد الموافقة أو
+    // الرفض — الـObx الخارجي في صفحة الطلبات يتتبّع segment فقط
+    return Obx(() {
+      if (ctrl.isLoading.value && ctrl.items.isEmpty) {
+        return const LoadingListShimmer();
+      }
+      return RefreshIndicator(
+        onRefresh: ctrl.load,
+        color: AppColors.primary,
+        child: ctrl.items.isEmpty
+            ? ListView(
+                padding: const EdgeInsets.only(top: 48),
+                children: const [
+                  EmptyState(
+                    icon: Icons.swap_horiz_rounded,
+                    title: 'لا توجد طلبات تبديل',
+                    subtitle: 'لا توجد طلبات بانتظار المراجعة حالياً',
+                  ),
+                ],
+              )
+            : ListView.builder(
+                padding: const EdgeInsets.fromLTRB(16, 16, 16, 24),
+                itemCount: ctrl.items.length,
+                itemBuilder: (context, i) => _SwapRequestCard(
+                  item: ctrl.items[i],
+                  busy: ctrl.busy.value,
+                  onApprove: () => ctrl.approve(ctrl.items[i]),
+                  onReject: () => ctrl.reject(ctrl.items[i]),
                 ),
-              ],
-            )
-          : ListView.builder(
-              padding: const EdgeInsets.fromLTRB(16, 16, 16, 24),
-              itemCount: ctrl.items.length,
-              itemBuilder: (context, i) => _SwapRequestCard(
-                item: ctrl.items[i],
-                busy: ctrl.busy.value,
-                onApprove: () => ctrl.approve(ctrl.items[i]),
-                onReject: () => ctrl.reject(ctrl.items[i]),
               ),
-            ),
-    );
+      );
+    });
   }
 }
 
