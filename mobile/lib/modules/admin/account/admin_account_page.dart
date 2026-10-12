@@ -103,7 +103,7 @@ class AdminAccountPage extends StatelessWidget {
               ),
               const SizedBox(height: 12),
               CustomButton(
-                text: 'عن التطبيق',
+                text: 'حول التطبيق',
                 icon: Icons.info_outline,
                 isOutlined: true,
                 onPressed: showAboutAppDialog,

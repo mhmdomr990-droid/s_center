@@ -313,7 +313,7 @@ class ProfilePage extends StatelessWidget {
                   Padding(
                     padding: const EdgeInsets.symmetric(horizontal: 16),
                     child: CustomButton(
-                      text: 'عن التطبيق',
+                      text: 'حول التطبيق',
                       icon: Icons.info_outline,
                       isOutlined: true,
                       onPressed: showAboutAppDialog,

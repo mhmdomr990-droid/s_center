@@ -186,9 +186,9 @@ class RegisterPage extends StatelessWidget {
                           ),
                         )),
                         const SizedBox(height: 16),
-                        CustomTextField(
-                          labelText: 'رقم الهاتف (اختياري)',
-                          prefixIcon: Icons.phone_outlined,
+          CustomTextField(
+            labelText: 'رقم الهاتف',
+            prefixIcon: Icons.phone_outlined,
                           controller: ctrl.registerPhoneCtrl,
                           keyboardType: TextInputType.phone,
                         ),

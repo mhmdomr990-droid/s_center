@@ -202,7 +202,11 @@ class AuthController extends GetxController {
     }
 
     final phone = registerPhoneCtrl.text.trim();
-    if (phone.isNotEmpty && !RegExp(r'^\+?[0-9\s\-()]{7,30}$').hasMatch(phone)) {
+    if (phone.isEmpty) {
+      Get.snackbar('خطأ', 'أدخل رقم الهاتف', backgroundColor: Colors.red, colorText: Colors.white);
+      return;
+    }
+    if (!RegExp(r'^\+?[0-9\s\-()]{7,30}$').hasMatch(phone)) {
       Get.snackbar('خطأ', 'رقم الهاتف غير صالح', backgroundColor: Colors.red, colorText: Colors.white);
       return;
     }
@@ -216,7 +220,7 @@ class AuthController extends GetxController {
         password: registerPasswordCtrl.text,
         deviceId: deviceId,
         specializationId: registerSpecializationId.value,
-        phone: phone.isEmpty ? null : phone,
+        phone: phone,
       );
 
       final data = response.data['data'];

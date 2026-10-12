@@ -5,7 +5,7 @@ import 'package:google_fonts/google_fonts.dart';
 import '../app/theme/app_colors.dart';
 import '../app/version.dart';
 
-/// نافذة «عن التطبيق»: اسم التطبيق + الإصدار + المطورون.
+/// نافذة «حول التطبيق»: اسم التطبيق + الإصدار + المطورون.
 /// الإصدار يقرأ من `appVersion` (يُزامَن مع build.gradle.kts عند كل تسليم).
 Future<void> showAboutAppDialog() async {
   if (Get.context == null) return;
