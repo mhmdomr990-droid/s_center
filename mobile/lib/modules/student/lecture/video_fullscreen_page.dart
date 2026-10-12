@@ -21,6 +21,12 @@ class VideoFullscreenPage extends StatefulWidget {
 class _VideoFullscreenPageState extends State<VideoFullscreenPage> {
   bool _showControls = true;
 
+  // Pinch-to-zoom: تكبير 1×..5× + تحريك داخل الحجم المكبَّر
+  double _scale = 1.0;
+  double _baseScale = 1.0;
+  Offset _pan = Offset.zero;
+  bool _showZoomHud = false;
+
   @override
   void initState() {
     super.initState();
@@ -49,6 +55,24 @@ class _VideoFullscreenPageState extends State<VideoFullscreenPage> {
   }
 
   void _toggleControls() => setState(() => _showControls = !_showControls);
+
+  void _onScaleStart(ScaleStartDetails d) {
+    _baseScale = _scale;
+  }
+
+  void _onScaleUpdate(ScaleUpdateDetails d) {
+    setState(() {
+      _scale = (_baseScale * d.scale).clamp(1.0, 5.0).toDouble();
+      if (_scale <= 1.001) {
+        // عودة إلى الحجم الطبيعي ⇐ تصفير الإزاحة
+        _scale = 1.0;
+        _pan = Offset.zero;
+      } else {
+        _pan += d.focalPointDelta;
+      }
+      _showZoomHud = _scale > 1.05;
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -123,16 +147,41 @@ class _VideoFullscreenPageState extends State<VideoFullscreenPage> {
               ? 16 / 9
               : controller.value.aspectRatio;
 
+          // حدود تحريك الفيديو المكبَّر: لا يخرج عن حدود الشاشة
+          final screen = MediaQuery.sizeOf(context);
+          double vw = screen.width;
+          double vh = screen.width / aspect;
+          if (vh > screen.height) {
+            vh = screen.height;
+            vw = screen.height * aspect;
+          }
+          double maxX = (vw * _scale - screen.width) / 2;
+          double maxY = (vh * _scale - screen.height) / 2;
+          if (maxX < 0) maxX = 0;
+          if (maxY < 0) maxY = 0;
+          final pan = Offset(
+            _pan.dx.clamp(-maxX, maxX).toDouble(),
+            _pan.dy.clamp(-maxY, maxY).toDouble(),
+          );
+
           return Stack(
             fit: StackFit.expand,
             children: [
               GestureDetector(
                 behavior: HitTestBehavior.opaque,
                 onTap: _toggleControls,
+                onScaleStart: _onScaleStart,
+                onScaleUpdate: _onScaleUpdate,
                 child: Center(
-                  child: AspectRatio(
-                    aspectRatio: aspect,
-                    child: VideoPlayer(controller),
+                  child: Transform.translate(
+                    offset: pan,
+                    child: Transform.scale(
+                      scale: _scale,
+                      child: AspectRatio(
+                        aspectRatio: aspect,
+                        child: VideoPlayer(controller),
+                      ),
+                    ),
                   ),
                 ),
               ),
@@ -140,6 +189,8 @@ class _VideoFullscreenPageState extends State<VideoFullscreenPage> {
                 Center(
                   child: GestureDetector(
                     onTap: ctrl.togglePlay,
+                    onScaleStart: _onScaleStart,
+                    onScaleUpdate: _onScaleUpdate,
                     child: Container(
                       padding: const EdgeInsets.all(14),
                       decoration: BoxDecoration(
@@ -159,6 +210,8 @@ class _VideoFullscreenPageState extends State<VideoFullscreenPage> {
                   child: GestureDetector(
                     behavior: HitTestBehavior.opaque,
                     onTap: _toggleControls,
+                    onScaleStart: _onScaleStart,
+                    onScaleUpdate: _onScaleUpdate,
                     child: Container(
                       color: Colors.black.withValues(alpha: 0.35),
                       padding: const EdgeInsets.fromLTRB(8, 4, 8, 4),
@@ -247,6 +300,32 @@ class _VideoFullscreenPageState extends State<VideoFullscreenPage> {
                             ],
                           ),
                         ],
+                      ),
+                    ),
+                  ),
+                ),
+              if (_showZoomHud)
+                Positioned(
+                  top: 60,
+                  left: 0,
+                  right: 0,
+                  child: IgnorePointer(
+                    child: Center(
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 12, vertical: 4),
+                        decoration: BoxDecoration(
+                          color: Colors.black.withValues(alpha: 0.6),
+                          borderRadius: BorderRadius.circular(14),
+                        ),
+                        child: Text(
+                          '×${_scale.toStringAsFixed(1)}',
+                          style: GoogleFonts.cairo(
+                            color: Colors.white,
+                            fontSize: 13,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
                       ),
                     ),
                   ),
