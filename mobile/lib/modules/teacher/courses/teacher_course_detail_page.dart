@@ -6,6 +6,7 @@ import '../../../app/routes/app_routes.dart';
 import '../../../widgets/lecture_tile.dart';
 import '../../../widgets/loading_shimmer.dart';
 import '../../../widgets/gradient_app_bar.dart';
+import '../lectures/add_edit_lecture_dialog.dart';
 import 'teacher_courses_controller.dart';
 
 class TeacherCourseDetailPage extends StatelessWidget {
@@ -33,7 +34,7 @@ class TeacherCourseDetailPage extends StatelessWidget {
             actions: [
               IconButton(
                 icon: const Icon(Icons.add),
-                onPressed: () => Get.toNamed(AppRoutes.addLecture, arguments: {'courseId': courseId}),
+                onPressed: () => showTeacherLectureDialog(context, ctrl, courseId: courseId),
               ),
             ],
           ),
@@ -114,8 +115,8 @@ class TeacherCourseDetailPage extends StatelessWidget {
                             'currentIndex': ctrl.lectures.indexOf(lecture),
                           });
                         } else if (value == 'edit') {
-                          Get.toNamed(AppRoutes.addLecture,
-                              arguments: {'courseId': courseId, 'lecture': lecture});
+                          showTeacherLectureDialog(context, ctrl,
+                              courseId: courseId, lecture: lecture);
                         } else if (value == 'toggle') {
                           ctrl.togglePublished(lecture.id, !lecture.isPublished, courseId);
                         } else if (value == 'delete') {

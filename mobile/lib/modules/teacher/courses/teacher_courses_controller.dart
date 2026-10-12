@@ -4,7 +4,6 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import '../../../app/routes/app_routes.dart';
 import '../../../data/providers/api_client.dart';
 import '../../../data/providers/catalog_provider.dart';
 import '../../../data/providers/teacher_provider.dart';
@@ -23,17 +22,6 @@ class TeacherCoursesController extends GetxController {
         _catalogProvider = CatalogProvider(Get.find<ApiClient>());
 
   static const List<int> availableYears = [1, 2, 3, 4, 5];
-
-  /// بادئة مفتاح مسودة استمارة «إضافة محاضرة» (واحدة لكل مقرر)
-  static const String draftKeyPrefix = 'lecture_draft_v1_';
-
-  /// تُستدعى بعد نجاح الإنشاء لتفريغ المسودة المحفوظة لهذا المقرر
-  Future<void> _clearLectureDraft(int courseId) async {
-    try {
-      final prefs = await SharedPreferences.getInstance();
-      await prefs.remove('$draftKeyPrefix$courseId');
-    } catch (_) {}
-  }
 
   final isLoading = true.obs;
   final isSaving = false.obs;
@@ -271,10 +259,6 @@ class TeacherCoursesController extends GetxController {
         failMessage: videoFilePath != null ? 'فشل رفع الملف' : 'فشل إضافة المحاضرة',
       ));
       if (ok) {
-        await _clearLectureDraft(courseId);
-        // الخروج فقط إن كانت صفحة الإضافة ما زالت مفتوحة —
-        // وإن خرج المستخدم أثناء الرفع فلا نغلق صفحته
-        if (Get.currentRoute == AppRoutes.addLecture) Get.back();
         _refreshCourseAfterUpload(courseId);
       }
       return ok;
@@ -293,7 +277,7 @@ class TeacherCoursesController extends GetxController {
     } catch (_) {}
   }
 
-  Future<void> updateLecture(int lectureId, int courseId,
+  Future<bool> updateLecture(int lectureId, int courseId,
       {required String title, required String type, String? url, String? content, int? sortOrder, String? videoFilePath, Uint8List? fileBytes, String? fileName, bool compress = true}) async {
     isSaving.value = true;
     try {
@@ -315,9 +299,9 @@ class TeacherCoursesController extends GetxController {
         failMessage: videoFilePath != null ? 'فشل رفع الملف' : 'فشل تحديث المحاضرة',
       ));
       if (ok) {
-        if (Get.currentRoute == AppRoutes.addLecture) Get.back();
         _refreshCourseAfterUpload(courseId);
       }
+      return ok;
     } finally {
       isSaving.value = false;
     }

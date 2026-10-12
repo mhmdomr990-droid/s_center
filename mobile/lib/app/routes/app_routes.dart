@@ -15,7 +15,6 @@ abstract class AppRoutes {
   static const String teacherHome = '/teacher/home';
   static const String teacherCourses = '/teacher/courses';
   static const String teacherCourseDetail = '/teacher/course/detail';
-  static const String addLecture = '/teacher/lecture/add';
   static const String earnings = '/teacher/earnings';
   static const String teacherAccount = '/teacher/account';
 
