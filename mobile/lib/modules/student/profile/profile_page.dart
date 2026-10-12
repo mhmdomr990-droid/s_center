@@ -6,6 +6,7 @@ import '../../../app/theme/app_shadows.dart';
 import '../../../app/theme/app_text_styles.dart';
 import '../../../app/theme/theme_controller.dart';
 import '../../../utils/format.dart';
+import '../../../widgets/about_app_dialog.dart';
 import '../../../widgets/custom_button.dart';
 import '../../../widgets/gradient_app_bar.dart';
 import '../../../widgets/loading_shimmer.dart';
@@ -306,6 +307,16 @@ class ProfilePage extends StatelessWidget {
                           ),
                         ],
                       ),
+                    ),
+                  ),
+                  const SizedBox(height: 24),
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 16),
+                    child: CustomButton(
+                      text: 'عن التطبيق',
+                      icon: Icons.info_outline,
+                      isOutlined: true,
+                      onPressed: showAboutAppDialog,
                     ),
                   ),
                   const SizedBox(height: 12),
