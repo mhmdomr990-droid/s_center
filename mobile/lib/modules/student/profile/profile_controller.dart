@@ -199,11 +199,11 @@ class ProfileController extends GetxController {
         content: TextField(
           controller: phoneCtrl,
           keyboardType: TextInputType.phone,
-          decoration: const InputDecoration(
-            labelText: 'رقم الهاتف',
-            hintText: 'اتركه فارغاً لحذف الرقم',
-            border: OutlineInputBorder(),
-          ),
+        decoration: const InputDecoration(
+          labelText: 'رقم الهاتف',
+          hintText: 'أدخل رقم الهاتف',
+          border: OutlineInputBorder(),
+        ),
         ),
         actions: [
           TextButton(onPressed: () => Get.back(result: false), child: const Text('إلغاء')),
@@ -215,7 +215,12 @@ class ProfileController extends GetxController {
     if (confirmed != true) return;
 
     final phone = phoneCtrl.text.trim();
-    if (phone.isNotEmpty && !RegExp(r'^\+?[0-9\s\-()]{7,30}$').hasMatch(phone)) {
+    if (phone.isEmpty) {
+      Get.snackbar('خطأ', 'أدخل رقم الهاتف',
+          backgroundColor: const Color(0xFFE53935), colorText: const Color(0xFFFFFFFF));
+      return;
+    }
+    if (!RegExp(r'^\+?[0-9\s\-()]{7,30}$').hasMatch(phone)) {
       Get.snackbar('خطأ', 'رقم الهاتف غير صالح',
           backgroundColor: const Color(0xFFE53935), colorText: const Color(0xFFFFFFFF));
       return;
