@@ -75,6 +75,7 @@ class TeacherProvider {
     Uint8List? fileBytes,
     String? fileName,
     void Function(int, int)? onSendProgress,
+    CancelToken? cancelToken,
   }) async {
     if (videoFilePath != null) {
       final form = FormData.fromMap({
@@ -90,6 +91,7 @@ class TeacherProvider {
         data: form,
         onSendProgress: onSendProgress,
         options: _uploadOptions,
+        cancelToken: cancelToken,
       );
     }
     return _api.post('/teacher/courses/$courseId/lectures', data: {
@@ -98,7 +100,7 @@ class TeacherProvider {
       if (url != null) 'url': url,
       if (content != null) 'content': content,
       if (sortOrder != null) 'sort_order': sortOrder,
-    });
+    }, cancelToken: cancelToken);
   }
 
   Future<Response> updateLecture(
@@ -112,6 +114,7 @@ class TeacherProvider {
     Uint8List? fileBytes,
     String? fileName,
     void Function(int, int)? onSendProgress,
+    CancelToken? cancelToken,
   }) async {
     if (videoFilePath != null) {
       final form = FormData.fromMap({
@@ -127,6 +130,7 @@ class TeacherProvider {
         data: form,
         onSendProgress: onSendProgress,
         options: _uploadOptions,
+        cancelToken: cancelToken,
       );
     }
     final data = <String, dynamic>{};
@@ -135,7 +139,7 @@ class TeacherProvider {
     if (url != null) data['url'] = url;
     if (content != null) data['content'] = content;
     if (sortOrder != null) data['sort_order'] = sortOrder;
-    return _api.patch('/teacher/lectures/$id', data: data);
+    return _api.patch('/teacher/lectures/$id', data: data, cancelToken: cancelToken);
   }
 
   Future<Response> deleteLecture(int id) {

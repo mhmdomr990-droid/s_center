@@ -79,7 +79,7 @@ class LecturesController extends GetxController {
         successMessage:
             videoFilePath != null ? 'تم رفع الملف بنجاح ✓' : 'تم إنشاء المحاضرة',
         failMessage: videoFilePath != null ? 'فشل رفع الملف' : 'فشل إنشاء المحاضرة',
-        upload: (path, onSend) => _provider.createLecture(
+        upload: (path, onSend, cancelToken) => _provider.createLecture(
           courseId: courseId,
           title: title,
           type: type,
@@ -90,6 +90,7 @@ class LecturesController extends GetxController {
           fileBytes: fileBytes,
           fileName: fileName,
           onSendProgress: onSend,
+          cancelToken: cancelToken,
         ),
       ));
       if (ok) await loadLectures();
@@ -129,7 +130,7 @@ class LecturesController extends GetxController {
         successMessage:
             videoFilePath != null ? 'تم رفع الملف بنجاح ✓' : 'تم تحديث المحاضرة',
         failMessage: videoFilePath != null ? 'فشل رفع الملف' : 'فشل تحديث المحاضرة',
-        upload: (path, onSend) => _provider.updateLecture(
+        upload: (path, onSend, cancelToken) => _provider.updateLecture(
           id,
           title: title,
           type: type,
@@ -140,6 +141,7 @@ class LecturesController extends GetxController {
           fileBytes: fileBytes,
           fileName: fileName,
           onSendProgress: onSend,
+          cancelToken: cancelToken,
         ),
       ));
       if (ok) await loadLectures();

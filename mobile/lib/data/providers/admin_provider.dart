@@ -261,6 +261,7 @@ class AdminProvider {
     Uint8List? fileBytes,
     String? fileName,
     void Function(int, int)? onSendProgress,
+    CancelToken? cancelToken,
   }) async {
     if (videoFilePath != null) {
       final form = FormData.fromMap({
@@ -277,6 +278,7 @@ class AdminProvider {
         data: form,
         onSendProgress: onSendProgress,
         options: _uploadOptions,
+        cancelToken: cancelToken,
       );
     }
     return _api.post('/admin/lectures', data: {
@@ -286,7 +288,7 @@ class AdminProvider {
       if (url != null) 'url': url,
       if (content != null) 'content': content,
       if (sortOrder != null) 'sort_order': sortOrder,
-    });
+    }, cancelToken: cancelToken);
   }
 
   Future<Response> updateLecture(
@@ -300,6 +302,7 @@ class AdminProvider {
     Uint8List? fileBytes,
     String? fileName,
     void Function(int, int)? onSendProgress,
+    CancelToken? cancelToken,
   }) async {
     if (videoFilePath != null) {
       final form = FormData.fromMap({
@@ -315,6 +318,7 @@ class AdminProvider {
         data: form,
         onSendProgress: onSendProgress,
         options: _uploadOptions,
+        cancelToken: cancelToken,
       );
     }
     final data = <String, dynamic>{};
@@ -323,7 +327,7 @@ class AdminProvider {
     if (url != null) data['url'] = url;
     if (content != null) data['content'] = content;
     if (sortOrder != null) data['sort_order'] = sortOrder;
-    return _api.patch('/admin/lectures/$id', data: data);
+    return _api.patch('/admin/lectures/$id', data: data, cancelToken: cancelToken);
   }
 
   Future<Response> setLecturePublished(int id, {required bool isPublished}) {

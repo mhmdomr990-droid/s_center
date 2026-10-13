@@ -52,12 +52,14 @@ class ApiClient {
     Map<String, String>? headers,
     void Function(int, int)? onSendProgress,
     Options? options,
+    CancelToken? cancelToken,
   }) {
     return _dio.post(
       path,
       data: data,
       options: options ?? (headers != null ? Options(headers: headers) : null),
       onSendProgress: onSendProgress,
+      cancelToken: cancelToken,
     );
   }
 
@@ -66,12 +68,14 @@ class ApiClient {
     dynamic data,
     void Function(int, int)? onSendProgress,
     Options? options,
+    CancelToken? cancelToken,
   }) {
     return _dio.patch(
       path,
       data: data,
       options: options,
       onSendProgress: onSendProgress,
+      cancelToken: cancelToken,
     );
   }
 

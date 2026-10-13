@@ -80,11 +80,21 @@ class UploadOverlay extends StatelessWidget {
                       ? (eta > 0
                           ? 'متبقٍ ${eta >= 60 ? '${(eta / 60).round()} د' : '$eta ث'}'
                           : '…')
-                      : '${(pctValue * 100).floor()}%',
+                          : '${(pctValue * 100).floor()}%',
                   style: const TextStyle(
                     fontSize: 12,
                     fontWeight: FontWeight.w700,
                   ),
+                ),
+                const SizedBox(width: 4),
+                IconButton(
+                  onPressed: () => um.cancel(),
+                  tooltip: 'إلغاء الرفع',
+                  visualDensity: VisualDensity.compact,
+                  padding: EdgeInsets.zero,
+                  constraints: const BoxConstraints(
+                      minWidth: 32, minHeight: 32),
+                  icon: const Icon(Icons.close, size: 20),
                 ),
               ],
             ),

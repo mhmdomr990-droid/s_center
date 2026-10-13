@@ -86,6 +86,15 @@ class VideoCompressor {
       // التنظيف اختياري أبداً لا يعطّل الرفع
     }
   }
+
+  /// إيقاف الضغط الجاري — يستدعي منطق الإلغاء في UploadManager
+  static Future<void> cancel() async {
+    try {
+      await VideoCompress.cancelCompression();
+    } catch (_) {
+      // الإلغاء اختياري أبداً لا يعطّل بقية المسار
+    }
+  }
 }
 
 class CompressOutcome {

@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
@@ -457,12 +459,26 @@ void showTeacherLectureDialog(
             ),
           ),
           actions: [
-            Obx(() => TextButton(
-                  onPressed: ctrl.isSaving.value
-                      ? null
-                      : () => Navigator.of(dialogContext).pop(),
-                  child: const Text('إلغاء'),
-                )),
+            Obx(() {
+              final busy = ctrl.isSaving.value;
+              return TextButton(
+                onPressed: () {
+                  if (busy) {
+                    unawaited(um.cancel());
+                  }
+                  if (dialogContext.mounted) {
+                    Navigator.of(dialogContext).pop();
+                  }
+                },
+                child: const Text('إلغاء'),
+              );
+            }),
+            Obx(() => ctrl.isSaving.value
+                ? TextButton(
+                    onPressed: () => Navigator.of(dialogContext).pop(),
+                    child: const Text('إخفاء'),
+                  )
+                : const SizedBox.shrink()),
             Obx(() => TextButton(
                   onPressed: ctrl.isSaving.value ? null : submit,
                   child:

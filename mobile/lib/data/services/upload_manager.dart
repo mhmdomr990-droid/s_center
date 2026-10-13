@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:dio/dio.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_foreground_task/flutter_foreground_task.dart';
@@ -47,7 +48,8 @@ class UploadTask {
 
   /// مسار رفع مخصّص (مثل الأدمن: endpoints مختلفة) — إن وُجد استُبدل به
   /// المسار الافتراضي عبر TeacherProvider.
-  final Future<void> Function(String? videoFilePath, void Function(int, int)? onSendProgress)?
+  final Future<void> Function(String? videoFilePath,
+          void Function(int, int)? onSendProgress, CancelToken? cancelToken)?
       upload;
   final String successMessage;
   final String failMessage;
@@ -74,9 +76,22 @@ class UploadManager extends GetxController {
   DateTime _lastNotifiedAt = DateTime.fromMillisecondsSinceEpoch(0);
   int _lastNotifiedPct = -1;
 
+  CancelToken? _token;
+  bool _cancelRequested = false;
+
   bool get isBusy =>
       phase.value == UploadPhase.compressing ||
       phase.value == UploadPhase.uploading;
+
+  /// إيقاف الرفع الجاري (ضغط + نقل) — يُستدعى من زرّي الإلغاء
+  Future<void> cancel() async {
+    if (!isBusy) return;
+    _cancelRequested = true;
+    _token?.cancel('user cancelled');
+    if (phase.value == UploadPhase.compressing) {
+      await VideoCompressor.cancel();
+    }
+  }
 
   Future<bool> run(UploadTask task) async {
     if (isBusy) {
@@ -92,6 +107,8 @@ class UploadManager extends GetxController {
     compressEta.value = 0;
     _lastNotifiedPct = -1;
     _lastNotifiedAt = DateTime.fromMillisecondsSinceEpoch(0);
+    _cancelRequested = false;
+    _token = CancelToken();
 
     final willCompress = task.compress &&
         task.videoFilePath != null &&
@@ -122,6 +139,11 @@ class UploadManager extends GetxController {
             'compress: ${outcome.reason} ${outcome.sourceSize} -> ${outcome.outputSize ?? '-'} ${outcome.error ?? ''}');
       }
 
+      // إلغاء أثناء الضغط — لا يُرفع الأصل إطلاقاً
+      if (_cancelRequested) {
+        throw const _UploadCancelled();
+      }
+
       phase.value = UploadPhase.uploading;
       compressing.value = false;
       compressProgress.value = 0;
@@ -133,7 +155,7 @@ class UploadManager extends GetxController {
           : (int sent, int total) => _onSendProgress(task, sent, total);
 
       if (task.upload != null) {
-        await task.upload!(uploadPath, onSend);
+        await task.upload!(uploadPath, onSend, _token);
       } else if (task.isEdit) {
         await _provider.updateLecture(
           task.lectureId!,
@@ -146,6 +168,7 @@ class UploadManager extends GetxController {
           fileBytes: task.fileBytes,
           fileName: task.fileName,
           onSendProgress: onSend,
+          cancelToken: _token,
         );
       } else {
         await _provider.createLecture(
@@ -159,6 +182,7 @@ class UploadManager extends GetxController {
           fileBytes: task.fileBytes,
           fileName: task.fileName,
           onSendProgress: onSend,
+          cancelToken: _token,
         );
       }
 
@@ -173,6 +197,15 @@ class UploadManager extends GetxController {
       unawaited(_resetSoon());
       return true;
     } catch (e) {
+      if (e is _UploadCancelled || _cancelRequested || _isCancel(e)) {
+        phase.value = UploadPhase.failed;
+        Get.snackbar('إلغاء', 'تم إلغاء الرفع',
+            backgroundColor: const Color(0xFFFB8C00),
+            colorText: const Color(0xFFFFFFFF));
+        unawaited(_stopServiceQuietly());
+        unawaited(_resetSoon());
+        return false;
+      }
       final message = apiErrorMessage(e, fallback: task.failMessage);
       phase.value = UploadPhase.failed;
       Get.snackbar('خطأ', message,
@@ -185,8 +218,22 @@ class UploadManager extends GetxController {
       compressing.value = false;
       compressProgress.value = 0;
       compressEta.value = 0;
+      _token = null;
+      _cancelRequested = false;
       if (task.videoFilePath != null) await VideoCompressor.deleteCache();
     }
+  }
+
+  static bool _isCancel(Object e) =>
+      e is DioException && e.type == DioExceptionType.cancel;
+
+  /// إيقاف الخدمة أمامية بلا إشعار فشل (مسار الإلغاء)
+  Future<void> _stopServiceQuietly() async {
+    try {
+      if (await FlutterForegroundTask.isRunningService) {
+        await FlutterForegroundTask.stopService();
+      }
+    } catch (_) {}
   }
 
   void _onSendProgress(UploadTask task, int sent, int total) {
@@ -270,4 +317,9 @@ class UploadManager extends GetxController {
       taskTitle.value = '';
     }
   }
+}
+
+/// علامة داخلية: أُلغي الرفع بطلب المستخدم (ليست فشلاً حقيقياً)
+class _UploadCancelled implements Exception {
+  const _UploadCancelled();
 }
