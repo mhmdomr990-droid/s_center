@@ -30,7 +30,8 @@ class UploadOverlay extends StatelessWidget {
       return Positioned(
         left: 16,
         right: 16,
-        bottom: 24,
+        // فوق شريط التبويبات (≈76dp) + فجوة 12 + هوامش نظام التنقل
+        bottom: MediaQuery.of(context).padding.bottom + 88,
         child: Material(
           color: Theme.of(context).cardColor,
           elevation: 8,
