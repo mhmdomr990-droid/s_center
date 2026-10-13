@@ -89,12 +89,12 @@ class UploadOverlay extends StatelessWidget {
                 const SizedBox(width: 4),
                 IconButton(
                   onPressed: () => um.cancel(),
-                  tooltip: 'إلغاء الرفع',
                   visualDensity: VisualDensity.compact,
                   padding: EdgeInsets.zero,
                   constraints: const BoxConstraints(
                       minWidth: 32, minHeight: 32),
-                  icon: const Icon(Icons.close, size: 20),
+                  icon: const Icon(Icons.close,
+                      size: 20, semanticLabel: 'إلغاء الرفع'),
                 ),
               ],
             ),

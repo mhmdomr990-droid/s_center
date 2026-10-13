@@ -47,6 +47,15 @@ Future<void> _preloadCairoFonts() async {
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
+  // TEMP_DEBUG: طباعة كامل الاستثناء والـstack والـcontext لكل خطأ
+  // (الإطار الافتراضي يطبع ملخصاً فقط بعد أول خطأ في الجلسة)
+  FlutterError.onError = (details) {
+    debugPrint('===FULL_EXCEPTION===');
+    debugPrint(details.exceptionAsString());
+    debugPrint('CONTEXT: ${details.context}');
+    debugPrintStack(stackTrace: details.stack, label: 'STACK');
+  };
+
   // خدمة أمامية: استمرار رفع المحاضرات في الخلفية + إشعار عند الاكتمال
   try {
     FlutterForegroundTask.initCommunicationPort();
