@@ -1141,6 +1141,12 @@ class _LecturesView extends StatelessWidget {
                   child: const Text('إلغاء'),
                 );
               }),
+              Obx(() => ctrl.busy.value
+                  ? TextButton(
+                      onPressed: () => Navigator.of(dialogContext).pop(),
+                      child: const Text('إخفاء'),
+                    )
+                  : const SizedBox.shrink()),
               Obx(() => TextButton(
                     onPressed: ctrl.busy.value ? null : submit,
                     child: Text(ctrl.busy.value ? 'جارٍ الحفظ...' : 'حفظ'),

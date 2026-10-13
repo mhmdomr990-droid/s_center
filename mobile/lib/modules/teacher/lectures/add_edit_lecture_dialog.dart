@@ -473,6 +473,12 @@ void showTeacherLectureDialog(
                 child: const Text('إلغاء'),
               );
             }),
+            Obx(() => ctrl.isSaving.value
+                ? TextButton(
+                    onPressed: () => Navigator.of(dialogContext).pop(),
+                    child: const Text('إخفاء'),
+                  )
+                : const SizedBox.shrink()),
             Obx(() => TextButton(
                   onPressed: ctrl.isSaving.value ? null : submit,
                   child:
