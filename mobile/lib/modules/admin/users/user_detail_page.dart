@@ -261,11 +261,13 @@ class UserDetailPage extends StatelessWidget {
             const SizedBox(height: 2),
             Text('@$username • $roleLabel', style: AppTextStyles.caption),
             const SizedBox(height: 8),
-            Obx(() {
-              final busy = ctrl.busy.value;
-              return Column(
-                children: [
-                  _actionRow(
+            Flexible(
+              child: SingleChildScrollView(
+                child: Obx(() {
+                  final busy = ctrl.busy.value;
+                  return Column(
+                    children: [
+                      _actionRow(
                     icon: Icons.power_settings_new_rounded,
                     iconColor: isActive ? AppColors.error : AppColors.success,
                     title: isActive ? 'تعطيل الحساب' : 'تفعيل الحساب',
@@ -334,10 +336,12 @@ class UserDetailPage extends StatelessWidget {
                         ctrl.openLectureGrantSheet();
                       },
                     ),
-                  ],
-                ],
-              );
-            }),
+                      ],
+                    ],
+                  );
+                }),
+              ),
+            ),
           ],
         ),
       ),
