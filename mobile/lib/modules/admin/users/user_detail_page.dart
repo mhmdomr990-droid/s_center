@@ -311,7 +311,7 @@ class UserDetailPage extends StatelessWidget {
                       ctrl.resetPassword();
                     },
                   ),
-                  if (!isTeacher)
+                  if (!isTeacher) ...[
                     _actionRow(
                       icon: Icons.card_giftcard_outlined,
                       iconColor: const Color(0xFF8E24AA),
@@ -323,6 +323,18 @@ class UserDetailPage extends StatelessWidget {
                         ctrl.openGrantSheet();
                       },
                     ),
+                    _actionRow(
+                      icon: Icons.ondemand_video_outlined,
+                      iconColor: const Color(0xFF00897B),
+                      title: 'منح محاضرة مجانية',
+                      subtitle: 'فتح محاضرات محددة دون شراء الكورس',
+                      enabled: !busy,
+                      onTap: () {
+                        Navigator.of(sheetContext).pop();
+                        ctrl.openLectureGrantSheet();
+                      },
+                    ),
+                  ],
                 ],
               );
             }),

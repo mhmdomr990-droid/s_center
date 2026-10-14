@@ -51,6 +51,15 @@ class AdminProvider {
   Future<Response> revokeCourseGrant(int userId, int courseId) =>
       _api.delete('/admin/users/$userId/grant-course', data: {'course_id': courseId});
 
+  Future<Response> grantLectures(int userId, List<int> lectureIds) =>
+      _api.post('/admin/users/$userId/grant-lectures', data: {'lecture_ids': lectureIds});
+
+  Future<Response> revokeLectureGrant(int userId, int lectureId) =>
+      _api.delete('/admin/users/$userId/revoke-lecture-grant/$lectureId');
+
+  Future<Response> userLectureGrants(int userId) =>
+      _api.get('/admin/users/$userId/lecture-grants');
+
   Future<Response> setUserActive(int id, {required bool isActive}) {
     return _api.patch('/admin/users/$id/active', data: {'is_active': isActive});
   }

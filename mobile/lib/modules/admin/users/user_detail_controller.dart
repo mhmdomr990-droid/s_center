@@ -27,6 +27,15 @@ class UserDetailController extends GetxController {
   final _ownedCourseIds = <int>{}.obs;
   late final TextEditingController grantSearchCtrl;
 
+  // منح محاضرات مجانية
+  final lectureGrants = <Map<String, dynamic>>[].obs;
+  final lectureGrantSheetLoading = false.obs;
+  final lectureGrantCourses = <Map<String, dynamic>>[].obs;
+  final lectureGrantLectures = <Map<String, dynamic>>[].obs;
+  final lectureGrantSelectedCourse = Rxn<Map<String, dynamic>>();
+  final lectureGrantSelectedIds = <int>{}.obs;
+  final lectureGrantLecturesLoading = false.obs;
+
   late final int userId;
 
   final adjustAmountCtrl = TextEditingController();
@@ -66,7 +75,7 @@ class UserDetailController extends GetxController {
       if (role == 'TEACHER') {
         await _loadTeacherData();
       } else {
-        await Future.wait([_loadTransactions(), _loadPurchases()]);
+        await Future.wait([_loadTransactions(), _loadPurchases(), _loadLectureGrants()]);
       }
     } catch (_) {
       Get.snackbar('خطأ', 'تعذّر تحميل بيانات المستخدم',
@@ -110,6 +119,14 @@ class UserDetailController extends GetxController {
     try {
       final response = await _provider.userPurchases(userId);
       purchases.assignAll(List<Map<String, dynamic>>.from(
+          (response.data['data'] as List).map((e) => Map<String, dynamic>.from(e))));
+    } catch (_) {}
+  }
+
+  Future<void> _loadLectureGrants() async {
+    try {
+      final response = await _provider.userLectureGrants(userId);
+      lectureGrants.assignAll(List<Map<String, dynamic>>.from(
           (response.data['data'] as List).map((e) => Map<String, dynamic>.from(e))));
     } catch (_) {}
   }
@@ -549,6 +566,424 @@ class UserDetailController extends GetxController {
           status == 404
               ? 'ليست منحة مجانية — ربما شراء مدفوع'
               : apiErrorMessage(e),
+          backgroundColor: Colors.red,
+          colorText: Colors.white);
+    } finally {
+      busy.value = false;
+    }
+  }
+
+  // ─── منح محاضرات مجانية ───
+
+  Future<void> openLectureGrantSheet() async {
+    final u = user.value;
+    if (u == null) return;
+    final specId = u['specialization_id'];
+    if (specId == null) {
+      Get.snackbar('منح محاضرة', 'لا يمكن المنح: المستخدم بلا اختصاص',
+          backgroundColor: Colors.orange, colorText: Colors.white);
+      return;
+    }
+
+    lectureGrantSelectedCourse.value = null;
+    lectureGrantLectures.clear();
+    lectureGrantSelectedIds.clear();
+    lectureGrantCourses.clear();
+    lectureGrantSheetLoading.value = true;
+    _showLectureGrantSheet('${u['full_name'] ?? ''}');
+
+    try {
+      final response = await _provider.courses(limit: 100);
+      final all = List<Map<String, dynamic>>.from(
+          (response.data['data'] as List).map((e) => Map<String, dynamic>.from(e)));
+      lectureGrantCourses.assignAll(all.where((c) =>
+          (c['is_published'] ?? true) == true &&
+          (c['specialization_id'] as num?)?.toInt() == (specId as num).toInt()));
+    } catch (_) {
+      Get.snackbar('خطأ', 'تعذّر تحميل الدورات',
+          backgroundColor: Colors.red, colorText: Colors.white);
+    } finally {
+      lectureGrantSheetLoading.value = false;
+    }
+  }
+
+  void _showLectureGrantSheet(String userName) {
+    Get.bottomSheet(
+      Container(
+        height: MediaQuery.of(Get.context!).size.height * 0.78,
+        decoration: BoxDecoration(
+          color: AppColors.courseCard,
+          borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
+          border: Border.all(color: AppColors.cardBorder),
+        ),
+        padding: const EdgeInsets.fromLTRB(16, 12, 16, 16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Expanded(
+                  child: Text('منح محاضرة مجانية — $userName',
+                      style: AppTextStyles.titleMedium),
+                ),
+                Obx(() => busy.value
+                    ? const SizedBox(
+                        width: 18,
+                        height: 18,
+                        child: CircularProgressIndicator(
+                            strokeWidth: 2, color: AppColors.primary))
+                    : const SizedBox.shrink()),
+                IconButton(
+                  icon: const Icon(Icons.close_rounded),
+                  onPressed: () => Get.back(),
+                  color: AppColors.textSecondary,
+                ),
+              ],
+            ),
+            const SizedBox(height: 4),
+            Expanded(
+              child: Obx(() {
+                if (lectureGrantSheetLoading.value) {
+                  return const Center(child: CircularProgressIndicator());
+                }
+                return ListView(
+                  children: [
+                    // ── المنح الحالية ──
+                    if (lectureGrants.where((g) => (g['revoked'] ?? false) != true).isNotEmpty) ...[
+                      Text('المنح الحالية',
+                          style: AppTextStyles.caption.copyWith(
+                              fontWeight: FontWeight.w700, color: AppColors.primary)),
+                      const SizedBox(height: 4),
+                      ...lectureGrants
+                          .where((g) => (g['revoked'] ?? false) != true)
+                          .map(_grantedLectureRow),
+                      const SizedBox(height: 12),
+                    ],
+                    // ── اختيار الكورس ──
+                    if (lectureGrantSelectedCourse.value == null) ...[
+                      Text('اختر الكورس',
+                          style: AppTextStyles.caption.copyWith(
+                              fontWeight: FontWeight.w700, color: AppColors.primary)),
+                      const SizedBox(height: 4),
+                      if (lectureGrantCourses.isEmpty)
+                        Padding(
+                          padding: const EdgeInsets.symmetric(vertical: 12),
+                          child: Text('لا توجد دورات منشورة في اختصاص المستخدم',
+                              style: AppTextStyles.caption),
+                        )
+                      else
+                        ...lectureGrantCourses.map(_grantCoursePickRow),
+                    ] else ...[
+                      // ── اختيار المحاضرات ──
+                      Row(
+                        children: [
+                          IconButton(
+                            icon: const Icon(Icons.arrow_forward_rounded, size: 20),
+                            color: AppColors.textSecondary,
+                            onPressed: lectureGrantLecturesLoading.value
+                                ? null
+                                : () {
+                                    lectureGrantSelectedCourse.value = null;
+                                    lectureGrantLectures.clear();
+                                    lectureGrantSelectedIds.clear();
+                                  },
+                          ),
+                          Expanded(
+                            child: Text('${lectureGrantSelectedCourse.value!['name'] ?? ''}',
+                                style: AppTextStyles.bodyMedium
+                                    .copyWith(fontWeight: FontWeight.w700),
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 4),
+                      if (lectureGrantLecturesLoading.value)
+                        const Padding(
+                          padding: EdgeInsets.symmetric(vertical: 24),
+                          child: Center(child: CircularProgressIndicator()),
+                        )
+                      else if (lectureGrantLectures.isEmpty)
+                        Padding(
+                          padding: const EdgeInsets.symmetric(vertical: 12),
+                          child: Text('لا توجد محاضرات منشورة في هذا الكورس',
+                              style: AppTextStyles.caption),
+                        )
+                      else ...[
+                        Row(
+                          children: [
+                            TextButton(
+                              onPressed: () {
+                                final allIds = lectureGrantLectures
+                                    .map((l) => (l['id'] as num).toInt())
+                                    .toSet();
+                                if (lectureGrantSelectedIds.containsAll(allIds)) {
+                                  lectureGrantSelectedIds.clear();
+                                } else {
+                                  lectureGrantSelectedIds.assignAll(allIds);
+                                }
+                              },
+                              child: Text(
+                                lectureGrantSelectedIds.length == lectureGrantLectures.length
+                                    ? 'إلغاء تحديد الكل'
+                                    : 'تحديد الكل',
+                                style: const TextStyle(fontSize: 12),
+                              ),
+                            ),
+                            const Spacer(),
+                            Obx(() => Text(
+                                '${lectureGrantSelectedIds.length} محددة',
+                                style: AppTextStyles.caption)),
+                          ],
+                        ),
+                        ...lectureGrantLectures.map(_grantLectureCheckboxRow),
+                      ],
+                    ],
+                  ],
+                );
+              }),
+            ),
+            // ── زر المنح ──
+            Obx(() {
+              final selected = lectureGrantSelectedIds.length;
+              if (lectureGrantSelectedCourse.value == null || selected == 0) {
+                return const SizedBox.shrink();
+              }
+              return Padding(
+                padding: const EdgeInsets.only(top: 8),
+                child: SizedBox(
+                  width: double.infinity,
+                  height: 52,
+                  child: ElevatedButton.icon(
+                    onPressed: busy.value ? null : () => grantSelectedLectures(),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: AppColors.primary,
+                      shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12)),
+                    ),
+                    icon: const Icon(Icons.card_giftcard_outlined,
+                        color: Colors.white, size: 20),
+                    label: Text('منح $selected محاضرة',
+                        style: const TextStyle(
+                            color: Colors.white, fontWeight: FontWeight.w700)),
+                  ),
+                ),
+              );
+            }),
+          ],
+        ),
+      ),
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+    );
+  }
+
+  Widget _grantedLectureRow(Map<String, dynamic> g) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 4),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+        decoration: BoxDecoration(
+          border: Border.all(color: AppColors.cardBorder),
+          borderRadius: BorderRadius.circular(10),
+        ),
+        child: Row(
+          children: [
+            const Icon(Icons.lock_open_rounded,
+                color: AppColors.success, size: 20),
+            const SizedBox(width: 10),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text('${g['lecture_title'] ?? ''}',
+                      style: AppTextStyles.bodyMedium.copyWith(fontSize: 14),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis),
+                  Text('${g['course_name'] ?? ''}',
+                      style: AppTextStyles.caption,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis),
+                ],
+              ),
+            ),
+            TextButton(
+              onPressed: busy.value ? null : () => revokeLectureGrant(g),
+              child: const Text('إلغاء',
+                  style: TextStyle(color: Colors.red, fontSize: 12)),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _grantCoursePickRow(Map<String, dynamic> c) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 4),
+      child: Material(
+        color: Colors.transparent,
+        borderRadius: BorderRadius.circular(10),
+        child: InkWell(
+          borderRadius: BorderRadius.circular(10),
+          onTap: lectureGrantLecturesLoading.value
+              ? null
+              : () => _selectLectureGrantCourse(c),
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
+            decoration: BoxDecoration(
+              border: Border.all(color: AppColors.cardBorder),
+              borderRadius: BorderRadius.circular(10),
+            ),
+            child: Row(
+              children: [
+                const Icon(Icons.menu_book_outlined,
+                    color: AppColors.primary, size: 20),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: Text('${c['name'] ?? ''}',
+                      style: AppTextStyles.bodyMedium.copyWith(fontSize: 14),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis),
+                ),
+                Icon(Icons.chevron_left_rounded,
+                    color: AppColors.textSecondary, size: 20),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Future<void> _selectLectureGrantCourse(Map<String, dynamic> course) async {
+    lectureGrantSelectedCourse.value = course;
+    lectureGrantSelectedIds.clear();
+    lectureGrantLectures.clear();
+    lectureGrantLecturesLoading.value = true;
+    try {
+      final response =
+          await _provider.lectures(courseId: (course['id'] as num).toInt(), limit: 100);
+      final all = List<Map<String, dynamic>>.from(
+          (response.data['data'] as List).map((e) => Map<String, dynamic>.from(e)));
+      lectureGrantLectures.assignAll(all.where((l) => (l['is_published'] ?? true) == true));
+    } catch (_) {
+      Get.snackbar('خطأ', 'تعذّر تحميل المحاضرات',
+          backgroundColor: Colors.red, colorText: Colors.white);
+    } finally {
+      lectureGrantLecturesLoading.value = false;
+    }
+  }
+
+  Widget _grantLectureCheckboxRow(Map<String, dynamic> l) {
+    final id = (l['id'] as num).toInt();
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 2),
+      child: Obx(() {
+        final checked = lectureGrantSelectedIds.contains(id);
+        return Material(
+          color: Colors.transparent,
+          child: InkWell(
+            borderRadius: BorderRadius.circular(8),
+            onTap: () {
+              if (checked) {
+                lectureGrantSelectedIds.remove(id);
+              } else {
+                lectureGrantSelectedIds.add(id);
+              }
+            },
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 6),
+              child: Row(
+                children: [
+                  Icon(
+                    checked
+                        ? Icons.check_box_rounded
+                        : Icons.check_box_outline_blank_rounded,
+                    color: checked ? AppColors.primary : AppColors.textSecondary,
+                    size: 22,
+                  ),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: Text('${l['title'] ?? ''}',
+                        style: AppTextStyles.bodyMedium.copyWith(fontSize: 14),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis),
+                  ),
+                  Text('${l['type'] ?? ''}', style: AppTextStyles.caption),
+                ],
+              ),
+            ),
+          ),
+        );
+      }),
+    );
+  }
+
+  Future<void> grantSelectedLectures() async {
+    if (busy.value) return;
+    final ids = lectureGrantSelectedIds.toList();
+    if (ids.isEmpty) return;
+    busy.value = true;
+    try {
+      final response = await _provider.grantLectures(userId, ids);
+      final message = '${response.data['data']?['message'] ?? 'تم منح المحاضرات'}';
+      Get.snackbar('تم', message,
+          backgroundColor: Colors.green, colorText: Colors.white);
+      lectureGrantSelectedIds.clear();
+      await _loadLectureGrants();
+      // تحديث حالة الشيت: إزالة المحاضرات الممنوحة من القائمة
+      lectureGrantLectures.removeWhere(
+          (l) => lectureGrants.any((g) => g['lecture_id'] == l['id'] && (g['revoked'] ?? false) != true));
+    } catch (e) {
+      final status = e is DioException ? e.response?.statusCode : null;
+      Get.snackbar(
+          'خطأ',
+          status == 409
+              ? 'بعض المحاضرات ممنوحة مسبقاً أو الطالب يملك الكورس كاملاً'
+              : status == 404
+                  ? 'محاضرة غير موجودة أو غير منشورة'
+                  : apiErrorMessage(e),
+          backgroundColor: Colors.red,
+          colorText: Colors.white);
+    } finally {
+      busy.value = false;
+    }
+  }
+
+  Future<void> revokeLectureGrant(Map<String, dynamic> grant) async {
+    final confirmed = await Get.dialog<bool>(
+      AlertDialog(
+        title: const Text('إلغاء المنحة'),
+        content: Text('هل تريد إلغاء منحة المحاضرة "${grant['lecture_title'] ?? ''}"؟'),
+        actions: [
+          TextButton(onPressed: () => Get.back(result: false), child: const Text('تراجع')),
+          TextButton(
+            onPressed: () => Get.back(result: true),
+            child: const Text('إلغاء المنحة', style: TextStyle(color: Colors.red)),
+          ),
+        ],
+      ),
+      barrierDismissible: true,
+    );
+    if (confirmed != true) return;
+
+    busy.value = true;
+    try {
+      await _provider.revokeLectureGrant(userId, (grant['lecture_id'] as num).toInt());
+      Get.snackbar('تم', 'تم إلغاء المنحة',
+          backgroundColor: Colors.green, colorText: Colors.white);
+      await _loadLectureGrants();
+      // إعادة المحاضرة إلى قائمة المنح إن كانت في الكورس المفتوح
+      if (lectureGrantSelectedCourse.value != null &&
+          lectureGrantSelectedCourse.value!['id'] == grant['course_id']) {
+        await _selectLectureGrantCourse(lectureGrantSelectedCourse.value!);
+      }
+    } catch (e) {
+      final status = e is DioException ? e.response?.statusCode : null;
+      Get.snackbar(
+          'خطأ',
+          status == 404 ? 'المنحة غير موجودة' : apiErrorMessage(e),
           backgroundColor: Colors.red,
           colorText: Colors.white);
     } finally {

@@ -315,8 +315,7 @@ class CourseDetailPage extends StatelessWidget {
                     final lecture = entry.value;
                     final hasFile =
                         lecture.isVideo || lecture.isPdfHosted;
-                    final canDownload = hasFile &&
-                        (ctrl.isPurchased(courseId) || course.isPurchased);
+                    final canDownload = hasFile && !lecture.locked;
                     return LectureTile(
                       index: entry.key + 1,
                       title: lecture.title,
@@ -332,11 +331,11 @@ class CourseDetailPage extends StatelessWidget {
                             )
                           : null,
                       onTap: () {
-                        // غير مشتري ⇐ لا فتح شاشة العرض — رسالة اشتراك فقط
-                        if (!(ctrl.isPurchased(courseId) || course.isPurchased)) {
+                        // محاضرة مقفلة (لا شراء ولا منحة) ⇐ رسالة اشتراك فقط
+                        if (lecture.locked) {
                           Get.snackbar(
                             'خطأ',
-                            'أنت غير مشترك في الدورة، يرجى الاشتراك والمحاولة لاحقاً',
+                            'هذه المحاضرة غير متاحة — مشترك في الدورة أو تواصل مع الإدارة للحصول على منحة',
                             backgroundColor: const Color(0xFFE53935),
                             colorText: const Color(0xFFFFFFFF),
                           );

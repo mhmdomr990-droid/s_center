@@ -7,6 +7,7 @@ class LectureModel {
   final String? url;
   final String? content;
   final bool isPublished;
+  final bool locked;
   final int sortOrder;
   final int? createdBy;
   final DateTime? createdAt;
@@ -20,6 +21,7 @@ class LectureModel {
     this.url,
     this.content,
     required this.isPublished,
+    this.locked = false,
     required this.sortOrder,
     this.createdBy,
     this.createdAt,
@@ -35,6 +37,7 @@ class LectureModel {
       url: json['url'],
       content: json['content'],
       isPublished: json['is_published'] ?? true,
+      locked: json['locked'] ?? false,
       sortOrder: json['sort_order'] ?? 0,
       createdBy: json['created_by'] ?? json['createdBy']?['id'],
       createdAt: json['created_at'] != null ? DateTime.tryParse(json['created_at']) : null,
