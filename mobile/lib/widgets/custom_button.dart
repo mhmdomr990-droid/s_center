@@ -8,6 +8,7 @@ class CustomButton extends StatefulWidget {
   final bool isLoading;
   final bool isOutlined;
   final IconData? icon;
+  final bool iconAfterText;
   final Color? backgroundColor;
 
   const CustomButton({
@@ -17,6 +18,7 @@ class CustomButton extends StatefulWidget {
     this.isLoading = false,
     this.isOutlined = false,
     this.icon,
+    this.iconAfterText = false,
     this.backgroundColor,
   });
 
@@ -56,7 +58,7 @@ class _CustomButtonState extends State<CustomButton> {
             : Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  if (widget.icon != null) ...[
+                  if (widget.icon != null && !widget.iconAfterText) ...[
                     Icon(widget.icon, size: 20),
                     const SizedBox(width: 8)
                   ],
@@ -71,6 +73,10 @@ class _CustomButtonState extends State<CustomButton> {
                               color: AppColors.primary)),
                     ),
                   ),
+                  if (widget.icon != null && widget.iconAfterText) ...[
+                    const SizedBox(width: 8),
+                    Icon(widget.icon, size: 20, color: AppColors.primary)
+                  ],
                 ],
               ),
       );
@@ -93,7 +99,7 @@ class _CustomButtonState extends State<CustomButton> {
             : Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  if (widget.icon != null) ...[
+                  if (widget.icon != null && !widget.iconAfterText) ...[
                     Icon(widget.icon, size: 20, color: Colors.white),
                     const SizedBox(width: 8)
                   ],
@@ -108,6 +114,10 @@ class _CustomButtonState extends State<CustomButton> {
                               color: Colors.white)),
                     ),
                   ),
+                  if (widget.icon != null && widget.iconAfterText) ...[
+                    const SizedBox(width: 8),
+                    Icon(widget.icon, size: 20, color: Colors.white)
+                  ],
                 ],
               ),
       );

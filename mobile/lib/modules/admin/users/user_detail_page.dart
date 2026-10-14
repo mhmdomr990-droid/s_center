@@ -126,7 +126,8 @@ class UserDetailPage extends StatelessWidget {
                     padding: const EdgeInsets.symmetric(horizontal: 16),
                     child: CustomButton(
                       text: 'إجراءات',
-                      icon: Icons.more_horiz_rounded,
+                      icon: Icons.bolt_rounded,
+                      iconAfterText: true,
                       isOutlined: true,
                       onPressed: ctrl.busy.value
                           ? null
