@@ -50,8 +50,6 @@ void showTeacherLectureDialog(
       backgroundColor: Colors.red, colorText: Colors.white);
 
   final um = Get.find<UploadManager>();
-  final prevSuppressed = um.overlaySuppressed.value;
-  Future.microtask(() => um.overlaySuppressed.value = true);
   showDialog<void>(
     context: context,
     builder: (dialogContext) => StatefulBuilder(
@@ -488,6 +486,5 @@ void showTeacherLectureDialog(
         );
       },
     ),
-  ).whenComplete(() =>
-      Future.microtask(() => um.overlaySuppressed.value = prevSuppressed));
+  );
 }

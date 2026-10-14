@@ -17,7 +17,6 @@ import 'data/services/screen_guard.dart';
 import 'data/services/upload_manager.dart';
 import 'modules/auth/auth_controller.dart';
 import 'widgets/app_scroll_behavior.dart';
-import 'widgets/upload_overlay.dart';
 
 /// تحميل وتسميع خطوط Cairo الخمسة قبل runApp.
 /// المفاتيح تُشتق من `.fontFamily` نفسه الذي ستستخدمه google_fonts
@@ -132,8 +131,6 @@ class SCenterApp extends StatelessWidget {
             child: Stack(
               children: [
                 child ?? const SizedBox.shrink(),
-                // شريط تقدم الرفع العائم — يبقى فوق أي صفحة
-                const UploadOverlay(),
               ],
             ),
           );

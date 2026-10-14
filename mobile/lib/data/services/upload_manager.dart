@@ -69,9 +69,6 @@ class UploadManager extends GetxController {
   final compressEta = 0.obs;
   final taskTitle = ''.obs;
 
-  /// صفحة الإضافة تُخفي الشريط العائم ( تعرض تقدمها بنفسها )
-  final overlaySuppressed = false.obs;
-
   static bool _permissionAsked = false;
   DateTime _lastNotifiedAt = DateTime.fromMillisecondsSinceEpoch(0);
   int _lastNotifiedPct = -1;
