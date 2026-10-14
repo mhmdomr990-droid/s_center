@@ -46,6 +46,19 @@ const optionalTeacherIdSchema = z.preprocess(
 
 export const adminIdParamSchema = idParamSchema;
 
+export const adminUserParamSchema = z
+  .object({
+    userId: z.coerce.number().int().positive(),
+  })
+  .strict();
+
+export const adminUserLectureParamSchema = z
+  .object({
+    userId: z.coerce.number().int().positive(),
+    lectureId: z.coerce.number().int().positive(),
+  })
+  .strict();
+
 export const paginationPageSchema = z
   .object({
     page: z.coerce.number().int().min(1).default(1),
@@ -163,6 +176,12 @@ export const grantCourseBodySchema = z
   .refine((value) => value.course_id !== undefined || value.courseId !== undefined, {
     message: 'course_id or courseId is required',
   });
+
+export const grantLecturesBodySchema = z
+  .object({
+    lecture_ids: z.array(z.coerce.number().int().positive()).min(1),
+  })
+  .strict();
 
 export const adminCoursesQuerySchema = z
   .object({

@@ -69,6 +69,7 @@
                   <button class="panel-btn panel-btn-secondary" style="width:100%;" type="submit" data-confirm="هل تريد تصفير الجهاز لهذا المستخدم؟">إعادة ضبط الجهاز</button>
                 </form>
                 <button class="panel-btn panel-btn-secondary" style="width:100%;margin-bottom:6px;" data-modal-open="user-grant-course-modal-<%= item.id %>">منح كورس مجاني</button>
+                <button class="panel-btn panel-btn-secondary" style="width:100%;margin-bottom:6px;" data-modal-open="user-grant-lecture-modal-<%= item.id %>">منح محاضرة مجانية</button>
                 <button class="panel-btn panel-btn-secondary" style="width:100%;margin-bottom:6px;" data-modal-open="user-reset-password-modal" data-modal-action="/panel/admin/users/<%= item.id %>/reset-password" data-modal-fill='<%= JSON.stringify(item) %>'>إعادة تعيين كلمة المرور</button>
                 <button class="panel-btn panel-btn-secondary" style="width:100%;" data-modal-open="user-adjust-balance-modal" data-modal-action="/panel/admin/users/<%= item.id %>/adjust-balance" data-modal-fill='<%= JSON.stringify(item) %>'>تعديل الرصيد</button>
               </div>
@@ -83,6 +84,11 @@
   <% const specializationCourses = item.specialization_id
     ? courses.filter((course) => Number(course.specialization_id) === Number(item.specialization_id))
     : []; %>
+  <% const visibleCourses = specializationCourses.filter((course) => course.is_published); %>
+  <% const grantableLectures = lectures.filter((lecture) =>
+    lecture.is_published && visibleCourses.some((course) => Number(course.id) === Number(lecture.course_id))
+  ); %>
+  <% const userLectureGrants = (lectureGrantsByUser && lectureGrantsByUser[item.id]) ? lectureGrantsByUser[item.id] : []; %>
   <div class="panel-modal" id="user-grant-course-modal-<%= item.id %>">
     <div class="panel-modal-content">
       <div class="panel-modal-header"><h3>منح كورس مجاني - <%= item.full_name %></h3><button type="button" class="panel-modal-close" data-modal-close>×</button></div>
@@ -106,6 +112,91 @@
           <button class="panel-btn panel-btn-primary" type="submit" <%= specializationCourses.length ? '' : 'disabled' %>>حفظ المنحة</button>
         </div>
       </form>
+    </div>
+  </div>
+
+  <div class="panel-modal" id="user-grant-lecture-modal-<%= item.id %>">
+    <div class="panel-modal-content" style="max-width:900px;">
+      <div class="panel-modal-header"><h3>منح محاضرة مجانية - <%= item.full_name %></h3><button type="button" class="panel-modal-close" data-modal-close>×</button></div>
+      <form method="post" action="/panel/admin/users/<%= item.id %>/grant-lectures" class="panel-form">
+        <input type="hidden" name="csrf_token" value="<%= csrfToken %>">
+        <div class="panel-form-grid">
+          <div>
+            <label>تصفية حسب الكورس</label>
+            <% if (visibleCourses.length) { %>
+              <select data-lecture-course-filter="<%= item.id %>">
+                <option value="">كل الكورسات</option>
+                <% visibleCourses.forEach((course) => { %>
+                  <option value="<%= course.id %>"><%= course.name %> - <%= course.year %> / <%= course.specialization_name || 'غير محدد' %></option>
+                <% }) %>
+              </select>
+            <% } else { %>
+              <input type="text" value="لا توجد كورسات منشورة ضمن اختصاص هذا الطالب" disabled>
+            <% } %>
+          </div>
+        </div>
+
+        <div style="margin-top:12px;max-height:220px;overflow:auto;border:1px solid #ded7ca;border-radius:8px;padding:10px;" data-lecture-picker-root="<%= item.id %>">
+          <% if (grantableLectures.length) { %>
+            <% grantableLectures.forEach((lecture) => { %>
+              <label style="display:flex;gap:8px;align-items:flex-start;margin-bottom:8px;" data-course-id="<%= lecture.course_id %>">
+                <input type="checkbox" name="lecture_ids" value="<%= lecture.id %>">
+                <span>
+                  <strong><%= lecture.title %></strong>
+                  <small style="display:block;color:#666;"><%= lecture.course_name %> - <%= lecture.type %></small>
+                </span>
+              </label>
+            <% }) %>
+          <% } else { %>
+            <p class="panel-muted" style="margin:0;">لا توجد محاضرات منشورة قابلة للمنح لهذا الطالب.</p>
+          <% } %>
+        </div>
+
+        <div class="panel-form-actions">
+          <button class="panel-btn panel-btn-primary" type="submit" <%= grantableLectures.length ? '' : 'disabled' %>>منح المحاضرات المحددة</button>
+        </div>
+      </form>
+
+      <hr style="margin:14px 0;border:none;border-top:1px solid #eee;">
+      <h4 style="margin:0 0 8px;">المنح الحالية للمحاضرات</h4>
+      <% if (!userLectureGrants.length) { %>
+        <p class="panel-muted" style="margin:0;">لا توجد منح محاضرات لهذا الطالب حالياً.</p>
+      <% } else { %>
+        <div class="panel-table" style="margin:0;">
+          <table>
+            <thead>
+              <tr>
+                <th>المحاضرة</th>
+                <th>الكورس</th>
+                <th>الحالة</th>
+                <th>تاريخ المنح</th>
+                <th>إجراء</th>
+              </tr>
+            </thead>
+            <tbody>
+              <% userLectureGrants.forEach((grant) => { %>
+                <tr>
+                  <td><%= grant.lecture_title %></td>
+                  <td><%= grant.course_name %></td>
+                  <td><%= grant.revoked ? 'ملغي' : 'فعّال' %></td>
+                  <td><%= date(grant.granted_at) %></td>
+                  <td>
+                    <% if (!grant.revoked) { %>
+                      <form method="post" action="/panel/admin/users/<%= item.id %>/revoke-lecture-grant" style="display:inline;">
+                        <input type="hidden" name="csrf_token" value="<%= csrfToken %>">
+                        <input type="hidden" name="lecture_id" value="<%= grant.lecture_id %>">
+                        <button class="panel-btn panel-btn-secondary" type="submit" data-confirm="هل تريد إلغاء منحة هذه المحاضرة؟">إلغاء المنحة</button>
+                      </form>
+                    <% } else { %>
+                      <span class="panel-muted">-</span>
+                    <% } %>
+                  </td>
+                </tr>
+              <% }) %>
+            </tbody>
+          </table>
+        </div>
+      <% } %>
     </div>
   </div>
 <% }) %>
@@ -222,4 +313,37 @@
     </form>
   </div>
 </div>
+<script>
+  (() => {
+    document.querySelectorAll('[data-lecture-course-filter]').forEach((selectEl) => {
+      const studentId = selectEl.getAttribute('data-lecture-course-filter');
+      if (!studentId) {
+        return;
+      }
+
+      const root = document.querySelector('[data-lecture-picker-root="' + studentId + '"]');
+      if (!root) {
+        return;
+      }
+
+      const applyFilter = () => {
+        const selectedCourseId = selectEl.value;
+        root.querySelectorAll('[data-course-id]').forEach((node) => {
+          const courseId = node.getAttribute('data-course-id');
+          const visible = !selectedCourseId || selectedCourseId === courseId;
+          node.style.display = visible ? '' : 'none';
+          if (!visible) {
+            const checkbox = node.querySelector('input[type="checkbox"]');
+            if (checkbox) {
+              checkbox.checked = false;
+            }
+          }
+        });
+      };
+
+      selectEl.addEventListener('change', applyFilter);
+      applyFilter();
+    });
+  })();
+</script>
 <%- include('../layout/footer') %>

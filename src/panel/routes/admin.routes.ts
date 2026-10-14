@@ -45,6 +45,7 @@ import {
 	createStudentAction,
 	createTeacherAction,
 	grantUserCourseAction,
+	grantUserLecturesAction,
 	lecturesPage,
 	watchLecturePage,
 	notificationsPage,
@@ -52,6 +53,7 @@ import {
 	rejectCourseSwapRequestAction,
 	rejectTopupAction,
 	revokeUserCourseGrantAction,
+	revokeUserLectureGrantAction,
 	resetUserDeviceAction,
 	resetUserPasswordAction,
 	sendNotificationAction,
@@ -86,6 +88,21 @@ const togglePublishSchema = z
 const grantCourseSchema = z
 	.object({
 		course_id: z.coerce.number().int().positive(),
+	})
+	.strict();
+
+const grantLecturesSchema = z
+	.object({
+		lecture_ids: z.preprocess(
+			(value) => (Array.isArray(value) ? value : value === undefined ? [] : [value]),
+			z.array(z.coerce.number().int().positive()).min(1),
+		),
+	})
+	.strict();
+
+const revokeLectureGrantSchema = z
+	.object({
+		lecture_id: z.coerce.number().int().positive(),
 	})
 	.strict();
 
@@ -133,6 +150,8 @@ panelAdminRoutes.get('/users', validate({ query: adminUsersQuerySchema }), async
 panelAdminRoutes.get('/purchases', asyncHandler(purchasesPage));
 panelAdminRoutes.post('/users/:id/grant-course', validate({ params: adminIdParamSchema, body: grantCourseSchema }), asyncHandler(grantUserCourseAction));
 panelAdminRoutes.post('/users/:id/revoke-course-grant', validate({ params: adminIdParamSchema, body: grantCourseSchema }), asyncHandler(revokeUserCourseGrantAction));
+panelAdminRoutes.post('/users/:id/grant-lectures', validate({ params: adminIdParamSchema, body: grantLecturesSchema }), asyncHandler(grantUserLecturesAction));
+panelAdminRoutes.post('/users/:id/revoke-lecture-grant', validate({ params: adminIdParamSchema, body: revokeLectureGrantSchema }), asyncHandler(revokeUserLectureGrantAction));
 panelAdminRoutes.post('/users/:id/active', validate({ params: adminIdParamSchema, body: activeUserSchema }), asyncHandler(toggleUserActiveAction));
 panelAdminRoutes.post('/users/:id/reset-device', validate({ params: adminIdParamSchema }), asyncHandler(resetUserDeviceAction));
 panelAdminRoutes.post('/users/:id/reset-password', validate({ params: adminIdParamSchema, body: resetPasswordSchema }), asyncHandler(resetUserPasswordAction));

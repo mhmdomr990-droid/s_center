@@ -29,7 +29,10 @@ import {
   createAdmin,
   adjustBalance,
   grantCourseToUser,
+  grantLectureToUser,
+  grantLecturesToUser,
   revokeCourseGrant,
+  revokeLectureGrant,
   listTeacherPayouts,
   listTeachers,
   listCoursesFiltered,
@@ -37,6 +40,7 @@ import {
   listSpecializationsFiltered,
   listTopupRequests,
   listUserPurchases,
+  listUserLectureGrants,
   listUserTransactions,
   listUsersFiltered,
   overviewStats,
@@ -275,6 +279,38 @@ export const revokeAdminUserCourseGrant = asyncHandler(async (req: Request, res:
     userId: Number(req.params.id),
     courseId,
   });
+  res.status(200).json({ success: true, data });
+});
+
+export const grantAdminUserLecture = asyncHandler(async (req: Request, res: Response) => {
+  const data = await grantLectureToUser({
+    adminId: req.user!.id,
+    userId: Number(req.params.userId),
+    lectureId: Number(req.params.lectureId),
+  });
+  res.status(201).json({ success: true, data });
+});
+
+export const grantAdminUserLectures = asyncHandler(async (req: Request, res: Response) => {
+  const data = await grantLecturesToUser({
+    adminId: req.user!.id,
+    userId: Number(req.params.userId),
+    lectureIds: req.body.lecture_ids,
+  });
+  res.status(200).json({ success: true, data });
+});
+
+export const revokeAdminUserLectureGrant = asyncHandler(async (req: Request, res: Response) => {
+  const data = await revokeLectureGrant({
+    adminId: req.user!.id,
+    userId: Number(req.params.userId),
+    lectureId: Number(req.params.lectureId),
+  });
+  res.status(200).json({ success: true, data });
+});
+
+export const getAdminUserLectureGrants = asyncHandler(async (req: Request, res: Response) => {
+  const data = await listUserLectureGrants(Number(req.params.userId));
   res.status(200).json({ success: true, data });
 });
 

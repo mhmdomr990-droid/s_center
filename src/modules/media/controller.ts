@@ -3,12 +3,12 @@ import type { Request, Response } from 'express';
 import { env } from '../../config/env';
 import { AppDataSource } from '../../config/data-source';
 import { Lecture } from '../../entities/Lecture';
-import { Purchase } from '../../entities/Purchase';
 import { User } from '../../entities/User';
 import { LectureType, UserRole } from '../../entities/enums';
 import { asyncHandler } from '../../utils/asyncHandler';
 import { AppError } from '../../utils/AppError';
 import { logAuditEvent } from '../../services/auditLog';
+import { hasStudentLectureAccess } from '../../services/lectureAccess';
 import path from 'path';
 import {
   createSignedMediaToken,
@@ -41,11 +41,13 @@ async function assertCanIssueStreamToken(user: User, lecture: Lecture) {
       throw new AppError(403, 'Access denied');
     }
 
-    const purchased = await AppDataSource.getRepository(Purchase).findOne({
-      where: { user: { id: user.id }, course: { id: lecture.course.id } },
+    const canAccessLecture = await hasStudentLectureAccess(AppDataSource.manager, {
+      userId: user.id,
+      courseId: lecture.course.id,
+      lectureId: lecture.id,
     });
 
-    if (!purchased) {
+    if (!canAccessLecture) {
       throw new AppError(403, 'Access denied');
     }
     return;

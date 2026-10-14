@@ -8,10 +8,10 @@ import type { Response } from 'express';
 import { env } from '../config/env';
 import { AppDataSource } from '../config/data-source';
 import { Lecture } from '../entities/Lecture';
-import { Purchase } from '../entities/Purchase';
 import { User } from '../entities/User';
 import { LectureType, LectureUploadStatus, UserRole } from '../entities/enums';
 import { AppError } from '../utils/AppError';
+import { hasStudentLectureAccess } from './lectureAccess';
 
 export type MediaPurpose = 'stream' | 'download';
 
@@ -246,11 +246,13 @@ export async function loadLectureMediaContext(payload: MediaTokenPayload) {
       throw new AppError(403, 'Access denied');
     }
 
-    const purchased = await AppDataSource.getRepository(Purchase).findOne({
-      where: { user: { id: user.id }, course: { id: lecture.course.id } },
+    const canAccessLecture = await hasStudentLectureAccess(AppDataSource.manager, {
+      userId: user.id,
+      courseId: lecture.course.id,
+      lectureId: lecture.id,
     });
 
-    if (!purchased) {
+    if (!canAccessLecture) {
       throw new AppError(403, 'Access denied');
     }
   } else if (isTeacher) {

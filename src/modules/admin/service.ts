@@ -1,10 +1,11 @@
 import bcrypt from 'bcrypt';
-import { Brackets, Like } from 'typeorm';
+import { Brackets, EntityManager, In, Like } from 'typeorm';
 import path from 'path';
 
 import { AppDataSource } from '../../config/data-source';
 import { Course } from '../../entities/Course';
 import { Lecture } from '../../entities/Lecture';
+import { LectureGrant } from '../../entities/LectureGrant';
 import { Notification } from '../../entities/Notification';
 import { Purchase } from '../../entities/Purchase';
 import { TeacherPayout } from '../../entities/TeacherPayout';
@@ -19,6 +20,7 @@ import { calculateMoneyShare, centsToMoney, toCents } from '../../utils/money';
 import { notify } from '../notifications/service';
 import { deleteStoredVideoFile, detectVideoDurationSeconds, type StoredVideoFile } from '../../services/media';
 import { logAuditEvent } from '../../services/auditLog';
+import { hasStudentCourseAccess } from '../../services/lectureAccess';
 
 function mapSpecialization(specialization: Specialization) {
   return {
@@ -215,6 +217,122 @@ async function requireNonAdminUser(id: number) {
     throw new AppError(400, 'Admin users cannot be modified');
   }
   return user;
+}
+
+async function requireStudentUserByManager(manager: EntityManager, id: number) {
+  const user = await manager.getRepository(User).findOne({ where: { id } });
+  if (!user) {
+    throw new AppError(404, 'User not found');
+  }
+  if (user.role !== UserRole.STUDENT) {
+    throw new AppError(400, 'يمكن منح المحاضرات المجانية للطلاب فقط');
+  }
+  return user;
+}
+
+type LectureGrantAttempt = {
+  success: boolean;
+  statusCode: number;
+  lecture_id: number;
+  message: string;
+  grant_id?: number;
+  course_id?: number;
+  reactivated?: boolean;
+};
+
+async function grantLectureAccessAttempt(
+  manager: EntityManager,
+  input: { admin: User; user: User; lectureId: number },
+): Promise<LectureGrantAttempt> {
+  const lectureRepository = manager.getRepository(Lecture);
+  const lectureGrantRepository = manager.getRepository(LectureGrant);
+
+  const lecture = await lectureRepository.findOne({
+    where: { id: input.lectureId },
+    relations: { course: true },
+  });
+
+  if (!lecture || !lecture.isPublished) {
+    return {
+      success: false,
+      statusCode: 404,
+      lecture_id: input.lectureId,
+      message: 'Lecture not found or unpublished',
+    };
+  }
+
+  const alreadyHasCourseAccess = await hasStudentCourseAccess(manager, {
+    userId: input.user.id,
+    courseId: lecture.course.id,
+  });
+
+  if (alreadyHasCourseAccess) {
+    return {
+      success: false,
+      statusCode: 409,
+      lecture_id: lecture.id,
+      course_id: lecture.course.id,
+      message: 'الطالب يملك وصولاً كاملاً للكورس أصلاً',
+    };
+  }
+
+  const existingGrant = await lectureGrantRepository.findOne({
+    where: { user: { id: input.user.id }, lecture: { id: lecture.id } },
+    lock: { mode: 'pessimistic_write' },
+  });
+
+  if (existingGrant && !existingGrant.revoked) {
+    return {
+      success: false,
+      statusCode: 409,
+      lecture_id: lecture.id,
+      course_id: lecture.course.id,
+      message: 'تم منح هذه المحاضرة مسبقاً لهذا الطالب',
+    };
+  }
+
+  const now = new Date();
+  const savedGrant = existingGrant
+    ? await lectureGrantRepository.save({
+      ...existingGrant,
+      revoked: false,
+      grantedBy: { id: input.admin.id } as User,
+      grantedAt: now,
+    })
+    : await lectureGrantRepository.save(
+      lectureGrantRepository.create({
+        user: { id: input.user.id } as User,
+        lecture: { id: lecture.id } as Lecture,
+        grantedBy: { id: input.admin.id } as User,
+        grantedAt: now,
+        revoked: false,
+      }),
+    );
+
+  await notify(input.user.id, 'منحة محاضرة مجانية', `تم منحك محاضرة مجانية: ${lecture.title}`, manager);
+
+  await logAuditEvent({
+    action: existingGrant ? 'REACTIVATE_LECTURE_GRANT' : 'GRANT_LECTURE',
+    actorId: input.admin.id,
+    entityType: 'LectureGrant',
+    entityId: savedGrant.id,
+    metadata: {
+      userId: input.user.id,
+      lectureId: lecture.id,
+      courseId: lecture.course.id,
+      reactivated: Boolean(existingGrant),
+    },
+  });
+
+  return {
+    success: true,
+    statusCode: existingGrant ? 200 : 201,
+    lecture_id: lecture.id,
+    course_id: lecture.course.id,
+    grant_id: savedGrant.id,
+    reactivated: Boolean(existingGrant),
+    message: existingGrant ? 'تمت إعادة تفعيل منحة المحاضرة بنجاح' : 'تم منح المحاضرة المجانية بنجاح',
+  };
 }
 
 async function findSpecializationOrFail(id: number) {
@@ -1021,6 +1139,173 @@ export async function listUserPurchases(userId: number) {
     teacher_share: purchase.teacherShare,
     created_at: purchase.createdAt,
   }));
+}
+
+export async function listUserLectureGrants(userId: number) {
+  const user = await AppDataSource.getRepository(User).findOne({ where: { id: userId } });
+  if (!user) {
+    throw new AppError(404, 'User not found');
+  }
+
+  const grants = await AppDataSource.getRepository(LectureGrant).find({
+    where: { user: { id: userId } },
+    relations: { lecture: { course: true }, grantedBy: true },
+    order: { grantedAt: 'DESC', id: 'DESC' },
+  });
+
+  return grants.map((grant) => ({
+    id: grant.id,
+    user_id: userId,
+    lecture_id: grant.lecture.id,
+    lecture_title: grant.lecture.title,
+    course_id: grant.lecture.course.id,
+    course_name: grant.lecture.course.name,
+    granted_at: grant.grantedAt,
+    revoked: grant.revoked,
+    granted_by: grant.grantedBy?.id ?? null,
+    granted_by_name: grant.grantedBy?.fullName ?? null,
+  }));
+}
+
+export async function listLectureGrantsForUsers(userIds: number[]) {
+  if (!userIds.length) {
+    return {} as Record<number, Awaited<ReturnType<typeof listUserLectureGrants>>>;
+  }
+
+  const grants = await AppDataSource.getRepository(LectureGrant).find({
+    where: { user: { id: In(userIds) } },
+    relations: { lecture: { course: true }, grantedBy: true, user: true },
+    order: { grantedAt: 'DESC', id: 'DESC' },
+  });
+
+  const grouped: Record<number, Awaited<ReturnType<typeof listUserLectureGrants>>> = {};
+
+  for (const grant of grants) {
+    const key = grant.user.id;
+    if (!grouped[key]) {
+      grouped[key] = [];
+    }
+
+    grouped[key].push({
+      id: grant.id,
+      user_id: key,
+      lecture_id: grant.lecture.id,
+      lecture_title: grant.lecture.title,
+      course_id: grant.lecture.course.id,
+      course_name: grant.lecture.course.name,
+      granted_at: grant.grantedAt,
+      revoked: grant.revoked,
+      granted_by: grant.grantedBy?.id ?? null,
+      granted_by_name: grant.grantedBy?.fullName ?? null,
+    });
+  }
+
+  return grouped;
+}
+
+export async function grantLectureToUser(input: { adminId: number; userId: number; lectureId: number }) {
+  return AppDataSource.transaction(async (manager) => {
+    const admin = await manager.getRepository(User).findOne({ where: { id: input.adminId, role: UserRole.ADMIN } });
+    if (!admin) {
+      throw new AppError(404, 'Admin not found');
+    }
+
+    const user = await requireStudentUserByManager(manager, input.userId);
+    const attempt = await grantLectureAccessAttempt(manager, {
+      admin,
+      user,
+      lectureId: input.lectureId,
+    });
+
+    if (!attempt.success) {
+      throw new AppError(attempt.statusCode, attempt.message);
+    }
+
+    return {
+      message: attempt.message,
+      grant_id: attempt.grant_id,
+      lecture_id: attempt.lecture_id,
+      course_id: attempt.course_id,
+      user_id: user.id,
+      reactivated: attempt.reactivated ?? false,
+    };
+  });
+}
+
+export async function grantLecturesToUser(input: { adminId: number; userId: number; lectureIds: number[] }) {
+  return AppDataSource.transaction(async (manager) => {
+    const admin = await manager.getRepository(User).findOne({ where: { id: input.adminId, role: UserRole.ADMIN } });
+    if (!admin) {
+      throw new AppError(404, 'Admin not found');
+    }
+
+    const user = await requireStudentUserByManager(manager, input.userId);
+    const uniqueLectureIds = [...new Set(input.lectureIds)];
+    const results: LectureGrantAttempt[] = [];
+
+    for (const lectureId of uniqueLectureIds) {
+      const attempt = await grantLectureAccessAttempt(manager, { admin, user, lectureId });
+      results.push(attempt);
+    }
+
+    const granted = results.filter((item) => item.success).length;
+    const failed = results.length - granted;
+
+    return {
+      message: granted > 0
+        ? `تم منح ${granted} محاضرة مجانية${failed ? `، وتعذر منح ${failed} محاضرة` : ''}`
+        : 'لم يتم منح أي محاضرة',
+      user_id: user.id,
+      granted,
+      failed,
+      results,
+    };
+  });
+}
+
+export async function revokeLectureGrant(input: { adminId: number; userId: number; lectureId: number }) {
+  return AppDataSource.transaction(async (manager) => {
+    const admin = await manager.getRepository(User).findOne({ where: { id: input.adminId, role: UserRole.ADMIN } });
+    if (!admin) {
+      throw new AppError(404, 'Admin not found');
+    }
+
+    const user = await requireStudentUserByManager(manager, input.userId);
+    const grantRepository = manager.getRepository(LectureGrant);
+    const grant = await grantRepository.findOne({
+      where: { user: { id: user.id }, lecture: { id: input.lectureId }, revoked: false },
+      relations: { lecture: { course: true } },
+      lock: { mode: 'pessimistic_write' },
+    });
+
+    if (!grant) {
+      throw new AppError(404, 'Lecture grant not found');
+    }
+
+    grant.revoked = true;
+    await grantRepository.save(grant);
+
+    await notify(user.id, 'إلغاء منحة محاضرة', `تم إلغاء المنحة المجانية للمحاضرة: ${grant.lecture.title}`, manager);
+
+    await logAuditEvent({
+      action: 'REVOKE_LECTURE_GRANT',
+      actorId: admin.id,
+      entityType: 'LectureGrant',
+      entityId: grant.id,
+      metadata: {
+        userId: user.id,
+        lectureId: grant.lecture.id,
+        courseId: grant.lecture.course.id,
+      },
+    });
+
+    return {
+      message: 'تم إلغاء منحة المحاضرة المجانية',
+      grant_id: grant.id,
+      lecture_id: grant.lecture.id,
+      user_id: user.id,
+    };
+  });
 }
 
 export async function grantCourseToUser(input: { adminId: number; userId: number; courseId: number }) {

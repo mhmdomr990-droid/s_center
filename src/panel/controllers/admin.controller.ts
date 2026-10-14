@@ -27,6 +27,7 @@ import {
   listTeachers,
   listTopupRequests,
   listUsers,
+  listLectureGrantsForUsers,
   listFreeGrantsByAdmin,
   listPurchaseHistory,
   overviewStats,
@@ -42,7 +43,9 @@ import {
   updateSpecialization,
   setUserActive,
   grantCourseToUser,
+  grantLecturesToUser,
   revokeCourseGrant,
+  revokeLectureGrant,
 } from '../../modules/admin/service';
 import {
   approveCourseSwapRequest,
@@ -367,13 +370,15 @@ export async function purchasesPage(req: Request, res: Response) {
 
 export async function usersPage(req: Request, res: Response) {
   const search = typeof req.query.search === 'string' ? req.query.search : '';
-  const [users, courses, specializations, freeGrants] = await Promise.all([
+  const [users, courses, specializations, freeGrants, lectures] = await Promise.all([
     listUsers(search || undefined),
     listCourses(),
     listSpecializations(),
     listFreeGrantsByAdmin(req.user!.id),
+    listLectures(),
   ]);
   const paged = paginate(users, Number(req.query.page) || 1, 20);
+  const lectureGrantsByUser = await listLectureGrantsForUsers(paged.items.map((user) => user.id));
   const common = await loadAdminCommon();
   return res.render('admin/users', {
     title: 'المستخدمون',
@@ -382,8 +387,10 @@ export async function usersPage(req: Request, res: Response) {
     csrfToken: res.locals.csrfToken,
     users: paged.items,
     courses,
+    lectures,
     specializations,
     freeGrants,
+    lectureGrantsByUser,
     search,
     page: paged.page,
     pageCount: paged.pageCount,
@@ -406,6 +413,40 @@ export async function revokeUserCourseGrantAction(req: Request, res: Response) {
   const courseId = Number(req.body.course_id);
   await revokeCourseGrant({ adminId: req.user!.id, userId, courseId });
   setFlash(res, 'success', 'تم إلغاء المنحة المجانية لهذا الكورس');
+  return res.redirect('/panel/admin/users');
+}
+
+export async function grantUserLecturesAction(req: Request, res: Response) {
+  const userId = Number(req.params.id);
+  const lectureIds = Array.isArray(req.body.lecture_ids)
+    ? req.body.lecture_ids.map((value: string) => Number(value))
+    : [Number(req.body.lecture_ids)];
+
+  const result = await grantLecturesToUser({
+    adminId: req.user!.id,
+    userId,
+    lectureIds,
+  });
+
+  if (result.failed > 0) {
+    const firstFailure = result.results.find((item) => !item.success);
+    setFlash(
+      res,
+      'success',
+      `تم منح ${result.granted} محاضرة. فشل ${result.failed} محاضرة${firstFailure ? ` (مثال: ${firstFailure.message})` : ''}`,
+    );
+  } else {
+    setFlash(res, 'success', `تم منح ${result.granted} محاضرة مجانية بنجاح`);
+  }
+
+  return res.redirect('/panel/admin/users');
+}
+
+export async function revokeUserLectureGrantAction(req: Request, res: Response) {
+  const userId = Number(req.params.id);
+  const lectureId = Number(req.body.lecture_id);
+  await revokeLectureGrant({ adminId: req.user!.id, userId, lectureId });
+  setFlash(res, 'success', 'تم إلغاء منحة المحاضرة المجانية');
   return res.redirect('/panel/admin/users');
 }
 

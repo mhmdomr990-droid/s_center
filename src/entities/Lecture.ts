@@ -1,9 +1,10 @@
-import { Column, Entity, JoinColumn, ManyToOne } from 'typeorm';
+import { Column, Entity, JoinColumn, ManyToOne, OneToMany } from 'typeorm';
 
 import { BaseColumns } from './BaseColumns';
 import { Course } from './Course';
 import { LectureType, LectureUploadStatus } from './enums';
 import { User } from './User';
+import { LectureGrant } from './LectureGrant';
 
 @Entity({ name: 'lectures' })
 export class Lecture extends BaseColumns {
@@ -44,4 +45,7 @@ export class Lecture extends BaseColumns {
 
   @Column({ name: 'sort_order', type: 'int', default: 0 })
   sortOrder!: number;
+
+  @OneToMany(() => LectureGrant, (lectureGrant) => lectureGrant.lecture)
+  lectureGrants!: LectureGrant[];
 }

@@ -9,6 +9,7 @@ import { Specialization } from './Specialization';
 import { TeacherPayout } from './TeacherPayout';
 import { TopupRequest } from './TopupRequest';
 import { Transaction } from './Transaction';
+import { LectureGrant } from './LectureGrant';
 
 @Entity({ name: 'users' })
 export class User extends BaseColumns {
@@ -54,6 +55,12 @@ export class User extends BaseColumns {
 
   @OneToMany(() => Purchase, (purchase) => purchase.grantedBy)
   grantedCourses!: Purchase[];
+
+  @OneToMany(() => LectureGrant, (lectureGrant) => lectureGrant.user)
+  lectureGrants!: LectureGrant[];
+
+  @OneToMany(() => LectureGrant, (lectureGrant) => lectureGrant.grantedBy)
+  grantedLectures!: LectureGrant[];
 
   @OneToMany(() => Transaction, (transaction) => transaction.user)
   transactions!: Transaction[];

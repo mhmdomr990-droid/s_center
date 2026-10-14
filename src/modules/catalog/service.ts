@@ -7,6 +7,7 @@ import { LectureType, UserRole } from '../../entities/enums';
 import { User } from '../../entities/User';
 import { AppError } from '../../utils/AppError';
 import { createSignedMediaToken } from '../../services/media';
+import { findStudentAccessibleLectureIds } from '../../services/lectureAccess';
 
 function isPurchasedCourse(purchasedCourseIds: Set<number>, courseId: number) {
   return purchasedCourseIds.has(courseId);
@@ -84,18 +85,35 @@ export async function listLectures(user: User, courseId: number) {
     throw new AppError(404, 'Course not found');
   }
 
-  const purchaseRepository = AppDataSource.getRepository(Purchase);
-  const purchased = user.role === UserRole.ADMIN
-    ? true
-    : !!(await purchaseRepository.findOne({ where: { user: { id: user.id }, course: { id: course.id } } }));
-
   const lectures = await AppDataSource.getRepository(Lecture).find({
     where: { course: { id: course.id }, isPublished: true },
     order: { sortOrder: 'ASC', id: 'ASC' },
   });
 
-  if (purchased) {
-    return lectures.map((lecture) => ({
+  const accessibleLectureIds = user.role === UserRole.ADMIN
+    ? new Set(lectures.map((lecture) => lecture.id))
+    : await findStudentAccessibleLectureIds(AppDataSource.manager, {
+      userId: user.id,
+      courseId: course.id,
+      lectureIds: lectures.map((lecture) => lecture.id),
+    });
+
+  return lectures.map((lecture) => {
+    const unlocked = accessibleLectureIds.has(lecture.id);
+    if (!unlocked) {
+      return {
+        id: lecture.id,
+        title: lecture.title,
+        type: lecture.type,
+        url: null,
+        content: null,
+        is_published: lecture.isPublished,
+        sort_order: lecture.sortOrder,
+        locked: true,
+      };
+    }
+
+    return {
       id: lecture.id,
       title: lecture.title,
       type: lecture.type,
@@ -114,17 +132,6 @@ export async function listLectures(user: User, courseId: number) {
       content: lecture.content,
       is_published: lecture.isPublished,
       sort_order: lecture.sortOrder,
-    }));
-  }
-
-  return lectures.map((lecture) => ({
-    id: lecture.id,
-    title: lecture.title,
-    type: lecture.type,
-    url: null,
-    content: null,
-    is_published: lecture.isPublished,
-    sort_order: lecture.sortOrder,
-    locked: true,
-  }));
+    };
+  });
 }

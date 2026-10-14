@@ -18,6 +18,9 @@ import {
   adminNotificationSchema,
   adminUsersQuerySchema,
   grantCourseBodySchema,
+  grantLecturesBodySchema,
+  adminUserParamSchema,
+  adminUserLectureParamSchema,
   activeUserSchema,
   adminCreateSchema,
   courseCreateSchema,
@@ -66,6 +69,10 @@ import {
   getAdminTeachers,
   getAdminUsers,
   grantAdminUserCourse,
+  grantAdminUserLecture,
+  grantAdminUserLectures,
+  getAdminUserLectureGrants,
+  revokeAdminUserLectureGrant,
   revokeAdminUserCourseGrant,
   patchAdminCourse,
   patchAdminCoursePublished,
@@ -133,6 +140,10 @@ adminRoutes.post('/users/:id/grant-course', validate({ params: adminIdParamSchem
 adminRoutes.post('/users/:id/grant-course/:courseId', validate({ params: adminIdParamSchema }), grantAdminUserCourse);
 adminRoutes.delete('/users/:id/grant-course', validate({ params: adminIdParamSchema, body: grantCourseBodySchema }), revokeAdminUserCourseGrant);
 adminRoutes.delete('/users/:id/grant-course/:courseId', validate({ params: adminIdParamSchema }), revokeAdminUserCourseGrant);
+adminRoutes.post('/users/:userId/grant-lecture/:lectureId', validate({ params: adminUserLectureParamSchema }), grantAdminUserLecture);
+adminRoutes.post('/users/:userId/revoke-lecture-grant/:lectureId', validate({ params: adminUserLectureParamSchema }), revokeAdminUserLectureGrant);
+adminRoutes.get('/users/:userId/lecture-grants', validate({ params: adminUserParamSchema }), getAdminUserLectureGrants);
+adminRoutes.post('/users/:userId/grant-lectures', validate({ params: adminUserParamSchema, body: grantLecturesBodySchema }), grantAdminUserLectures);
 adminRoutes.patch('/users/:id/active', validate({ params: adminIdParamSchema, body: activeUserSchema }), patchAdminUserActive);
 adminRoutes.post('/users/:id/reset-device', validate({ params: adminIdParamSchema }), resetAdminUserDevice);
 adminRoutes.post('/users/:id/adjust-balance', validate({ params: adminIdParamSchema, body: adjustBalanceSchema }), adjustAdminUserBalance);
