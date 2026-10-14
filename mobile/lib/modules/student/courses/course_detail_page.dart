@@ -338,7 +338,7 @@ class CourseDetailPage extends StatelessWidget {
                         if (lecture.locked) {
                           Get.snackbar(
                             'خطأ',
-                            'هذه المحاضرة غير متاحة — مشترك في الدورة أو تواصل مع الإدارة للحصول على منحة',
+                            'هذه المحاضرة غير متاحة — اشترك في الدورة أو تواصل مع الإدارة للحصول على منحة',
                             backgroundColor: const Color(0xFFE53935),
                             colorText: const Color(0xFFFFFFFF),
                           );
