@@ -124,61 +124,22 @@ class UserDetailPage extends StatelessWidget {
                   const SizedBox(height: 16),
                   Padding(
                     padding: const EdgeInsets.symmetric(horizontal: 16),
-                    child: Row(
-                      children: [
-                        Expanded(
-                          child: CustomButton(
-                            text: isActive ? 'تعطيل' : 'تفعيل',
-                            isOutlined: !isActive,
-                            backgroundColor: isActive ? AppColors.error : AppColors.success,
-                            onPressed: ctrl.busy.value ? null : ctrl.toggleActive,
-                          ),
-                        ),
-                        const SizedBox(width: 8),
-                        Expanded(
-                          child: CustomButton(
-                            text: 'تسوية رصيد',
-                            isOutlined: true,
-                            onPressed: ctrl.busy.value ? null : ctrl.adjustBalance,
-                          ),
-                        ),
-                      ],
+                    child: CustomButton(
+                      text: 'إجراءات',
+                      icon: Icons.more_horiz_rounded,
+                      isOutlined: true,
+                      onPressed: ctrl.busy.value
+                          ? null
+                          : () => _showActionsSheet(
+                                context,
+                                ctrl,
+                                username: '${u['username'] ?? ''}',
+                                roleLabel: roleLabel,
+                                isActive: isActive,
+                                isTeacher: isTeacher,
+                              ),
                     ),
                   ),
-                  Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                    child: Row(
-                      children: [
-                        Expanded(
-                          child: CustomButton(
-                            text: 'إعادة تعيين الجهاز',
-                            isOutlined: true,
-                            onPressed: ctrl.busy.value ? null : ctrl.resetDevice,
-                          ),
-                        ),
-                        const SizedBox(width: 8),
-                        Expanded(
-                          child: CustomButton(
-                            text: 'كلمة مرور جديدة',
-                            isOutlined: true,
-                            onPressed: ctrl.busy.value ? null : ctrl.resetPassword,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                  if (!isTeacher)
-                    Padding(
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 16, vertical: 8),
-                      child: CustomButton(
-                        text: 'منح كورس مجاني',
-                        icon: Icons.card_giftcard_outlined,
-                        isOutlined: true,
-                        onPressed:
-                            ctrl.busy.value ? null : ctrl.openGrantSheet,
-                      ),
-                    ),
                   const SizedBox(height: 8),
                   Padding(
                     padding: const EdgeInsets.symmetric(horizontal: 16),
@@ -255,6 +216,172 @@ class UserDetailPage extends StatelessWidget {
           }),
         );
       },
+    );
+  }
+
+  void _showActionsSheet(
+    BuildContext context,
+    UserDetailController ctrl, {
+    required String username,
+    required String roleLabel,
+    required bool isActive,
+    required bool isTeacher,
+  }) {
+    showModalBottomSheet<void>(
+      context: context,
+      backgroundColor: Colors.transparent,
+      builder: (sheetContext) => Container(
+        decoration: BoxDecoration(
+          color: AppColors.courseCard,
+          borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
+        ),
+        padding: EdgeInsets.only(
+          top: 8,
+          bottom: MediaQuery.of(sheetContext).padding.bottom + 16,
+          left: 16,
+          right: 16,
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Center(
+              child: Container(
+                width: 40,
+                height: 4,
+                decoration: BoxDecoration(
+                  color: AppColors.cardBorder,
+                  borderRadius: BorderRadius.circular(2),
+                ),
+              ),
+            ),
+            const SizedBox(height: 14),
+            Text('إجراءات', style: AppTextStyles.titleMedium),
+            const SizedBox(height: 2),
+            Text('@$username • $roleLabel', style: AppTextStyles.caption),
+            const SizedBox(height: 8),
+            Obx(() {
+              final busy = ctrl.busy.value;
+              return Column(
+                children: [
+                  _actionRow(
+                    icon: Icons.power_settings_new_rounded,
+                    iconColor: isActive ? AppColors.error : AppColors.success,
+                    title: isActive ? 'تعطيل الحساب' : 'تفعيل الحساب',
+                    subtitle: isActive
+                        ? 'إيقاف دخول المستخدم للتطبيق'
+                        : 'إعادة السماح بالدخول',
+                    enabled: !busy,
+                    onTap: () {
+                      Navigator.of(sheetContext).pop();
+                      ctrl.toggleActive();
+                    },
+                  ),
+                  _actionRow(
+                    icon: Icons.account_balance_wallet_outlined,
+                    iconColor: AppColors.primary,
+                    title: 'تسوية رصيد',
+                    subtitle: 'إضافة أو خصم مبلغ من رصيد الحساب',
+                    enabled: !busy,
+                    onTap: () {
+                      Navigator.of(sheetContext).pop();
+                      ctrl.adjustBalance();
+                    },
+                  ),
+                  _actionRow(
+                    icon: Icons.restart_alt_rounded,
+                    iconColor: const Color(0xFFFB8C00),
+                    title: 'إعادة تعيين الجهاز',
+                    subtitle: 'السماح بتسجيل الدخول من جهاز آخر',
+                    enabled: !busy,
+                    onTap: () {
+                      Navigator.of(sheetContext).pop();
+                      ctrl.resetDevice();
+                    },
+                  ),
+                  _actionRow(
+                    icon: Icons.lock_reset_rounded,
+                    iconColor: AppColors.textSecondary,
+                    title: 'كلمة مرور جديدة',
+                    subtitle: 'تعيين كلمة مرور مؤقتة للمستخدم',
+                    enabled: !busy,
+                    onTap: () {
+                      Navigator.of(sheetContext).pop();
+                      ctrl.resetPassword();
+                    },
+                  ),
+                  if (!isTeacher)
+                    _actionRow(
+                      icon: Icons.card_giftcard_outlined,
+                      iconColor: const Color(0xFF8E24AA),
+                      title: 'منح كورس مجاني',
+                      subtitle: 'إتاحة دورة لحساب الطالب مجاناً',
+                      enabled: !busy,
+                      onTap: () {
+                        Navigator.of(sheetContext).pop();
+                        ctrl.openGrantSheet();
+                      },
+                    ),
+                ],
+              );
+            }),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _actionRow({
+    required IconData icon,
+    required Color iconColor,
+    required String title,
+    required String subtitle,
+    required VoidCallback onTap,
+    required bool enabled,
+  }) {
+    return Opacity(
+      opacity: enabled ? 1 : 0.55,
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          borderRadius: BorderRadius.circular(12),
+          onTap: enabled ? onTap : null,
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 10),
+            child: Row(
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: iconColor.withValues(alpha: 0.12),
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  child: Icon(icon, color: iconColor, size: 22),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(title,
+                          style: AppTextStyles.bodyMedium
+                              .copyWith(fontWeight: FontWeight.w600)),
+                      const SizedBox(height: 2),
+                      Text(subtitle,
+                          style: AppTextStyles.caption,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis),
+                    ],
+                  ),
+                ),
+                const SizedBox(width: 8),
+                Icon(Icons.chevron_left_rounded,
+                    color: AppColors.textSecondary, size: 20),
+              ],
+            ),
+          ),
+        ),
+      ),
     );
   }
 
