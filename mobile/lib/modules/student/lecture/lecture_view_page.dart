@@ -458,6 +458,14 @@ class LectureController extends GetxController with WidgetsBindingObserver {
 class LectureViewPage extends StatelessWidget {
   const LectureViewPage({super.key});
 
+  /// حجم خط العنوان يتناقص كلما طال النص
+  double _adaptiveTitleSize(int length) {
+    if (length <= 30) return 20;
+    if (length <= 60) return 17;
+    if (length <= 90) return 15;
+    return 13;
+  }
+
   @override
   Widget build(BuildContext context) {
     return GetBuilder<LectureController>(
@@ -467,7 +475,8 @@ class LectureViewPage extends StatelessWidget {
 
         return Scaffold(
           backgroundColor: AppColors.background,
-          appBar: GradientAppBar(title: lecture.title),
+          appBar:
+              GradientAppBar(title: lecture.courseName ?? 'المحاضرة'),
           body: SafeArea(
             top: false,
             child: ListView(
@@ -531,7 +540,35 @@ class LectureViewPage extends StatelessWidget {
                       ],
                     ),
                     const SizedBox(height: 16),
-                    Text(lecture.title, style: AppTextStyles.headlineMedium),
+                    GestureDetector(
+                      onTap: () => Get.dialog<void>(
+                        AlertDialog(
+                          title: Text(lecture.title,
+                              textAlign: TextAlign.center,
+                              style: AppTextStyles.titleLarge),
+                          contentPadding: const EdgeInsets.fromLTRB(
+                              24, 16, 24, 8),
+                          content: SelectableText(
+                            lecture.title,
+                            textAlign: TextAlign.center,
+                            style: AppTextStyles.bodyLarge,
+                          ),
+                          actionsAlignment: MainAxisAlignment.center,
+                          actions: [
+                            TextButton(
+                              onPressed: () => Get.back<void>(),
+                              child: const Text('إغلاق'),
+                            ),
+                          ],
+                        ),
+                      ),
+                      child: Text(
+                        lecture.title,
+                        style: AppTextStyles.headlineMedium.copyWith(
+                            fontSize:
+                                _adaptiveTitleSize(lecture.title.length)),
+                      ),
+                    ),
                   ],
                 ),
               ),

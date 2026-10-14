@@ -52,12 +52,36 @@ class LectureTile extends StatelessWidget {
     }
   }
 
+  /// حجم خط العنوان يتناقص كلما طال النص
+  double _adaptiveTitleSize(int length) {
+    if (length <= 30) return 14;
+    if (length <= 60) return 13;
+    return 12;
+  }
+
   @override
   Widget build(BuildContext context) {
     final (typeIcon, typeColor) = _typeStyle;
     return RepaintBoundary(
       child: GestureDetector(
       onTap: onTap,
+      // ضغطة طويلة ⇐ عرض العنوان كاملاً (سطر واحد مضغوط قد يخفي نهايته)
+      onLongPress: () => showDialog<void>(
+        context: context,
+        builder: (ctx) => AlertDialog(
+          title: Text(title,
+              textAlign: TextAlign.center, style: AppTextStyles.titleLarge),
+          content: SelectableText(title,
+              textAlign: TextAlign.center, style: AppTextStyles.bodyLarge),
+          actionsAlignment: MainAxisAlignment.center,
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(ctx).pop(),
+              child: const Text('إغلاق'),
+            ),
+          ],
+        ),
+      ),
       child: Container(
         margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 5),
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
@@ -98,20 +122,43 @@ class LectureTile extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(title,
-                      style: AppTextStyles.bodyMedium,
+                      style: AppTextStyles.bodyMedium.copyWith(
+                          fontSize: _adaptiveTitleSize(title.length)),
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis),
                   const SizedBox(height: 2),
-                  Text(_typeLabel, style: AppTextStyles.caption),
+                  Row(
+                    children: [
+                      Flexible(
+                        child: Text(_typeLabel,
+                            style: AppTextStyles.caption,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis),
+                      ),
+                      if (isGrantedFree) ...[
+                        const SizedBox(width: 6),
+                        const StatusPill(
+                            label: 'مجانية',
+                            color: AppColors.success,
+                            filled: true),
+                      ],
+                      if (isNew) ...[
+                        const SizedBox(width: 6),
+                        const StatusPill(
+                            label: 'جديد',
+                            color: AppColors.primary,
+                            filled: true),
+                      ],
+                      if (!isPublished) ...[
+                        const SizedBox(width: 6),
+                        const StatusPill(
+                            label: 'غير منشورة', color: AppColors.warning),
+                      ],
+                    ],
+                  ),
                 ],
               ),
             ),
-            if (isGrantedFree)
-              const StatusPill(label: 'مجانية', color: AppColors.success, filled: true),
-            if (isNew)
-              const StatusPill(label: 'جديد', color: AppColors.primary, filled: true),
-            if (!isPublished)
-              const StatusPill(label: 'غير منشورة', color: AppColors.warning),
             Icon(Icons.chevron_left_rounded,
                 size: 22, color: AppColors.textHint),
             ?trailing,
