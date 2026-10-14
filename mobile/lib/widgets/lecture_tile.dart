@@ -10,6 +10,7 @@ class LectureTile extends StatelessWidget {
   final String type;
   final bool isPublished;
   final bool isNew;
+  final bool isGrantedFree;
   final VoidCallback? onTap;
   final Widget? trailing;
 
@@ -20,6 +21,7 @@ class LectureTile extends StatelessWidget {
     required this.type,
     this.isPublished = true,
     this.isNew = false,
+    this.isGrantedFree = false,
     this.onTap,
     this.trailing,
   });
@@ -104,6 +106,8 @@ class LectureTile extends StatelessWidget {
                 ],
               ),
             ),
+            if (isGrantedFree)
+              const StatusPill(label: 'مجانية', color: AppColors.success, filled: true),
             if (isNew)
               const StatusPill(label: 'جديد', color: AppColors.primary, filled: true),
             if (!isPublished)

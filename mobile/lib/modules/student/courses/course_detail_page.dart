@@ -316,11 +316,14 @@ class CourseDetailPage extends StatelessWidget {
                     final hasFile =
                         lecture.isVideo || lecture.isPdfHosted;
                     final canDownload = hasFile && !lecture.locked;
+                    final grantedFree = !lecture.locked &&
+                        !(ctrl.isPurchased(courseId) || course.isPurchased);
                     return LectureTile(
                       index: entry.key + 1,
                       title: lecture.title,
                       type: lecture.type,
                       isNew: _isNewLecture(lecture.createdAt),
+                      isGrantedFree: grantedFree,
                       trailing: hasFile
                           ? DownloadLectureButton(
                               lectureId: lecture.id,

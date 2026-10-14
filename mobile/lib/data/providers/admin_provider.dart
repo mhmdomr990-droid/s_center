@@ -55,7 +55,7 @@ class AdminProvider {
       _api.post('/admin/users/$userId/grant-lectures', data: {'lecture_ids': lectureIds});
 
   Future<Response> revokeLectureGrant(int userId, int lectureId) =>
-      _api.delete('/admin/users/$userId/revoke-lecture-grant/$lectureId');
+      _api.post('/admin/users/$userId/revoke-lecture-grant/$lectureId');
 
   Future<Response> userLectureGrants(int userId) =>
       _api.get('/admin/users/$userId/lecture-grants');
