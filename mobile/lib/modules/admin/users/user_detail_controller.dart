@@ -593,6 +593,7 @@ class UserDetailController extends GetxController {
     _showLectureGrantSheet('${u['full_name'] ?? ''}');
 
     try {
+      await Future.wait([_loadLectureGrants(), _loadPurchases()]);
       final response = await _provider.courses(limit: 100);
       final all = List<Map<String, dynamic>>.from(
           (response.data['data'] as List).map((e) => Map<String, dynamic>.from(e)));
@@ -818,7 +819,12 @@ class UserDetailController extends GetxController {
     );
   }
 
+  bool _isCourseOwnedByUser(int courseId) =>
+      purchases.any((p) => (p['course_id'] as num?)?.toInt() == courseId);
+
   Widget _grantCoursePickRow(Map<String, dynamic> c) {
+    final courseId = (c['id'] as num).toInt();
+    final owned = _isCourseOwnedByUser(courseId);
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 4),
       child: Material(
@@ -826,7 +832,7 @@ class UserDetailController extends GetxController {
         borderRadius: BorderRadius.circular(10),
         child: InkWell(
           borderRadius: BorderRadius.circular(10),
-          onTap: lectureGrantLecturesLoading.value
+          onTap: lectureGrantLecturesLoading.value || owned
               ? null
               : () => _selectLectureGrantCourse(c),
           child: Container(
@@ -835,20 +841,27 @@ class UserDetailController extends GetxController {
               border: Border.all(color: AppColors.cardBorder),
               borderRadius: BorderRadius.circular(10),
             ),
-            child: Row(
-              children: [
-                const Icon(Icons.menu_book_outlined,
-                    color: AppColors.primary, size: 20),
-                const SizedBox(width: 10),
-                Expanded(
-                  child: Text('${c['name'] ?? ''}',
-                      style: AppTextStyles.bodyMedium.copyWith(fontSize: 14),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis),
-                ),
-                Icon(Icons.chevron_left_rounded,
-                    color: AppColors.textSecondary, size: 20),
-              ],
+            child: Opacity(
+              opacity: owned ? 0.5 : 1,
+              child: Row(
+                children: [
+                  const Icon(Icons.menu_book_outlined,
+                      color: AppColors.primary, size: 20),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: Text('${c['name'] ?? ''}',
+                        style: AppTextStyles.bodyMedium.copyWith(fontSize: 14)),
+                  ),
+                  if (owned)
+                    const Text('مملوكة',
+                        style: TextStyle(
+                            fontSize: 11,
+                            fontWeight: FontWeight.w700,
+                            color: AppColors.success)),
+                  Icon(Icons.chevron_left_rounded,
+                      color: AppColors.textSecondary, size: 20),
+                ],
+              ),
             ),
           ),
         ),
@@ -857,16 +870,29 @@ class UserDetailController extends GetxController {
   }
 
   Future<void> _selectLectureGrantCourse(Map<String, dynamic> course) async {
+    final courseId = (course['id'] as num).toInt();
+    if (_isCourseOwnedByUser(courseId)) {
+      Get.snackbar('منح محاضرة', 'الطالب يملك هذه الدورة بالكامل',
+          backgroundColor: Colors.orange, colorText: Colors.white);
+      return;
+    }
     lectureGrantSelectedCourse.value = course;
     lectureGrantSelectedIds.clear();
     lectureGrantLectures.clear();
     lectureGrantLecturesLoading.value = true;
     try {
       final response =
-          await _provider.lectures(courseId: (course['id'] as num).toInt(), limit: 100);
+          await _provider.lectures(courseId: courseId, limit: 100);
       final all = List<Map<String, dynamic>>.from(
           (response.data['data'] as List).map((e) => Map<String, dynamic>.from(e)));
-      lectureGrantLectures.assignAll(all.where((l) => (l['is_published'] ?? true) == true));
+      // استبعاد المحاضرات الممنوحة مسبقاً (غير الملغاة)
+      final grantedIds = lectureGrants
+          .where((g) => (g['revoked'] ?? false) != true)
+          .map((g) => (g['lecture_id'] as num).toInt())
+          .toSet();
+      lectureGrantLectures.assignAll(all.where((l) =>
+          (l['is_published'] ?? true) == true &&
+          !grantedIds.contains((l['id'] as num).toInt())));
     } catch (_) {
       Get.snackbar('خطأ', 'تعذّر تحميل المحاضرات',
           backgroundColor: Colors.red, colorText: Colors.white);

@@ -123,9 +123,7 @@ class LectureTile extends StatelessWidget {
                 children: [
                   Text(title,
                       style: AppTextStyles.bodyMedium.copyWith(
-                          fontSize: _adaptiveTitleSize(title.length)),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis),
+                          fontSize: _adaptiveTitleSize(title.length))),
                   const SizedBox(height: 2),
                   Row(
                     children: [
