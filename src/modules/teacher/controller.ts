@@ -12,6 +12,7 @@ import {
   listCourseLectures,
   listMyCourses,
   listTeacherPayouts,
+  listTeacherPurchases,
   previewTeacherCourseLectures,
   reorderTeacherCourseLectures,
   setTeacherLecturePublished,
@@ -79,6 +80,15 @@ export const getTeacherStatsController = asyncHandler(async (req: Request, res: 
 export const getTeacherDashboardController = asyncHandler(async (req: Request, res: Response) => {
   const data = await getTeacherDashboard(req.user!.id, Number(req.query.days ?? 30));
   res.status(200).json({ success: true, data });
+});
+
+export const getTeacherPurchasesController = asyncHandler(async (req: Request, res: Response) => {
+  const courseIdValue = req.params?.id ? Number(req.params.id) : Number(req.query.course_id ?? 0);
+  const courseId = Number.isFinite(courseIdValue) && courseIdValue > 0 ? courseIdValue : undefined;
+  const search = typeof req.query.search === 'string' ? req.query.search : undefined;
+  const data = await listTeacherPurchases(req.user!.id, { courseId, search });
+  const paged = paginateItems(data, { page: Number(req.query.page ?? 1), limit: Number(req.query.limit ?? 20) });
+  res.status(200).json({ success: true, data: paged.data, meta: paged.meta });
 });
 
 export const getTeacherPayouts = asyncHandler(async (req: Request, res: Response) => {

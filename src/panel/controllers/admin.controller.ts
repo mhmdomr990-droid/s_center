@@ -19,6 +19,7 @@ import {
   createTeacher,
   createStudent,
   createAdmin,
+  updateTeacher,
   adjustBalance,
   listCourses,
   listLectures,
@@ -509,6 +510,12 @@ export async function teachersPage(req: Request, res: Response) {
 export async function createTeacherAction(req: Request, res: Response) {
   await createTeacher(req.body);
   setFlash(res, 'success', 'تم إنشاء المدرس');
+  return res.redirect('/panel/admin/teachers');
+}
+
+export async function updateTeacherAction(req: Request, res: Response) {
+  await updateTeacher(Number(req.params.id), req.body);
+  setFlash(res, 'success', 'تم تحديث بيانات المدرس');
   return res.redirect('/panel/admin/teachers');
 }
 

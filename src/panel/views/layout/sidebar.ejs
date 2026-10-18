@@ -38,6 +38,7 @@
     <% } else if (currentUser.role === 'TEACHER') { %>
       <a href="/panel/teacher/courses">كورساتي</a>
       <a href="/panel/teacher/lectures">المحاضرات</a>
+      <a href="/panel/teacher/purchases">مشتريات الطلاب</a>
       <a href="/panel/teacher/earnings">الأرباح</a>
       <form method="post" action="/panel/logout" style="margin-top:12px;">
         <input type="hidden" name="csrf_token" value="<%= csrfToken %>">

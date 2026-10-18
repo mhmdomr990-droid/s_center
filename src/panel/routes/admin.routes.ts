@@ -27,6 +27,7 @@ import {
 	specializationUpdateSchema,
 	teacherCreateSchema,
 	teacherPayoutSchema,
+	teacherUpdateSchema,
 	topupRequestsQuerySchema,
 	adminUsersQuerySchema,
 } from '../../modules/admin/schemas';
@@ -44,6 +45,7 @@ import {
 	createSpecializationAction,
 	createStudentAction,
 	createTeacherAction,
+	updateTeacherAction,
 	grantUserCourseAction,
 	grantUserLecturesAction,
 	lecturesPage,
@@ -161,6 +163,7 @@ panelAdminRoutes.post('/students', validate({ body: studentCreateSchema }), asyn
 panelAdminRoutes.post('/admins', validate({ body: adminCreateSchema }), asyncHandler(createAdminAction));
 panelAdminRoutes.get('/teachers', asyncHandler(teachersPage));
 panelAdminRoutes.post('/teachers', validate({ body: teacherCreateSchema }), asyncHandler(createTeacherAction));
+panelAdminRoutes.post('/teachers/:id', validate({ params: adminIdParamSchema, body: teacherUpdateSchema }), asyncHandler(updateTeacherAction));
 panelAdminRoutes.post('/teachers/:id/payouts', validate({ params: adminIdParamSchema, body: teacherPayoutSchema }), asyncHandler(teacherPayoutAction));
 panelAdminRoutes.get('/teachers/:id/payouts', validate({ params: adminIdParamSchema }), asyncHandler(teacherPayoutsPage));
 

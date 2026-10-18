@@ -35,6 +35,7 @@ import {
   specializationUpdateSchema,
   teacherCreateSchema,
   teacherPayoutSchema,
+  teacherUpdateSchema,
   topupRequestsQuerySchema,
 } from './schemas';
 import {
@@ -87,6 +88,7 @@ import {
   postAdminSpecialization,
   postAdminTeacher,
   postAdminCreateAdmin,
+  patchAdminTeacher,
   postAdminTeacherPayout,
   putAdminLectureOrder,
   rejectAdminTopupRequest,
@@ -155,6 +157,7 @@ adminRoutes.post('/admins', validate({ body: adminCreateSchema }), postAdminCrea
 adminRoutes.post('/teachers', validate({ body: teacherCreateSchema }), postAdminTeacher);
 adminRoutes.get('/teachers', getAdminTeachers);
 adminRoutes.get('/teachers/:id', validate({ params: adminIdParamSchema }), getAdminTeacherById);
+adminRoutes.patch('/teachers/:id', validate({ params: adminIdParamSchema, body: teacherUpdateSchema }), patchAdminTeacher);
 adminRoutes.post('/teachers/:id/payouts', validate({ params: adminIdParamSchema, body: teacherPayoutSchema }), postAdminTeacherPayout);
 adminRoutes.get('/teachers/:id/payouts', validate({ params: adminIdParamSchema }), getAdminTeacherPayouts);
 

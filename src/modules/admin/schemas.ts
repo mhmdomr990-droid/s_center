@@ -236,6 +236,34 @@ export const teacherCreateSchema = z
   })
   .strict();
 
+export const teacherUpdateSchema = z
+  .object({
+    username: z.preprocess(
+      (value) => (value === '' || value === null || value === undefined ? undefined : String(value).trim().toLowerCase()),
+      usernameSchema.optional(),
+    ),
+    full_name: z.preprocess(
+      (value) => (value === '' || value === null || value === undefined ? undefined : String(value).trim()),
+      z.string().trim().min(2).max(120).optional(),
+    ),
+    password: z.preprocess(
+      (value) => (value === '' || value === null || value === undefined ? undefined : String(value)),
+      passwordSchema.optional(),
+    ),
+    is_active: z.preprocess((value) => {
+      if (typeof value === 'string') {
+        const normalized = value.trim().toLowerCase();
+        if (normalized === 'true' || normalized === '1') return true;
+        if (normalized === 'false' || normalized === '0') return false;
+      }
+      return value;
+    }, z.boolean().optional()),
+  })
+  .strict()
+  .refine((value) => Object.keys(value).length > 0, {
+    message: 'At least one field must be provided',
+  });
+
 export const studentCreateSchema = z
   .object({
     username: usernameSchema,

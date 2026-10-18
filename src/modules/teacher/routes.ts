@@ -15,6 +15,7 @@ import {
   teacherLectureOrderSchema,
   teacherLecturePublishSchema,
   teacherLectureUpdateSchema,
+  teacherPurchasesQuerySchema,
   teacherStatsQuerySchema,
 } from './schemas';
 import {
@@ -26,6 +27,7 @@ import {
   getTeacherDashboardController,
   getTeacherEarnings,
   getTeacherPayouts,
+  getTeacherPurchasesController,
   getTeacherStatsController,
   patchTeacherLecture,
   patchTeacherLecturePublished,
@@ -40,7 +42,9 @@ teacherRoutes.use(authMiddleware, requireRole(UserRole.TEACHER));
 
 teacherRoutes.get('/courses', getTeacherCourses);
 teacherRoutes.get('/dashboard', validate({ query: teacherDashboardQuerySchema }), getTeacherDashboardController);
+teacherRoutes.get('/purchases', validate({ query: teacherPurchasesQuerySchema }), getTeacherPurchasesController);
 teacherRoutes.get('/courses/:id', validate({ params: teacherCourseIdParamSchema }), getTeacherCourseByIdController);
+teacherRoutes.get('/courses/:id/purchases', validate({ params: teacherCourseIdParamSchema, query: teacherPurchasesQuerySchema }), getTeacherPurchasesController);
 teacherRoutes.patch('/courses/:id', validate({ params: teacherCourseIdParamSchema, body: teacherCourseUpdateSchema }), patchTeacherCourse);
 teacherRoutes.get('/courses/:id/lectures', validate({ params: teacherCourseIdParamSchema }), getTeacherCourseLectures);
 teacherRoutes.get('/courses/:id/preview', validate({ params: teacherCourseIdParamSchema }), getTeacherCoursePreview);

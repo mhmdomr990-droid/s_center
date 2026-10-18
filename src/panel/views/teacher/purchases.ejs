@@ -1,0 +1,68 @@
+<%- include('../layout/header', { title: 'مشتريات الطلاب' }) %>
+<%- include('../layout/sidebar', { currentUser, csrfToken }) %>
+<%- include('../partials/flash', { flash }) %>
+<div class="panel-topbar">
+  <div>
+    <h1 style="margin:0;">مشتريات الطلاب</h1>
+  </div>
+</div>
+<%- include('../partials/breadcrumb', {
+  items: [
+    { label: 'لوحة المعلّم', href: '/panel/teacher/courses' },
+    { label: 'مشتريات الطلاب' },
+  ],
+}) %>
+
+<div class="panel-card" style="margin-bottom:20px;">
+  <form method="get" action="/panel/teacher/purchases" class="panel-form" style="display:flex;gap:12px;flex-wrap:wrap;align-items:end;">
+    <label>
+      <span>اختيار الكورس</span>
+      <select name="courseId">
+        <option value="">كل الكورسات</option>
+        <% courses.forEach((course) => { %>
+          <option value="<%= course.course_id %>" <%= selectedCourseId === course.course_id ? 'selected' : '' %>><%= course.name %></option>
+        <% }) %>
+      </select>
+    </label>
+    <button type="submit" class="panel-btn panel-btn-primary">تصفية</button>
+  </form>
+</div>
+
+<div class="panel-table">
+  <table>
+    <thead>
+      <tr>
+        <th>اسم الكورس</th>
+        <th>اسم الطالب</th>
+        <th>اسم المستخدم</th>
+        <th>تاريخ الشراء</th>
+        <th>المبلغ</th>
+        <th>نوع العملية</th>
+      </tr>
+    </thead>
+    <tbody>
+      <% if (!purchases.length) { %>
+        <tr>
+          <td colspan="6">
+            <section class="polish-empty">
+              <svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M4 5h16v2H4zm0 6h16v2H4zm0 6h10v2H4z"/></svg>
+              <h4>لا توجد عمليات شراء لك حاليًا</h4>
+              <p>بمجرد شراء الطلاب لكورساتك ستظهر أسماءهم هنا.</p>
+            </section>
+          </td>
+        </tr>
+      <% } %>
+      <% purchases.forEach((purchase) => { %>
+        <tr>
+          <td><%= purchase.course_name %></td>
+          <td><%= purchase.full_name || '—' %></td>
+          <td><%= purchase.username || '—' %></td>
+          <td><%= new Date(purchase.created_at).toLocaleString('ar-SA', { dateStyle: 'medium', timeStyle: 'short' }) %></td>
+          <td><%= money(purchase.price_paid) %></td>
+          <td><%= purchase.source_label %></td>
+        </tr>
+      <% }) %>
+    </tbody>
+  </table>
+</div>
+<%- include('../layout/footer') %>

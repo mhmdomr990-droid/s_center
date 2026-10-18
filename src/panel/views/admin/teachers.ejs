@@ -43,6 +43,7 @@
           <td><%= money(item.paid) %></td>
           <td><%= money(item.remaining) %></td>
           <td>
+            <button class="panel-btn panel-btn-secondary" data-modal-open="teacher-edit-modal" data-modal-action="/panel/admin/teachers/<%= item.teacher_id %>" data-modal-fill='<%= JSON.stringify({ username: item.username, full_name: item.full_name, is_active: item.is_active }) %>'>تعديل</button>
             <a class="panel-btn panel-btn-secondary" href="/panel/admin/teachers/<%= item.teacher_id %>/payouts">سجل الدفعات</a>
             <button class="panel-btn panel-btn-primary" data-modal-open="teacher-payout-modal" data-modal-action="/panel/admin/teachers/<%= item.teacher_id %>/payouts" data-modal-fill='<%= JSON.stringify(item) %>'>إضافة دفعة</button>
           </td>
@@ -60,6 +61,27 @@
         <div><label>اسم المستخدم</label><input name="username" required></div>
         <div><label>الاسم الكامل</label><input name="full_name" required></div>
         <div><label>كلمة المرور</label><input name="password" type="password" required></div>
+      </div>
+      <div class="panel-form-actions"><button class="panel-btn panel-btn-primary" type="submit">حفظ</button></div>
+    </form>
+  </div>
+</div>
+<div class="panel-modal" id="teacher-edit-modal">
+  <div class="panel-modal-content">
+    <div class="panel-modal-header"><h3>تعديل بيانات المدرس</h3><button type="button" class="panel-modal-close" data-modal-close>×</button></div>
+    <form method="post" action="/panel/admin/teachers/0" class="panel-form">
+      <input type="hidden" name="csrf_token" value="<%= csrfToken %>">
+      <div class="panel-form-grid">
+        <div><label>اسم المستخدم</label><input name="username" placeholder="اتركه بدون تعديل إن لم ترغب"></div>
+        <div><label>الاسم الكامل</label><input name="full_name" placeholder="اتركه بدون تعديل إن لم ترغب"></div>
+        <div><label>كلمة المرور الجديدة</label><input name="password" type="password" placeholder="اتركه فارغًا إن لم ترغب"></div>
+        <div>
+          <label>الحالة</label>
+          <select name="is_active">
+            <option value="true">نشط</option>
+            <option value="false">غير نشط</option>
+          </select>
+        </div>
       </div>
       <div class="panel-form-actions"><button class="panel-btn panel-btn-primary" type="submit">حفظ</button></div>
     </form>
