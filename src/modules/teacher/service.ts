@@ -4,7 +4,7 @@ import { Course } from '../../entities/Course';
 import { Lecture } from '../../entities/Lecture';
 import { Purchase } from '../../entities/Purchase';
 import { TeacherPayout } from '../../entities/TeacherPayout';
-import { LectureType, LectureUploadStatus } from '../../entities/enums';
+import { LectureType, LectureUploadStatus, PurchaseSource } from '../../entities/enums';
 import { User } from '../../entities/User';
 import { AppError } from '../../utils/AppError';
 import { centsToMoney, toCents } from '../../utils/money';
@@ -408,6 +408,59 @@ export async function previewTeacherCourseLectures(teacherId: number, courseId: 
   });
 
   return lectures.map(mapLecture);
+}
+
+function mapTeacherPurchase(purchase: Purchase) {
+  const user = purchase.user ?? null;
+  const course = purchase.course ?? null;
+
+  return {
+    id: purchase.id,
+    student_id: user?.id ?? null,
+    username: user?.username ?? 'غير معروف',
+    full_name: user?.fullName ?? 'غير معروف',
+    course_id: course?.id ?? null,
+    course_name: course?.name ?? 'غير محدد',
+    specialization_name: course?.specialization?.name ?? 'غير محدد',
+    price_paid: purchase.pricePaid,
+    teacher_share: purchase.teacherShare,
+    source: purchase.source,
+    source_label: purchase.source === PurchaseSource.GRANTED ? 'منحة مجانية' : 'شراء',
+    created_at: purchase.createdAt,
+  };
+}
+
+export async function listTeacherPurchases(teacherId: number, filters: { courseId?: number; search?: string } = {}) {
+  const query = AppDataSource.getRepository(Purchase)
+    .createQueryBuilder('purchase')
+    .innerJoin('purchase.course', 'course')
+    .leftJoinAndSelect('purchase.user', 'user')
+    .leftJoinAndSelect('purchase.course', 'courseDetails')
+    .leftJoinAndSelect('courseDetails.specialization', 'specialization')
+    .where('course.teacher_id = :teacherId', { teacherId })
+    .andWhere('purchase.teacher_id = :teacherId', { teacherId })
+    .orderBy('purchase.created_at', 'DESC')
+    .addOrderBy('purchase.id', 'DESC');
+
+  if (filters.courseId) {
+    query.andWhere('course.id = :courseId', { courseId: filters.courseId });
+  }
+
+  const search = (filters.search ?? '').trim();
+  if (search) {
+    const term = `%${search.toLowerCase()}%`;
+    query.andWhere(
+      `(
+        LOWER(user.username) LIKE :search OR
+        LOWER(user.full_name) LIKE :search OR
+        LOWER(course.name) LIKE :search
+      )`,
+      { search: term },
+    );
+  }
+
+  const purchases = await query.getMany();
+  return purchases.map(mapTeacherPurchase);
 }
 
 export async function getTeacherDashboard(teacherId: number, days: number) {

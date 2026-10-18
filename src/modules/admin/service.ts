@@ -132,6 +132,7 @@ function mapTeacherAggregate(row: Record<string, unknown>) {
     teacher_id: Number(row.teacher_id),
     username: String(row.username ?? ''),
     full_name: String(row.full_name ?? ''),
+    is_active: Boolean(row.is_active ?? true),
     purchases_count: Number(row.purchases_count ?? 0),
     paid_count: Number(row.paid_count ?? 0),
     free_count: Number(row.free_count ?? 0),
@@ -1532,6 +1533,49 @@ export async function createTeacher(input: { username: string; full_name: string
   return mapUser(saved);
 }
 
+export async function updateTeacher(
+  teacherId: number,
+  input: { username?: string; full_name?: string; password?: string; is_active?: boolean },
+) {
+  const userRepository = AppDataSource.getRepository(User);
+  const teacher = await userRepository.findOne({ where: { id: teacherId, role: UserRole.TEACHER } });
+
+  if (!teacher) {
+    throw new AppError(404, 'Teacher not found');
+  }
+
+  if (input.username !== undefined) {
+    const username = input.username.trim().toLowerCase();
+    if (username.length < 3) {
+      throw new AppError(400, 'اسم المستخدم يجب أن يكون 3 أحرف على الأقل');
+    }
+    const existing = await userRepository.findOne({ where: { username } });
+    if (existing && existing.id !== teacherId) {
+      throw new AppError(409, 'Username already exists');
+    }
+    teacher.username = username;
+  }
+
+  if (input.full_name !== undefined) {
+    const fullName = input.full_name.trim();
+    if (!fullName) {
+      throw new AppError(400, 'اسم المدرس مطلوب');
+    }
+    teacher.fullName = fullName;
+  }
+
+  if (input.password !== undefined) {
+    teacher.passwordHash = await bcrypt.hash(input.password, 12);
+  }
+
+  if (input.is_active !== undefined) {
+    teacher.isActive = Boolean(input.is_active);
+  }
+
+  const saved = await userRepository.save(teacher);
+  return mapUser(saved);
+}
+
 export async function createStudent(input: {
   username: string;
   full_name: string;
@@ -1634,6 +1678,7 @@ async function loadTeacherRows(from?: string, to?: string) {
     .select('teacher.id', 'teacher_id')
     .addSelect('teacher.username', 'username')
     .addSelect('teacher.full_name', 'full_name')
+    .addSelect('teacher.is_active', 'is_active')
     .addSelect('COALESCE(purchases.purchases_count, 0)', 'purchases_count')
     .addSelect('COALESCE(purchases.paid_count, 0)', 'paid_count')
     .addSelect('COALESCE(purchases.free_count, 0)', 'free_count')

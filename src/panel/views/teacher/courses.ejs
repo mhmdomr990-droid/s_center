@@ -22,12 +22,13 @@
         <th>السعر</th>
         <th>الحالة</th>
         <th>المحاضرات</th>
+        <th>المشترون</th>
       </tr>
     </thead>
     <tbody>
       <% if (!courses.length) { %>
         <tr>
-          <td colspan="6">
+          <td colspan="7">
             <section class="polish-empty">
               <svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M4 5h16v2H4zm0 6h16v2H4zm0 6h10v2H4z"/></svg>
               <h4>لا توجد مواد مسندة لك حاليًا</h4>
@@ -44,6 +45,7 @@
           <td><%= money(item.price) %></td>
           <td><%= item.is_published ? 'منشور' : 'مخفي' %></td>
           <td><a class="panel-btn panel-btn-secondary" href="/panel/teacher/lectures?courseId=<%= item.course_id %>">إدارة المحاضرات</a></td>
+          <td><a class="panel-btn panel-btn-primary" href="/panel/teacher/purchases?courseId=<%= item.course_id %>">الطلاب</a></td>
         </tr>
       <% }) %>
     </tbody>

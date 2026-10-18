@@ -49,6 +49,15 @@ export const teacherDashboardQuerySchema = z
   })
   .strict();
 
+export const teacherPurchasesQuerySchema = z
+  .object({
+    course_id: z.coerce.number().int().positive().optional(),
+    search: z.string().trim().max(100).optional(),
+    page: z.coerce.number().int().positive().optional(),
+    limit: z.coerce.number().int().positive().optional(),
+  })
+  .strict();
+
 export const teacherEarningsQuerySchema = z
   .object({
     month: z.string().regex(/^\d{4}-\d{2}$/).optional(),

@@ -2,7 +2,7 @@ import type { Request, Response } from 'express';
 
 import { AppError } from '../../utils/AppError';
 import type { StoredVideoFile } from '../../services/media';
-import { archiveTeacherLecture, createLectureForTeacher, deleteTeacherLecturePermanently, getTeacherStats, listCourseLectures, listMyCourses, listTeacherPayouts, updateTeacherLecture } from '../../modules/teacher/service';
+import { archiveTeacherLecture, createLectureForTeacher, deleteTeacherLecturePermanently, getTeacherStats, listCourseLectures, listMyCourses, listTeacherPayouts, listTeacherPurchases, updateTeacherLecture } from '../../modules/teacher/service';
 import { setFlash } from '../middlewares/flash';
 
 async function loadTeacherCommon(teacherId: number) {
@@ -87,6 +87,24 @@ export async function earningsPage(req: Request, res: Response) {
     csrfToken: res.locals.csrfToken,
     stats,
     payouts,
+  });
+}
+
+export async function purchasesPage(req: Request, res: Response) {
+  const courses = await listMyCourses(req.user!.id);
+  const selectedCourseId = req.query.courseId ? Number(req.query.courseId) : undefined;
+  const purchases = await listTeacherPurchases(req.user!.id, {
+    courseId: Number.isFinite(selectedCourseId) && selectedCourseId && selectedCourseId > 0 ? selectedCourseId : undefined,
+  });
+
+  return res.render('teacher/purchases', {
+    title: 'مشتريات الطلاب',
+    currentUser: req.user,
+    flash: res.locals.flash,
+    csrfToken: res.locals.csrfToken,
+    courses,
+    selectedCourseId,
+    purchases,
   });
 }
 
