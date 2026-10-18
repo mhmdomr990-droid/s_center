@@ -299,6 +299,13 @@ export const teacherPayoutSchema = z
   })
   .strict();
 
+export const maintenanceModeSchema = z
+  .object({
+    enabled: z.boolean(),
+    message: z.string().trim().max(500).optional().nullable(),
+  })
+  .strict();
+
 export const resetPasswordSchema = z
   .object({
     new_password: passwordSchema,

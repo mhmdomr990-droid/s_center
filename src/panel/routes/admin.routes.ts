@@ -59,6 +59,8 @@ import {
 	resetUserDeviceAction,
 	resetUserPasswordAction,
 	sendNotificationAction,
+	settingsPage,
+	updateMaintenanceAction,
 	specializationsPage,
 	statsRedirect,
 	teacherPayoutAction,
@@ -169,3 +171,5 @@ panelAdminRoutes.get('/teachers/:id/payouts', validate({ params: adminIdParamSch
 
 panelAdminRoutes.get('/notifications', asyncHandler(notificationsPage));
 panelAdminRoutes.post('/notifications', validate({ body: panelNotificationSchema }), asyncHandler(sendNotificationAction));
+panelAdminRoutes.get('/settings', asyncHandler(settingsPage));
+panelAdminRoutes.post('/settings/maintenance', validate({ body: z.object({ enabled: z.enum(['true', 'false']), message: z.string().trim().max(500).optional().nullable() }).strict() }), asyncHandler(updateMaintenanceAction));

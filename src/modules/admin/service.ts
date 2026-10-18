@@ -15,6 +15,7 @@ import { LectureType, LectureUploadStatus, PurchaseSource, TopupStatus, Transact
 import { Transaction } from '../../entities/Transaction';
 import { User } from '../../entities/User';
 import { UserRole } from '../../entities/enums';
+import { AppSetting } from '../../entities/AppSetting';
 import { AppError } from '../../utils/AppError';
 import { calculateMoneyShare, centsToMoney, toCents } from '../../utils/money';
 import { notify } from '../notifications/service';
@@ -1806,6 +1807,53 @@ export async function resetPassword(userId: number, newPassword: string) {
   user.passwordHash = passwordHash;
   await AppDataSource.getRepository(User).save(user);
   return { message: 'Password reset successfully' };
+}
+
+export async function getMaintenanceStatus() {
+  const repository = AppDataSource.getRepository(AppSetting);
+  const maintenanceKey = await repository.findOne({ where: { key: 'maintenance_mode' } });
+  const messageKey = await repository.findOne({ where: { key: 'maintenance_message' } });
+
+  return {
+    maintenance: maintenanceKey ? String(maintenanceKey.value ?? '0') === '1' : false,
+    message: messageKey?.value ?? 'التطبيق قيد الصيانة حاليًا',
+    updated_at: maintenanceKey?.updatedAt ?? null,
+  };
+}
+
+export async function setMaintenanceStatus(input: { enabled: boolean; message?: string | null }) {
+  const repository = AppDataSource.getRepository(AppSetting);
+
+  const maintenanceMode = await repository.findOne({ where: { key: 'maintenance_mode' } });
+  const maintenanceMessage = await repository.findOne({ where: { key: 'maintenance_message' } });
+
+  if (maintenanceMode) {
+    maintenanceMode.value = input.enabled ? '1' : '0';
+    await repository.save(maintenanceMode);
+  } else {
+    await repository.save(
+      repository.create({
+        key: 'maintenance_mode',
+        value: input.enabled ? '1' : '0',
+      }),
+    );
+  }
+
+  const finalMessage = input.message !== undefined ? input.message?.trim() || 'التطبيق قيد الصيانة حاليًا' : 'التطبيق قيد الصيانة حاليًا';
+
+  if (maintenanceMessage) {
+    maintenanceMessage.value = finalMessage;
+    await repository.save(maintenanceMessage);
+  } else {
+    await repository.save(
+      repository.create({
+        key: 'maintenance_message',
+        value: finalMessage,
+      }),
+    );
+  }
+
+  return getMaintenanceStatus();
 }
 
 export async function overviewStats(from?: string, to?: string) {

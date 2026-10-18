@@ -31,6 +31,8 @@ import {
   listLectureGrantsForUsers,
   listFreeGrantsByAdmin,
   listPurchaseHistory,
+  getMaintenanceStatus,
+  setMaintenanceStatus,
   overviewStats,
   payoutTeacher,
   rejectTopupRequest,
@@ -117,6 +119,29 @@ export async function overviewPage(req: Request, res: Response) {
     specializationSales: bySpec,
     ...common,
   });
+}
+
+export async function settingsPage(req: Request, res: Response) {
+  const maintenance = await getMaintenanceStatus();
+  const common = await loadAdminCommon();
+
+  return res.render('admin/settings', {
+    title: 'إعدادات التطبيق',
+    currentUser: req.user,
+    flash: res.locals.flash,
+    csrfToken: res.locals.csrfToken,
+    maintenance,
+    ...common,
+  });
+}
+
+export async function updateMaintenanceAction(req: Request, res: Response) {
+  const enabled = String(req.body.enabled) === 'true';
+  const message = typeof req.body.message === 'string' ? req.body.message.trim() : 'التطبيق قيد الصيانة حاليًا';
+
+  await setMaintenanceStatus({ enabled, message: enabled ? message : '' });
+  setFlash(res, 'success', enabled ? 'تم تفعيل وضع الصيانة' : 'تم إلغاء وضع الصيانة');
+  return res.redirect('/panel/admin/settings');
 }
 
 export async function specializationsPage(req: Request, res: Response) {

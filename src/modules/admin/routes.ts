@@ -36,6 +36,7 @@ import {
   teacherCreateSchema,
   teacherPayoutSchema,
   teacherUpdateSchema,
+  maintenanceModeSchema,
   topupRequestsQuerySchema,
 } from './schemas';
 import {
@@ -63,6 +64,7 @@ import {
   getAdminTopupRequests,
   getAdminUserById,
   getAdminUserPurchases,
+  getAdminPurchaseHistory,
   getAdminUserTransactions,
   getAdminCourseSwapRequests,
   approveAdminCourseSwapRequest,
@@ -88,6 +90,8 @@ import {
   postAdminSpecialization,
   postAdminTeacher,
   postAdminCreateAdmin,
+  getAdminMaintenanceStatus,
+  patchAdminMaintenanceStatus,
   patchAdminTeacher,
   postAdminTeacherPayout,
   putAdminLectureOrder,
@@ -135,6 +139,7 @@ adminRoutes.post('/course-swap-requests/:id/approve', validate({ params: adminId
 adminRoutes.post('/course-swap-requests/:id/reject', validate({ params: adminIdParamSchema }), rejectAdminCourseSwapRequest);
 
 adminRoutes.get('/users', validate({ query: adminUsersQuerySchema }), getAdminUsers);
+adminRoutes.get('/purchases', getAdminPurchaseHistory);
 adminRoutes.get('/users/:id', validate({ params: adminIdParamSchema }), getAdminUserById);
 adminRoutes.get('/users/:id/transactions', validate({ params: adminIdParamSchema }), getAdminUserTransactions);
 adminRoutes.get('/users/:id/purchases', validate({ params: adminIdParamSchema }), getAdminUserPurchases);
@@ -152,6 +157,8 @@ adminRoutes.post('/users/:id/adjust-balance', validate({ params: adminIdParamSch
 adminRoutes.post('/users/:id/reset-password', validate({ params: adminIdParamSchema, body: resetPasswordSchema }), postAdminResetPassword);
 
 adminRoutes.post('/notifications', validate({ body: adminNotificationSchema }), sendAdminNotification);
+adminRoutes.get('/settings/maintenance', getAdminMaintenanceStatus);
+adminRoutes.patch('/settings/maintenance', validate({ body: maintenanceModeSchema }), patchAdminMaintenanceStatus);
 
 adminRoutes.post('/admins', validate({ body: adminCreateSchema }), postAdminCreateAdmin);
 adminRoutes.post('/teachers', validate({ body: teacherCreateSchema }), postAdminTeacher);

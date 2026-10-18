@@ -21,6 +21,7 @@ import { panelTeacherRoutes } from './panel/routes/teacher.routes';
 import { errorMiddleware } from './middlewares/error';
 import { generalRateLimit } from './middlewares/rateLimit';
 import { csrfOrigin } from './panel/middlewares/csrfOrigin';
+import { getMaintenanceStatus } from './modules/admin/service';
 
 export const app = express();
 
@@ -85,6 +86,33 @@ app.use(['/student', '/panel', '/js', '/css'], (_req, res, next) => {
 app.use('/student', express.static(path.resolve(process.cwd(), 'public', 'student-app')));
 app.use(express.static(path.resolve(process.cwd(), 'public')));
 app.use('/api', generalRateLimit);
+
+app.get('/api/app-status', async (_req, res) => {
+  const data = await getMaintenanceStatus();
+  res.status(200).json({ success: true, data });
+});
+
+app.use('/api', async (req, res, next) => {
+  const isAllowedRoute = req.path.startsWith('/auth/') || req.path.startsWith('/admin/');
+  if (isAllowedRoute || req.path === '/app-status') {
+    return next();
+  }
+
+  try {
+    const status = await getMaintenanceStatus();
+    if (status.maintenance) {
+      return res.status(503).json({
+        success: false,
+        maintenance: true,
+        message: status.message || 'التطبيق قيد الصيانة حاليًا',
+      });
+    }
+
+    return next();
+  } catch (error) {
+    return next(error);
+  }
+});
 
 app.get('/', (_req, res) => {
   res.sendFile(path.resolve(process.cwd(), 'public', 'landing', 'index.html'));
