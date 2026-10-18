@@ -143,27 +143,50 @@ class TeacherCourseDetailPage extends StatelessWidget {
   }
 
   Widget _buildInfoChip(String text, {VoidCallback? onTap}) {
-    final chip = Container(
+    // زر «المشترون» على الكارت المتدرّج: pill بحد وripple ليبدو قابلاً للضغط
+    if (onTap != null) {
+      return Material(
+        color: Colors.white.withValues(alpha: 0.22),
+        borderRadius: BorderRadius.circular(14),
+        child: InkWell(
+          onTap: onTap,
+          borderRadius: BorderRadius.circular(14),
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(14),
+              border:
+                  Border.all(color: Colors.white.withValues(alpha: 0.55)),
+            ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const Icon(Icons.people_alt_outlined,
+                    color: Colors.white, size: 15),
+                const SizedBox(width: 5),
+                Text(text,
+                    style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 12,
+                        fontWeight: FontWeight.w700)),
+                const SizedBox(width: 3),
+                const Icon(Icons.chevron_left_rounded,
+                    color: Colors.white70, size: 15),
+              ],
+            ),
+          ),
+        ),
+      );
+    }
+    return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
       decoration: BoxDecoration(
         color: Colors.white.withValues(alpha: 0.2),
         borderRadius: BorderRadius.circular(8),
       ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Text(text,
-              style: const TextStyle(color: Colors.white, fontSize: 12)),
-          if (onTap != null) ...[
-            const SizedBox(width: 3),
-            const Icon(Icons.chevron_left_rounded,
-                color: Colors.white70, size: 14),
-          ],
-        ],
-      ),
+      child: Text(text,
+          style: const TextStyle(color: Colors.white, fontSize: 12)),
     );
-    if (onTap == null) return chip;
-    return GestureDetector(onTap: onTap, child: chip);
   }
 
   void _confirmDelete(TeacherCoursesController ctrl, int lectureId, int courseId) {

@@ -327,30 +327,42 @@ class _CoursesView extends StatelessWidget {
                               style: AppTextStyles.caption
                                   .copyWith(fontWeight: FontWeight.w700)),
                           const SizedBox(height: 4),
-                          InkWell(
-                            onTap: () => ctrl.openPurchasersSheet(course),
-                            borderRadius: BorderRadius.circular(8),
-                            child: Padding(
-                              padding: const EdgeInsets.symmetric(
-                                  horizontal: 4, vertical: 2),
-                              child: Row(
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  Icon(Icons.people_outline,
-                                      size: 15,
-                                      color: AppColors.textSecondary),
-                                  const SizedBox(width: 5),
-                                  Text(
-                                      'المشترون: ${course['purchases_count'] ?? 0}',
-                                      style: AppTextStyles.caption
-                                          .copyWith(
-                                              color:
-                                                  AppColors.textSecondary)),
-                                  const SizedBox(width: 3),
-                                  Icon(Icons.chevron_left_rounded,
-                                      size: 16,
-                                      color: AppColors.textHint),
-                                ],
+                          Material(
+                            color:
+                                AppColors.primary.withValues(alpha: 0.10),
+                            borderRadius: BorderRadius.circular(14),
+                            child: InkWell(
+                              onTap: () =>
+                                  ctrl.openPurchasersSheet(course),
+                              borderRadius: BorderRadius.circular(14),
+                              child: Container(
+                                padding: const EdgeInsets.symmetric(
+                                    horizontal: 10, vertical: 5),
+                                decoration: BoxDecoration(
+                                  borderRadius: BorderRadius.circular(14),
+                                  border: Border.all(
+                                      color: AppColors.primary
+                                          .withValues(alpha: 0.40)),
+                                ),
+                                child: Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    const Icon(Icons.people_alt_outlined,
+                                        size: 15,
+                                        color: AppColors.primary),
+                                    const SizedBox(width: 5),
+                                    Text(
+                                        'المشترون: ${course['purchases_count'] ?? 0}',
+                                        style: const TextStyle(
+                                            fontSize: 12,
+                                            fontWeight: FontWeight.w700,
+                                            color: AppColors.primary)),
+                                    const SizedBox(width: 3),
+                                    const Icon(Icons.chevron_left_rounded,
+                                        size: 16,
+                                        color: AppColors.primary),
+                                  ],
+                                ),
                               ),
                             ),
                           ),
