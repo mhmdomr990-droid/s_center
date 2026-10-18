@@ -1,4 +1,7 @@
+import 'dart:async';
+
 import 'package:dio/dio.dart';
+import '../../modules/maintenance/maintenance_dialog.dart';
 import '../services/storage_service.dart';
 
 class ApiClient {
@@ -8,7 +11,10 @@ class ApiClient {
   // العنوان الفعلي — يبدأ ثابتاً منذ أول إطار
   static String baseUrl = defaultBaseUrl;
 
-  static const Duration timeout = Duration(seconds: 30);
+  // مهل قصيرة: سيرفر مشغول/مقطوع يفشل خلال ثوانٍ بدل 30 ثانية تجمّد
+  // (الرفع والوسائط لهما مهل خاصة بهم ولا يمرّون بهذه القيم افتراضياً)
+  static const Duration connectTimeout = Duration(seconds: 10);
+  static const Duration receiveTimeout = Duration(seconds: 15);
 
   late final Dio _dio;
   final StorageService _storage;
@@ -16,8 +22,8 @@ class ApiClient {
   ApiClient(this._storage) {
     _dio = Dio(BaseOptions(
       baseUrl: baseUrl,
-      connectTimeout: timeout,
-      receiveTimeout: timeout,
+      connectTimeout: connectTimeout,
+      receiveTimeout: receiveTimeout,
       headers: {
         'Content-Type': 'application/json',
         'Accept': 'application/json',
@@ -33,6 +39,15 @@ class ApiClient {
         handler.next(options);
       },
       onError: (error, handler) {
+        // إشارة الصيانة من الباك أثناء العمل ⇐ النافذة الدائمة
+        // (الأدمن لا يرى 503 أصلاً — مساراته مستثناة في الباك)
+        final data = error.response?.data;
+        if (error.response?.statusCode == 503 &&
+            data is Map &&
+            data['maintenance'] == true) {
+          unawaited(showMaintenanceDialog(
+              message: data['message'] is String ? data['message'] : null));
+        }
         handler.next(error);
       },
     ));

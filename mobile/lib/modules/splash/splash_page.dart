@@ -5,7 +5,10 @@ import 'package:get/get.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 import '../../app/routes/app_routes.dart';
+import '../../data/services/app_status.dart';
+import '../../data/services/storage_service.dart';
 import '../auth/auth_controller.dart';
+import '../maintenance/maintenance_dialog.dart';
 
 class SplashPage extends StatefulWidget {
   const SplashPage({super.key});
@@ -33,6 +36,17 @@ class _SplashPageState extends State<SplashPage>
     )..repeat();
 
     _navTimer = Timer(const Duration(milliseconds: 2800), () async {
+      if (!mounted) return;
+      // فحص حالة السيرفر لحظة الفتح: صيانة ⇐ نافذة دائمة
+      // (الأدمن يتجاوز دائماً — الباك يستثني مساراته)
+      final status = await AppStatusService.fetch();
+      if (!mounted) return;
+      if (status != null && status.maintenance) {
+        final cached = await Get.find<StorageService>().getUser();
+        if (cached?.isAdmin != true) {
+          await showMaintenanceDialog(message: status.message);
+        }
+      }
       if (!mounted) return;
       await Get.find<AuthController>().checkAuth();
       if (mounted && Get.currentRoute == AppRoutes.splash) {
