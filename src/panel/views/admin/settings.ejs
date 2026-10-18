@@ -1,0 +1,32 @@
+<%- include('../layout/header', { title: 'إعدادات التطبيق' }) %>
+<%- include('../layout/sidebar', { currentUser, csrfToken, pendingTopupsCount, pendingCourseSwapCount }) %>
+<%- include('../partials/flash', { flash }) %>
+<div class="panel-topbar"><h1 style="margin:0;">إعدادات التطبيق</h1></div>
+<%- include('../partials/breadcrumb', {
+  items: [
+    { label: 'لوحة التحكم', href: '/panel/admin/overview' },
+    { label: 'إعدادات التطبيق' },
+  ],
+}) %>
+<div class="panel-card">
+  <form method="post" action="/panel/admin/settings/maintenance" class="panel-form">
+    <input type="hidden" name="csrf_token" value="<%= csrfToken %>">
+    <div class="panel-form-grid">
+      <div>
+        <label>حالة التطبيق</label>
+        <select name="enabled" required>
+          <option value="false" <%= maintenance.maintenance ? '' : 'selected' %>>عادي</option>
+          <option value="true" <%= maintenance.maintenance ? 'selected' : '' %>>قيد الصيانة</option>
+        </select>
+      </div>
+      <div>
+        <label>رسالة الصيانة</label>
+        <textarea name="message" rows="4" placeholder="التطبيق قيد الصيانة حاليًا"><%= maintenance.message || 'التطبيق قيد الصيانة حاليًا' %></textarea>
+      </div>
+    </div>
+    <div class="panel-form-actions">
+      <button type="submit" class="panel-btn panel-btn-primary">حفظ</button>
+    </div>
+  </form>
+</div>
+<%- include('../layout/footer') %>

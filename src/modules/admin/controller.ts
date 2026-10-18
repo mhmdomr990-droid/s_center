@@ -28,6 +28,8 @@ import {
   createTeacher,
   createAdmin,
   updateTeacher,
+  getMaintenanceStatus,
+  setMaintenanceStatus,
   adjustBalance,
   grantCourseToUser,
   grantLectureToUser,
@@ -44,6 +46,7 @@ import {
   listUserLectureGrants,
   listUserTransactions,
   listUsersFiltered,
+  listPurchaseHistory,
   overviewStats,
   reorderCourseLectures,
   rejectTopupRequest,
@@ -238,6 +241,16 @@ export const getAdminUserPurchases = asyncHandler(async (req: Request, res: Resp
   res.status(200).json({ success: true, data: paged.data, meta: paged.meta });
 });
 
+export const getAdminPurchaseHistory = asyncHandler(async (req: Request, res: Response) => {
+  const data = await listPurchaseHistory({
+    search: typeof req.query.search === 'string' ? req.query.search : undefined,
+    courseName: typeof req.query.courseName === 'string' ? req.query.courseName : undefined,
+    studentName: typeof req.query.studentName === 'string' ? req.query.studentName : undefined,
+  });
+  const paged = paginateItems(data, { page: Number(req.query.page ?? 1), limit: Number(req.query.limit ?? 20) });
+  res.status(200).json({ success: true, data: paged.data, meta: paged.meta });
+});
+
 export const patchAdminUserActive = asyncHandler(async (req: Request, res: Response) => {
   const data = await setUserActive(Number(req.params.id), req.body.is_active);
   res.status(200).json({ success: true, data });
@@ -323,6 +336,16 @@ export const sendAdminNotification = asyncHandler(async (req: Request, res: Resp
 export const postAdminTeacher = asyncHandler(async (req: Request, res: Response) => {
   const data = await createTeacher(req.body);
   res.status(201).json({ success: true, data });
+});
+
+export const getAdminMaintenanceStatus = asyncHandler(async (_req: Request, res: Response) => {
+  const data = await getMaintenanceStatus();
+  res.status(200).json({ success: true, data });
+});
+
+export const patchAdminMaintenanceStatus = asyncHandler(async (req: Request, res: Response) => {
+  const data = await setMaintenanceStatus({ enabled: req.body.enabled, message: req.body.message });
+  res.status(200).json({ success: true, data });
 });
 
 export const patchAdminTeacher = asyncHandler(async (req: Request, res: Response) => {
