@@ -327,16 +327,32 @@ class _CoursesView extends StatelessWidget {
                               style: AppTextStyles.caption
                                   .copyWith(fontWeight: FontWeight.w700)),
                           const SizedBox(height: 4),
-                          Row(
-                            children: [
-                              Icon(Icons.people_outline,
-                                  size: 15, color: AppColors.textSecondary),
-                              const SizedBox(width: 5),
-                              Text(
-                                  'المشترون: ${course['purchases_count'] ?? 0}',
-                                  style: AppTextStyles.caption
-                                      .copyWith(color: AppColors.textSecondary)),
-                            ],
+                          InkWell(
+                            onTap: () => ctrl.openPurchasersSheet(course),
+                            borderRadius: BorderRadius.circular(8),
+                            child: Padding(
+                              padding: const EdgeInsets.symmetric(
+                                  horizontal: 4, vertical: 2),
+                              child: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Icon(Icons.people_outline,
+                                      size: 15,
+                                      color: AppColors.textSecondary),
+                                  const SizedBox(width: 5),
+                                  Text(
+                                      'المشترون: ${course['purchases_count'] ?? 0}',
+                                      style: AppTextStyles.caption
+                                          .copyWith(
+                                              color:
+                                                  AppColors.textSecondary)),
+                                  const SizedBox(width: 3),
+                                  Icon(Icons.chevron_left_rounded,
+                                      size: 16,
+                                      color: AppColors.textHint),
+                                ],
+                              ),
+                            ),
                           ),
                           Row(
                             mainAxisAlignment: MainAxisAlignment.end,

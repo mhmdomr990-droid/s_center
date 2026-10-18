@@ -4,6 +4,8 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import '../../../app/theme/app_colors.dart';
+import '../../../app/theme/app_text_styles.dart';
 import '../../../data/providers/api_client.dart';
 import '../../../data/providers/catalog_provider.dart';
 import '../../../data/providers/teacher_provider.dart';
@@ -324,5 +326,154 @@ class TeacherCoursesController extends GetxController {
     } catch (e) {
       // ignore
     }
+  }
+
+  // ── مشتري الدورة ──
+  final purchasersLoading = false.obs;
+  final purchasers = <Map<String, dynamic>>[].obs;
+
+  Future<void> openPurchasersSheet(CourseModel course) async {
+    purchasers.clear();
+    purchasersLoading.value = true;
+    _showPurchasersSheet(course.name);
+    try {
+      final response = await _teacherProvider.coursePurchasers(course.id);
+      final data = response.data['data'];
+      if (data is List) {
+        purchasers.assignAll(
+            data.map((e) => Map<String, dynamic>.from(e as Map)).toList());
+      }
+    } catch (_) {
+      Get.snackbar('خطأ', 'تعذّر تحميل قائمة المشترين',
+          backgroundColor: const Color(0xFFE53935),
+          colorText: const Color(0xFFFFFFFF));
+    } finally {
+      purchasersLoading.value = false;
+    }
+  }
+
+  void _showPurchasersSheet(String courseName) {
+    Get.bottomSheet(
+      Container(
+        height: MediaQuery.of(Get.context!).size.height * 0.7,
+        decoration: BoxDecoration(
+          color: AppColors.courseCard,
+          borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
+          border: Border.all(color: AppColors.cardBorder),
+        ),
+        padding: const EdgeInsets.fromLTRB(16, 12, 16, 16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Expanded(
+                  child: Text('مشترو الدورة — $courseName',
+                      style: AppTextStyles.titleMedium, maxLines: 1),
+                ),
+                Obx(() => Text('${purchasers.length} طالب',
+                    style: AppTextStyles.caption)),
+                IconButton(
+                  icon: const Icon(Icons.close_rounded),
+                  onPressed: () => Get.back(),
+                  color: AppColors.textSecondary,
+                ),
+              ],
+            ),
+            const SizedBox(height: 4),
+            Expanded(
+              child: Obx(() {
+                if (purchasersLoading.value) {
+                  return const Center(child: CircularProgressIndicator());
+                }
+                if (purchasers.isEmpty) {
+                  return Center(
+                      child: Text('لا يوجد مشترون بعد',
+                          style: AppTextStyles.caption));
+                }
+                return ListView.builder(
+                  itemCount: purchasers.length,
+                  itemBuilder: (_, i) => _purchaserRow(i, purchasers[i]),
+                );
+              }),
+            ),
+          ],
+        ),
+      ),
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+    );
+  }
+
+  Widget _purchaserRow(int index, Map<String, dynamic> p) {
+    final granted = '${p['source'] ?? ''}' == 'GRANTED';
+    final rawDate = '${p['created_at'] ?? ''}';
+    String date = '';
+    final parsed = DateTime.tryParse(rawDate);
+    if (parsed != null) {
+      date =
+          '${parsed.year}-${parsed.month.toString().padLeft(2, '0')}-${parsed.day.toString().padLeft(2, '0')}';
+    }
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 3),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+        decoration: BoxDecoration(
+          border: Border.all(color: AppColors.cardBorder),
+          borderRadius: BorderRadius.circular(10),
+        ),
+        child: Row(
+          children: [
+            Container(
+              width: 28,
+              height: 28,
+              alignment: Alignment.center,
+              decoration: BoxDecoration(
+                color: AppColors.primary.withValues(alpha: 0.1),
+                shape: BoxShape.circle,
+              ),
+              child: Text('${index + 1}',
+                  style: const TextStyle(
+                      fontSize: 12,
+                      fontWeight: FontWeight.bold,
+                      color: AppColors.primary)),
+            ),
+            const SizedBox(width: 10),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text('${p['full_name'] ?? ''}',
+                      style: AppTextStyles.bodyMedium.copyWith(fontSize: 14),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis),
+                  Text('@${p['username'] ?? ''}',
+                      style: AppTextStyles.caption,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis),
+                ],
+              ),
+            ),
+            if (date.isNotEmpty) Text(date, style: AppTextStyles.caption),
+            const SizedBox(width: 8),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+              decoration: BoxDecoration(
+                color: (granted ? AppColors.success : AppColors.primary)
+                    .withValues(alpha: 0.12),
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Text(
+                granted ? 'ممنوحة' : 'مُشترى',
+                style: TextStyle(
+                    fontSize: 10,
+                    fontWeight: FontWeight.w700,
+                    color: granted ? AppColors.success : AppColors.primary),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
   }
 }

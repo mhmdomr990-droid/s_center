@@ -45,6 +45,15 @@ class AdminProvider {
 
   Future<Response> userPurchases(int id) => _api.get('/admin/users/$id/purchases');
 
+  Future<Response> purchaseHistory(
+          {String? search, String? courseName, int page = 1, int limit = 100}) =>
+      _api.get('/admin/purchases', queryParameters: {
+        if (search != null && search.isNotEmpty) 'search': search,
+        if (courseName != null && courseName.isNotEmpty) 'courseName': courseName,
+        'page': page,
+        'limit': limit,
+      });
+
   Future<Response> grantCourse(int userId, int courseId) =>
       _api.post('/admin/users/$userId/grant-course', data: {'course_id': courseId});
 

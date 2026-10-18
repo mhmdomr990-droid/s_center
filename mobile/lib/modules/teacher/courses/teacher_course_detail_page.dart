@@ -66,7 +66,8 @@ class TeacherCourseDetailPage extends StatelessWidget {
                         children: [
                           if (course.specializationName.isNotEmpty)
                             _buildInfoChip(course.specializationName),
-                          _buildInfoChip('${course.purchasesCount ?? 0} مشتري'),
+                          _buildInfoChip('${course.purchasesCount ?? 0} مشتري',
+                              onTap: () => ctrl.openPurchasersSheet(course)),
                           _buildInfoChip(
                               'نسبة المعلم: ${_percentLabel(course.teacherPercent)}%'),
                           _buildInfoChip('${course.price} SYP'),
@@ -141,15 +142,28 @@ class TeacherCourseDetailPage extends StatelessWidget {
     return v.isEmpty ? '0' : v;
   }
 
-  Widget _buildInfoChip(String text) {
-    return Container(
+  Widget _buildInfoChip(String text, {VoidCallback? onTap}) {
+    final chip = Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
       decoration: BoxDecoration(
         color: Colors.white.withValues(alpha: 0.2),
         borderRadius: BorderRadius.circular(8),
       ),
-      child: Text(text, style: const TextStyle(color: Colors.white, fontSize: 12)),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Text(text,
+              style: const TextStyle(color: Colors.white, fontSize: 12)),
+          if (onTap != null) ...[
+            const SizedBox(width: 3),
+            const Icon(Icons.chevron_left_rounded,
+                color: Colors.white70, size: 14),
+          ],
+        ],
+      ),
     );
+    if (onTap == null) return chip;
+    return GestureDetector(onTap: onTap, child: chip);
   }
 
   void _confirmDelete(TeacherCoursesController ctrl, int lectureId, int courseId) {

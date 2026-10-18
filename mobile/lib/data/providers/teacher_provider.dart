@@ -20,6 +20,10 @@ class TeacherProvider {
     return _api.get('/teacher/courses/$id');
   }
 
+  Future<Response> coursePurchasers(int courseId) {
+    return _api.get('/teacher/courses/$courseId/purchases', queryParameters: {'limit': 100});
+  }
+
   Future<Response> updateCourseDescription(int id, String description) {
     return _api.patch('/teacher/courses/$id', data: {'description': description});
   }
