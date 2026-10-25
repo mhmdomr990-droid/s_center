@@ -6,9 +6,11 @@ import 'package:google_fonts/google_fonts.dart';
 
 import '../../app/routes/app_routes.dart';
 import '../../data/services/app_status.dart';
+import '../../data/services/device_guard.dart';
 import '../../data/services/storage_service.dart';
 import '../auth/auth_controller.dart';
 import '../maintenance/maintenance_dialog.dart';
+import '../security/emulator_blocked_dialog.dart';
 
 class SplashPage extends StatefulWidget {
   const SplashPage({super.key});
@@ -22,6 +24,7 @@ class _SplashPageState extends State<SplashPage>
   late final AnimationController _content;
   late final AnimationController _sheen;
   Timer? _navTimer;
+  bool _blocked = false;
 
   @override
   void initState() {
@@ -35,24 +38,35 @@ class _SplashPageState extends State<SplashPage>
       duration: const Duration(milliseconds: 4600),
     )..repeat();
 
+    // كشف المحاكي فوراً (محلي، بلا شبكة) — قبل أي فحص سيرفر أو تنقّل.
+    // إن كان محاكياً: نافذة حظر دائمة + إلغاء كل ما يلي.
+    unawaited(_guardEmulator());
+
     _navTimer = Timer(const Duration(milliseconds: 2800), () async {
-      if (!mounted) return;
+      if (!mounted || _blocked) return;
       // فحص حالة السيرفر لحظة الفتح: صيانة ⇐ نافذة دائمة
       // (الأدمن يتجاوز دائماً — الباك يستثني مساراته)
       final status = await AppStatusService.fetch();
-      if (!mounted) return;
+      if (!mounted || _blocked) return;
       if (status != null && status.maintenance) {
         final cached = await Get.find<StorageService>().getUser();
         if (cached?.isAdmin != true) {
           await showMaintenanceDialog(message: status.message);
         }
       }
-      if (!mounted) return;
+      if (!mounted || _blocked) return;
       await Get.find<AuthController>().checkAuth();
-      if (mounted && Get.currentRoute == AppRoutes.splash) {
+      if (mounted && !_blocked && Get.currentRoute == AppRoutes.splash) {
         Get.offAllNamed(AppRoutes.login);
       }
     });
+  }
+
+  Future<void> _guardEmulator() async {
+    final emulator = await DeviceGuard.isEmulator();
+    if (!emulator || !mounted) return;
+    _blocked = true;
+    await showEmulatorBlockedDialog();
   }
 
   @override
