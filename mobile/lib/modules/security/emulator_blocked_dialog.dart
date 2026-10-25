@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:get/get.dart';
 
 import '../../app/theme/app_colors.dart';
+import '../../widgets/custom_button.dart';
 
 bool _dialogVisible = false;
 
@@ -76,24 +77,10 @@ class _EmulatorBlockedDialog extends StatelessWidget {
                     height: 1.7),
               ),
               const SizedBox(height: 20),
-              SizedBox(
-                width: double.infinity,
-                height: 48,
-                child: ElevatedButton.icon(
-                  onPressed: () => SystemNavigator.pop(),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: AppColors.primary,
-                    shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12)),
-                  ),
-                  icon: const Icon(Icons.exit_to_app_rounded,
-                      color: Colors.white, size: 18),
-                  label: const Text(
-                    'خروج',
-                    style: TextStyle(
-                        color: Colors.white, fontWeight: FontWeight.w700),
-                  ),
-                ),
+              CustomButton(
+                text: 'خروج',
+                icon: Icons.exit_to_app_rounded,
+                onPressed: () => SystemNavigator.pop(),
               ),
             ],
           ),
