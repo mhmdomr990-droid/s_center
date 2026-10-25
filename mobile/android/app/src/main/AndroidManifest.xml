@@ -53,5 +53,16 @@
             <action android:name="android.intent.action.PROCESS_TEXT"/>
             <data android:mimeType="text/plain"/>
         </intent>
+        <!-- حزم محاكيات — للكشف عنها عبر PackageManager (طبقة 1 في MainActivity.detectEmulator) -->
+        <package android:name="com.bluestacks.appmart"/>
+        <package android:name="com.bluestacks.settings"/>
+        <package android:name="com.bluestacks.BstCommandProcessor"/>
+        <package android:name="com.bluestacks.home"/>
+        <package android:name="com.bignox.app.store.hd"/>
+        <package android:name="com.bignox.google.installer"/>
+        <package android:name="com.android.flysilkworm"/>
+        <package android:name="com.android.flysilkworm.coldlaunch"/>
+        <package android:name="com.microvirt.launcher"/>
+        <package android:name="com.microvirt.download"/>
     </queries>
 </manifest>

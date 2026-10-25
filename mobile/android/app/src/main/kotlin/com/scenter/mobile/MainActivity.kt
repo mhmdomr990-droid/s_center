@@ -39,9 +39,10 @@ class MainActivity : FlutterActivity() {
             }
     }
 
-    // كشف المحاكي: بصمة النظام + بيانات الصانع + خصائص qemu + ملفات الأجهزة الافتراضية.
-    // إشارة قوية واحدة تكفي (waydroid/emulator/goldfish...)؛ الضعيفة تُحسم مجتمعة.
-    // الهواوي الحقيقية (HUAWEI/kirin/release-keys) لا تطابق أي إشارة هنا.
+    // كشف المحاكي: بصمة النظام + بيانات الصانع + خصائص qemu + ملفات الأجهزة الافتراضية
+    // + حزم BlueStacks/Nox/LDPlayer/MEmu + ملفاتها + معمارية x86 + hypervisor
+    // إشارة قوية واحدة تكفي؛ الضعيفة تُحسم مجتمعة.
+    // الهواوي الحقيقية (HUAWEI/kirin/arm64/release-keys) لا تطابق أي إشارة هنا.
     private fun detectEmulator(): Boolean {
         val fingerprint = Build.FINGERPRINT.lowercase()
         val manufacturer = Build.MANUFACTURER.lowercase()
@@ -78,6 +79,58 @@ class MainActivity : FlutterActivity() {
         ) return true
         if (listOf("goldfish", "ranchu", "vbox86", "nox", "cutf").any { hardware.contains(it) }) return true
         if (listOf("goldfish", "ranchu", "vbox86").any { board.contains(it) }) return true
+
+        val emulatorPackages = listOf(
+            "com.bluestacks.appmart", "com.bluestacks.settings",
+            "com.bluestacks.BstCommandProcessor", "com.bluestacks.home",
+            "com.bignox.app.store.hd", "com.bignox.google.installer",
+            "com.android.flysilkworm", "com.android.flysilkworm.coldlaunch",
+            "com.microvirt.launcher", "com.microvirt.download"
+        )
+        for (pkg in emulatorPackages) {
+            try {
+                packageManager.getPackageInfo(pkg, 0)
+                return true
+            } catch (_: Exception) {
+            }
+        }
+
+        val emulatorFiles = listOf(
+            "/data/bluestacks.prop", "/data/.bluestacks.prop",
+            "/sdcard/windows/BstSharedFolder",
+            "/storage/emulated/0/windows/BstSharedFolder",
+            "/data/data/com.bluestacks.settings",
+            "/dev/socket/qemud",
+            "/system/lib/libc_malloc_debug_qemu.so"
+        )
+        if (emulatorFiles.any { File(it).exists() }) return true
+
+        if (Build.SUPPORTED_ABIS.any { it.lowercase().startsWith("x86") }) return true
+        if (sysProp("ro.build.characteristics").contains("emulator")) return true
+
+        val extendedTokens = listOf(
+            "bluestacks", "bst", "nox", "ttvm", "ldplayer", "memu",
+            "vbox86pcs", "android_x86"
+        )
+        if (extendedTokens.any {
+                fingerprint.contains(it) || manufacturer.contains(it) ||
+                    model.contains(it) || brand.contains(it) ||
+                    device.contains(it) || product.contains(it) ||
+                    hardware.contains(it) || board.contains(it)
+            }
+        ) return true
+        if (listOf(
+                "ro.build.display.id", "ro.build.version.incremental",
+                "ro.build.description", "ro.product.system.device"
+            ).any { prop -> extendedTokens.any { t -> sysProp(prop).contains(t) } }
+        ) return true
+
+        try {
+            File("/proc/cpuinfo").readLines().any { line ->
+                line.startsWith("flags") && line.contains("hypervisor")
+            }.let { if (it) return true }
+        } catch (_: Exception) {
+        }
 
         return false
     }
