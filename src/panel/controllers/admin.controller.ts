@@ -20,6 +20,7 @@ import {
   createStudent,
   createAdmin,
   updateTeacher,
+  updateStudentProfileByAdmin,
   adjustBalance,
   listCourses,
   listLectures,
@@ -516,6 +517,12 @@ export async function resetUserPasswordAction(req: Request, res: Response) {
 export async function adjustUserBalanceAction(req: Request, res: Response) {
   await adjustBalance(Number(req.params.id), req.body.amount, req.body.description);
   setFlash(res, 'success', 'تم تعديل الرصيد');
+  return res.redirect('/panel/admin/users');
+}
+
+export async function updateStudentProfileAction(req: Request, res: Response) {
+  await updateStudentProfileByAdmin(Number(req.params.id), req.body);
+  setFlash(res, 'success', 'تم تحديث بيانات الطالب');
   return res.redirect('/panel/admin/users');
 }
 

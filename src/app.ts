@@ -25,6 +25,8 @@ import { getMaintenanceStatus } from './modules/admin/service';
 
 export const app = express();
 
+app.set('trust proxy', env.TRUST_PROXY);
+
 function resolveViewsPath() {
   const distViews = path.resolve(process.cwd(), 'dist', 'panel', 'views');
   const srcViews = path.resolve(process.cwd(), 'src', 'panel', 'views');

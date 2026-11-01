@@ -28,6 +28,7 @@ import {
   createTeacher,
   createAdmin,
   updateTeacher,
+  updateStudentProfileByAdmin,
   getMaintenanceStatus,
   setMaintenanceStatus,
   adjustBalance,
@@ -272,6 +273,11 @@ export const adjustAdminUserBalance = asyncHandler(async (req: Request, res: Res
     },
   });
   res.status(result.status).json(result.body);
+});
+
+export const patchAdminStudentProfile = asyncHandler(async (req: Request, res: Response) => {
+  const data = await updateStudentProfileByAdmin(Number(req.params.id), req.body);
+  res.status(200).json({ success: true, data });
 });
 
 export const grantAdminUserCourse = asyncHandler(async (req: Request, res: Response) => {

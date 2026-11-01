@@ -28,7 +28,8 @@ export async function getLogin(req: Request, res: Response) {
 export async function postLogin(req: Request, res: Response, next: (error?: unknown) => void) {
   try {
     const { username, password } = req.body as { username: string; password: string };
-    const result = await loginForPanel({ username, password });
+    const normalizedUsername = String(username || '').trim().toLowerCase();
+    const result = await loginForPanel({ username: normalizedUsername, password });
     const token = result.token;
     const user = result.user;
     res.cookie('panel_token', token, {
