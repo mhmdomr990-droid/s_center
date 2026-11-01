@@ -8,6 +8,7 @@ import '../../../data/providers/purchase_provider.dart';
 import '../../../data/services/storage_service.dart';
 import '../../../data/models/course_model.dart';
 import '../../../data/models/purchase_model.dart';
+import '../../../data/models/user_model.dart';
 import '../../auth/auth_controller.dart';
 
 class HomeController extends GetxController {
@@ -38,16 +39,30 @@ class HomeController extends GetxController {
   @override
   void onInit() {
     super.onInit();
-    _loadUserName();
+    _syncUserName();
     loadData();
   }
 
+  // الاسم يُقرأ من AuthController ويتحدث رياضياً فور تعديل الاسم من الملف
+  // الشخصي (ever() يتوقف تلقائياً مع دورة حياة المتحكّم — لا تسريب)
+  void _syncUserName() {
+    if (Get.isRegistered<AuthController>()) {
+      final auth = Get.find<AuthController>();
+      userName.value = _nameOf(auth.user.value);
+      ever(auth.user, (u) => userName.value = _nameOf(u));
+    } else {
+      // احتياط: قراءة من التخزين إن لم يكن AuthController مسجّلاً
+      _loadUserName();
+    }
+  }
+
+  String _nameOf(UserModel? user) => user != null && user.fullName.isNotEmpty
+      ? user.fullName
+      : (user?.username ?? '');
+
   Future<void> _loadUserName() async {
     final user = await _storage.getUser();
-    final name = user?.fullName.isNotEmpty == true
-        ? user!.fullName
-        : (user?.username ?? '');
-    userName.value = name;
+    userName.value = _nameOf(user);
   }
 
   Future<void> loadData() async {

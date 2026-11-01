@@ -7,6 +7,7 @@ import '../../../data/providers/api_client.dart';
 import '../../../data/providers/api_exception.dart';
 import '../../../data/providers/catalog_provider.dart';
 import '../../../data/providers/purchase_provider.dart';
+import '../../../data/providers/wallet_provider.dart';
 import '../../auth/auth_controller.dart';
 import '../../../widgets/custom_button.dart';
 import '../../../widgets/custom_text_field.dart';
@@ -51,11 +52,32 @@ class _SwapCourseSheetState extends State<SwapCourseSheet> {
   bool _loading = true;
   bool _submitting = false;
   bool _allOwned = false;
+  String _balance = '0.00';
 
   @override
   void initState() {
     super.initState();
-    _loadAlternatives();
+    // المادة المنحّحة: لا تُحمَّل مواد بديلة أصلاً (تنبيه + زر معطّل)
+    if (widget.course.isGranted) {
+      _loading = false;
+    } else {
+      _loadAlternatives();
+    }
+    _loadBalance();
+  }
+
+  // الرصيد اللحظي من الخادم (كاش AuthController قد يكون قديماً بعد شراء/توب-أب)
+  Future<void> _loadBalance() async {
+    if (Get.isRegistered<AuthController>()) {
+      _balance = Get.find<AuthController>().user.value?.balance ?? '0.00';
+    }
+    try {
+      final res = await WalletProvider(Get.find<ApiClient>()).getWallet();
+      final b = res.data['data']?['balance'];
+      if (b != null && mounted) setState(() => _balance = b.toString());
+    } catch (_) {
+      // يبقى القيمة الاحتياطية من الكاش
+    }
   }
 
   @override
@@ -113,24 +135,32 @@ class _SwapCourseSheetState extends State<SwapCourseSheet> {
     return '${negative ? '-' : ''}${s.substring(0, s.length - 2)}.${s.substring(s.length - 2)}';
   }
 
-  BigInt get _balanceCents =>
-      _toCents(Get.find<AuthController>().user.value?.balance ?? '0.00');
+  BigInt get _balanceCents => _toCents(_balance);
 
-  // الفرق الموجب فقط: سعر المادة البديلة − ما دفعه الطالب فعلياً
-  // (مطابق لحساب الخادم: نفس القيمة يخصمها/approveCourseSwapRequest عند الفارق الأعلى)
-  BigInt get _deltaCents {
+  // فرق السعر بإشارته (موجب = يُخصم، سالب = يُسترداد) — مطابق لحساب الخادم:
+  // المادة المنحّحة لا تُخصم ولا تُسترداد أبداً (باقٍ GRANTED بـ pricePaid = 0.00)
+  BigInt get _signedDeltaCents {
+    if (widget.course.isGranted) return BigInt.zero;
     final selected = _alternatives.cast<Map<String, dynamic>?>().firstWhere(
         (c) => (c?['id'] as num?)?.toInt() == _selectedId,
         orElse: () => null);
     if (selected == null) return BigInt.zero;
-    final delta = _toCents('${selected['price'] ?? '0.00'}') -
+    return _toCents('${selected['price'] ?? '0.00'}') -
         _toCents(widget.course.pricePaid);
-    return delta > BigInt.zero ? delta : BigInt.zero;
   }
+
+  // الفرق الموجب فقط (يُخصم عند الموافقة) — لحارس الرصيد
+  BigInt get _deltaCents =>
+      _signedDeltaCents > BigInt.zero ? _signedDeltaCents : BigInt.zero;
 
   bool get _insufficientBalance => _deltaCents > _balanceCents;
 
   Future<void> _submit() async {
+    if (widget.course.isGranted) {
+      Get.snackbar('تبديل المادة', 'المادة منحة — لا يمكن تبديلها، راجع الإدارة',
+          backgroundColor: Colors.red, colorText: Colors.white);
+      return;
+    }
     if (_selectedId == null) {
       Get.snackbar('تبديل المادة', 'اختر المادة البديلة أولاً',
           backgroundColor: Colors.orange, colorText: Colors.white);
@@ -206,6 +236,22 @@ class _SwapCourseSheetState extends State<SwapCourseSheet> {
                 padding: const EdgeInsets.symmetric(vertical: 24),
                 child: Center(child: CircularProgressIndicator()),
               )
+            else if (widget.course.isGranted) ...[
+              // المادة منحّحة: لا تُحمَّل مواد بديلة — تنبيه + إرسال معطّل
+              Padding(
+                padding: const EdgeInsets.symmetric(vertical: 16),
+                child: Text(
+                  'المادة منحة — لا يمكن تبديلها، راجع الإدارة',
+                  style: AppTextStyles.bodyMedium
+                      .copyWith(color: AppColors.error, fontWeight: FontWeight.w600),
+                ),
+              ),
+              CustomButton(
+                text: 'إرسال طلب التبديل',
+                icon: Icons.send_rounded,
+                onPressed: null,
+              ),
+            ]
             else if (_alternatives.isEmpty)
               Padding(
                 padding: const EdgeInsets.symmetric(vertical: 16),
@@ -241,9 +287,9 @@ class _SwapCourseSheetState extends State<SwapCourseSheet> {
                     : (v) => setState(() => _selectedId = v),
               ),
               const SizedBox(height: 12),
-              if (_deltaCents > BigInt.zero) ...[
+              if (_signedDeltaCents > BigInt.zero) ...[
                 Text(
-                  'فرق السعر: +${_centsToMoney(_deltaCents)} SYP • رصيدك: ${_centsToMoney(_balanceCents)} SYP',
+                  'فرق السعر: +${_centsToMoney(_signedDeltaCents)} SYP • رصيدك: ${_centsToMoney(_balanceCents)} SYP',
                   style: AppTextStyles.bodySmall.copyWith(
                       color: _insufficientBalance
                           ? AppColors.error
@@ -256,6 +302,13 @@ class _SwapCourseSheetState extends State<SwapCourseSheet> {
                     style: AppTextStyles.bodySmall.copyWith(color: AppColors.error),
                   ),
                 ],
+                const SizedBox(height: 12),
+              ] else if (_signedDeltaCents < BigInt.zero) ...[
+                Text(
+                  'فرق السعر: ${_centsToMoney(_signedDeltaCents)} SYP (سيُضاف إلى رصيدك بعد الموافقة) • رصيدك: ${_centsToMoney(_balanceCents)} SYP',
+                  style:
+                      AppTextStyles.bodySmall.copyWith(color: AppColors.textSecondary),
+                ),
                 const SizedBox(height: 12),
               ],
               CustomTextField(

@@ -9,8 +9,11 @@ class PurchaseModel {
   final String? teacherName;
   final String pricePaid;
   final String teacherShare;
+  final String source; // PURCHASED | GRANTED (من GET /me/courses)
   final DateTime? createdAt;
   final int? lecturesCount;
+
+  bool get isGranted => source == 'GRANTED';
 
   PurchaseModel({
     required this.id,
@@ -23,6 +26,7 @@ class PurchaseModel {
     this.teacherName,
     required this.pricePaid,
     required this.teacherShare,
+    this.source = 'PURCHASED',
     this.createdAt,
     this.lecturesCount,
   });
@@ -39,6 +43,7 @@ class PurchaseModel {
       teacherName: json['teacher_full_name'] ?? json['teacher_name'],
       pricePaid: (json['price_paid'] ?? json['price'] ?? '0.00').toString(),
       teacherShare: (json['teacher_share'] ?? '0.00').toString(),
+      source: (json['source'] ?? 'PURCHASED').toString(),
       createdAt: json['created_at'] != null ? DateTime.tryParse(json['created_at']) : (json['purchased_at'] != null ? DateTime.tryParse(json['purchased_at']) : null),
       lecturesCount: json['lectures_count'],
     );
@@ -56,6 +61,7 @@ class PurchaseModel {
       teacherName: teacherName,
       pricePaid: pricePaid,
       teacherShare: teacherShare,
+      source: source,
       createdAt: createdAt,
       lecturesCount: lecturesCount,
     );
