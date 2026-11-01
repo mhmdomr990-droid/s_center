@@ -4,6 +4,7 @@ import { authMiddleware } from '../../middlewares/auth';
 import { requireRole } from '../../middlewares/role';
 import { validate } from '../../middlewares/validate';
 import { lectureVideoUpload } from '../../middlewares/videoUpload';
+import { sensitiveActionRateLimit, uploadRateLimit } from '../../middlewares/rateLimit';
 import { UserRole } from '../../entities/enums';
 import {
   adjustBalanceSchema,
@@ -123,9 +124,9 @@ adminRoutes.put('/courses/:id/lectures/order', validate({ params: adminIdParamSc
 adminRoutes.delete('/courses/:id', validate({ params: adminIdParamSchema }), deleteAdminCourse);
 
 adminRoutes.get('/lectures', validate({ query: adminLecturesQuerySchema }), getAdminLectures);
-adminRoutes.post('/lectures', lectureVideoUpload.single('video'), validate({ body: lectureCreateSchema }), postAdminLecture);
+adminRoutes.post('/lectures', uploadRateLimit, lectureVideoUpload.single('video'), validate({ body: lectureCreateSchema }), postAdminLecture);
 adminRoutes.get('/lectures/:id', validate({ params: adminIdParamSchema }), getAdminLectureById);
-adminRoutes.patch('/lectures/:id', lectureVideoUpload.single('video'), validate({ params: adminIdParamSchema, body: lectureUpdateSchema }), patchAdminLecture);
+adminRoutes.patch('/lectures/:id', uploadRateLimit, lectureVideoUpload.single('video'), validate({ params: adminIdParamSchema, body: lectureUpdateSchema }), patchAdminLecture);
 adminRoutes.patch('/lectures/:id/published', validate({ params: adminIdParamSchema, body: publishedBodySchema }), patchAdminLecturePublished);
 adminRoutes.delete('/lectures/:id', validate({ params: adminIdParamSchema }), deleteAdminLecture);
 
@@ -154,7 +155,7 @@ adminRoutes.post('/users/:userId/grant-lectures', validate({ params: adminUserPa
 adminRoutes.patch('/users/:id/active', validate({ params: adminIdParamSchema, body: activeUserSchema }), patchAdminUserActive);
 adminRoutes.post('/users/:id/reset-device', validate({ params: adminIdParamSchema }), resetAdminUserDevice);
 adminRoutes.post('/users/:id/adjust-balance', validate({ params: adminIdParamSchema, body: adjustBalanceSchema }), adjustAdminUserBalance);
-adminRoutes.post('/users/:id/reset-password', validate({ params: adminIdParamSchema, body: resetPasswordSchema }), postAdminResetPassword);
+adminRoutes.post('/users/:id/reset-password', sensitiveActionRateLimit, validate({ params: adminIdParamSchema, body: resetPasswordSchema }), postAdminResetPassword);
 
 adminRoutes.post('/notifications', validate({ body: adminNotificationSchema }), sendAdminNotification);
 adminRoutes.get('/settings/maintenance', getAdminMaintenanceStatus);

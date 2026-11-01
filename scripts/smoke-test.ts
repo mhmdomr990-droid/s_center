@@ -471,7 +471,142 @@ async function runRegressionScenario() {
   }
 }
 
-runRegressionScenario().catch((error) => {
-  console.error(`Regression scenario crashed: ${error instanceof Error ? error.message : String(error)}`);
+async function runRateLimitScenario() {
+  const results: AssertionResult[] = [];
+  const suffix = Date.now();
+
+  console.log('');
+  console.log('Running rate-limit smoke scenario...');
+
+  const adminLogin = await request<ApiEnvelope<{ token: string }>>('/api/auth/login', {
+    method: 'POST',
+    body: { username: 'admin', password: 'admin1234' },
+    expectedStatuses: [200],
+  });
+  const adminToken = adminLogin.data.data.token;
+
+  const usernameA = `rl_teacher_a_${suffix}`;
+  const usernameB = `rl_teacher_b_${suffix}`;
+
+  await request<ApiEnvelope<{ id: number }>>('/api/admin/teachers', {
+    method: 'POST',
+    token: adminToken,
+    body: { username: usernameA, full_name: `RateLimit A ${suffix}`, password: 'teacher1234' },
+    expectedStatuses: [201],
+  });
+
+  await request<ApiEnvelope<{ id: number }>>('/api/admin/teachers', {
+    method: 'POST',
+    token: adminToken,
+    body: { username: usernameB, full_name: `RateLimit B ${suffix}`, password: 'teacher1234' },
+    expectedStatuses: [201],
+  });
+
+  let firstTenFailedAsExpected = true;
+  for (let i = 1; i <= 10; i += 1) {
+    const failedLogin = await request<{ message?: string }>('/api/auth/login', {
+      method: 'POST',
+      body: { username: usernameA, password: 'wrong-pass-123' },
+      expectedStatuses: [401, 429],
+    });
+
+    if (failedLogin.status !== 401) {
+      firstTenFailedAsExpected = false;
+    }
+  }
+
+  assert(
+    results,
+    'Rate limit: first 10 failed logins allowed',
+    firstTenFailedAsExpected,
+    firstTenFailedAsExpected ? 'all first 10 attempts returned 401' : 'one of first 10 attempts returned 429 unexpectedly',
+  );
+
+  const blockedAttempt = await request<{ message?: string; retry_after_seconds?: number }>('/api/auth/login', {
+    method: 'POST',
+    body: { username: usernameA, password: 'wrong-pass-123' },
+    expectedStatuses: [429],
+  });
+
+  const retryAfterSeconds = Number(blockedAttempt.data.retry_after_seconds ?? 0);
+  assert(
+    results,
+    'Rate limit: 11th failed login is blocked',
+    blockedAttempt.status === 429,
+    `expected 429, actual=${blockedAttempt.status}`,
+  );
+  assert(
+    results,
+    'Rate limit: blocked response includes retry_after_seconds',
+    Number.isFinite(retryAfterSeconds) && retryAfterSeconds > 0,
+    `retry_after_seconds=${retryAfterSeconds}`,
+  );
+
+  const differentUserAttempt = await request<{ message?: string }>('/api/auth/login', {
+    method: 'POST',
+    body: { username: usernameB, password: 'wrong-pass-123' },
+    expectedStatuses: [401, 429],
+  });
+  assert(
+    results,
+    'Rate limit: one user block does not block another user',
+    differentUserAttempt.status === 401,
+    `expected 401 for second user, actual=${differentUserAttempt.status}`,
+  );
+
+  let successfulLoginsAllPassed = true;
+  for (let i = 1; i <= 5; i += 1) {
+    const successLogin = await request<ApiEnvelope<{ token: string }>>('/api/auth/login', {
+      method: 'POST',
+      body: { username: usernameB, password: 'teacher1234' },
+      expectedStatuses: [200],
+    });
+
+    if (successLogin.status !== 200 || !successLogin.data.success) {
+      successfulLoginsAllPassed = false;
+    }
+  }
+
+  assert(
+    results,
+    'Rate limit: successful logins are still accepted',
+    successfulLoginsAllPassed,
+    successfulLoginsAllPassed ? 'all successful attempts returned 200' : 'a successful login did not return 200',
+  );
+
+  const failedAfterSuccesses = await request<{ message?: string }>('/api/auth/login', {
+    method: 'POST',
+    body: { username: usernameB, password: 'wrong-pass-123' },
+    expectedStatuses: [401, 429],
+  });
+  assert(
+    results,
+    'Rate limit: successful logins do not consume failed-attempt budget',
+    failedAfterSuccesses.status === 401,
+    `expected 401 after successful logins, actual=${failedAfterSuccesses.status}`,
+  );
+
+  const passed = results.filter((item) => item.passed).length;
+  const failed = results.length - passed;
+
+  console.log('');
+  console.log('Rate-Limit Summary');
+  console.log('------------------');
+  console.log(`Total Assertions: ${results.length}`);
+  console.log(`Passed: ${passed}`);
+  console.log(`Failed: ${failed}`);
+
+  if (failed > 0) {
+    process.exitCode = 1;
+  }
+}
+
+async function main() {
+  await runRegressionScenario();
+  await runRateLimitScenario();
+}
+
+main().catch((error) => {
+  console.error(`Smoke test crashed: ${error instanceof Error ? error.message : String(error)}`);
   process.exitCode = 1;
 });

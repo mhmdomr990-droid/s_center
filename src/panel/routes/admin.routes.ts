@@ -5,6 +5,7 @@ import { UserRole } from '../../entities/enums';
 import { requireRole } from '../../middlewares/role';
 import { validate } from '../../middlewares/validate';
 import { lectureVideoUpload } from '../../middlewares/videoUpload';
+import { sensitiveActionRateLimit, uploadRateLimit } from '../../middlewares/rateLimit';
 import { asyncHandler } from '../../utils/asyncHandler';
 import {
 	adminIdParamSchema,
@@ -139,8 +140,8 @@ panelAdminRoutes.post('/courses/:id/delete', validate({ params: adminIdParamSche
 
 panelAdminRoutes.get('/lectures', asyncHandler(lecturesPage));
 panelAdminRoutes.get('/lectures/:id/watch', validate({ params: adminIdParamSchema }), asyncHandler(watchLecturePage));
-panelAdminRoutes.post('/lectures', lectureVideoUpload.single('video'), validate({ body: lectureCreateSchema }), asyncHandler(createLectureAction));
-panelAdminRoutes.post('/lectures/:id', lectureVideoUpload.single('video'), validate({ params: adminIdParamSchema, body: lectureUpdateSchema }), asyncHandler(updateLectureAction));
+panelAdminRoutes.post('/lectures', uploadRateLimit, lectureVideoUpload.single('video'), validate({ body: lectureCreateSchema }), asyncHandler(createLectureAction));
+panelAdminRoutes.post('/lectures/:id', uploadRateLimit, lectureVideoUpload.single('video'), validate({ params: adminIdParamSchema, body: lectureUpdateSchema }), asyncHandler(updateLectureAction));
 panelAdminRoutes.post('/lectures/:id/hide', validate({ params: adminIdParamSchema }), asyncHandler(hideLectureAction));
 panelAdminRoutes.post('/lectures/:id/delete', validate({ params: adminIdParamSchema }), asyncHandler(deleteLectureAction));
 
@@ -158,7 +159,7 @@ panelAdminRoutes.post('/users/:id/grant-lectures', validate({ params: adminIdPar
 panelAdminRoutes.post('/users/:id/revoke-lecture-grant', validate({ params: adminIdParamSchema, body: revokeLectureGrantSchema }), asyncHandler(revokeUserLectureGrantAction));
 panelAdminRoutes.post('/users/:id/active', validate({ params: adminIdParamSchema, body: activeUserSchema }), asyncHandler(toggleUserActiveAction));
 panelAdminRoutes.post('/users/:id/reset-device', validate({ params: adminIdParamSchema }), asyncHandler(resetUserDeviceAction));
-panelAdminRoutes.post('/users/:id/reset-password', validate({ params: adminIdParamSchema, body: resetPasswordSchema }), asyncHandler(resetUserPasswordAction));
+panelAdminRoutes.post('/users/:id/reset-password', sensitiveActionRateLimit, validate({ params: adminIdParamSchema, body: resetPasswordSchema }), asyncHandler(resetUserPasswordAction));
 panelAdminRoutes.post('/users/:id/adjust-balance', validate({ params: adminIdParamSchema, body: adjustBalanceSchema }), asyncHandler(adjustUserBalanceAction));
 
 panelAdminRoutes.post('/students', validate({ body: studentCreateSchema }), asyncHandler(createStudentAction));
