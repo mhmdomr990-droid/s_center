@@ -23,6 +23,7 @@ import {
   adminUserParamSchema,
   adminUserLectureParamSchema,
   activeUserSchema,
+  studentProfileUpdateSchema,
   adminCreateSchema,
   courseCreateSchema,
   courseUpdateSchema,
@@ -85,6 +86,7 @@ import {
   patchAdminSpecialization,
   patchAdminSpecializationPublished,
   patchAdminUserActive,
+  patchAdminStudentProfile,
   postAdminResetPassword,
   postAdminCourse,
   postAdminLecture,
@@ -153,6 +155,7 @@ adminRoutes.post('/users/:userId/revoke-lecture-grant/:lectureId', validate({ pa
 adminRoutes.get('/users/:userId/lecture-grants', validate({ params: adminUserParamSchema }), getAdminUserLectureGrants);
 adminRoutes.post('/users/:userId/grant-lectures', validate({ params: adminUserParamSchema, body: grantLecturesBodySchema }), grantAdminUserLectures);
 adminRoutes.patch('/users/:id/active', validate({ params: adminIdParamSchema, body: activeUserSchema }), patchAdminUserActive);
+adminRoutes.patch('/users/:id/profile', validate({ params: adminIdParamSchema, body: studentProfileUpdateSchema }), patchAdminStudentProfile);
 adminRoutes.post('/users/:id/reset-device', validate({ params: adminIdParamSchema }), resetAdminUserDevice);
 adminRoutes.post('/users/:id/adjust-balance', validate({ params: adminIdParamSchema, body: adjustBalanceSchema }), adjustAdminUserBalance);
 adminRoutes.post('/users/:id/reset-password', sensitiveActionRateLimit, validate({ params: adminIdParamSchema, body: resetPasswordSchema }), postAdminResetPassword);

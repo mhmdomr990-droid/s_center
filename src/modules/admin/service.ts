@@ -1620,6 +1620,49 @@ export async function createStudent(input: {
   return mapUser(saved);
 }
 
+export async function updateStudentProfileByAdmin(
+  userId: number,
+  input: { full_name: string; phone?: string | null; specialization_id?: number | null },
+) {
+  const userRepository = AppDataSource.getRepository(User);
+  const specializationRepository = AppDataSource.getRepository(Specialization);
+  const student = await userRepository.findOne({ where: { id: userId, role: UserRole.STUDENT }, relations: { specialization: true } });
+
+  if (!student) {
+    throw new AppError(404, 'Student not found');
+  }
+
+  const fullName = input.full_name.trim();
+  if (!fullName || fullName.length < 2) {
+    throw new AppError(400, 'الاسم الكامل يجب أن يتجاوز حرفين على الأقل');
+  }
+  student.fullName = fullName;
+
+  if (input.phone !== undefined) {
+    const phone = input.phone && input.phone.trim() ? input.phone.trim() : null;
+    if (phone && !/^\+?[0-9\s\-()]{7,30}$/.test(phone)) {
+      throw new AppError(400, 'رقم الهاتف غير صالح');
+    }
+    student.phone = phone;
+  }
+
+  if (input.specialization_id !== undefined) {
+    const specializationId = Number(input.specialization_id ?? 0) || null;
+    const specialization = specializationId
+      ? await specializationRepository.findOne({ where: { id: specializationId, isPublished: true } })
+      : null;
+
+    if (specializationId && !specialization) {
+      throw new AppError(404, 'Selected specialization not found');
+    }
+
+    student.specialization = specialization ? ({ id: specialization.id } as Specialization) : null;
+  }
+
+  const saved = await userRepository.save(student);
+  return mapUser(saved);
+}
+
 export async function createAdmin(input: { username: string; full_name: string; password: string }) {
   const userRepository = AppDataSource.getRepository(User);
   const username = input.username.trim().toLowerCase();

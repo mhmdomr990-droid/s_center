@@ -149,6 +149,20 @@ export const activeUserSchema = z
   })
   .strict();
 
+export const studentProfileUpdateSchema = z
+  .object({
+    full_name: z.string().trim().min(2).max(120),
+    phone: z.preprocess(
+      (value) => (value === '' || value === null || value === undefined ? null : String(value).trim()),
+      z.string().max(30).nullable().optional(),
+    ),
+    specialization_id: z.preprocess(
+      (value) => (value === '' || value === null || value === undefined ? null : value),
+      z.coerce.number().int().positive().nullable().optional(),
+    ),
+  })
+  .strict();
+
 export const adjustBalanceSchema = z
   .object({
     amount: signedMoneySchema,

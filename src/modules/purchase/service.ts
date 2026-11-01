@@ -455,6 +455,16 @@ export async function approveCourseSwapRequest(adminId: number, requestId: numbe
       replacementTeacherShare: request.newTeacherShare,
     });
 
+    const oldPaidCents = toCents(oldPurchase.pricePaid ?? '0.00');
+    const newPaidCents = toCents(replacementFields.pricePaid ?? '0.00');
+    const swapDelta = calculateCourseSwapBalanceDelta({ oldCoursePrice: oldPaidCents, newCoursePrice: newPaidCents });
+    const refundCents = oldPurchase.source === PurchaseSource.PURCHASED && swapDelta.direction === 'refund' ? swapDelta.deltaCents : 0n;
+    const chargeCents = oldPurchase.source === PurchaseSource.PURCHASED && swapDelta.direction === 'charge' ? swapDelta.deltaCents : 0n;
+
+    if (chargeCents > 0n && toCents(student.balance) < chargeCents) {
+      throw new AppError(400, 'رصيد الطالب غير كافٍ لتبديل المادة إلى مادة أعلى سعراً');
+    }
+
     const replacementPurchase = purchaseRepository.create({
       user: { id: request.student.id } as User,
       course: { id: request.newCourse.id } as Course,
@@ -467,12 +477,6 @@ export async function approveCourseSwapRequest(adminId: number, requestId: numbe
 
     await purchaseRepository.remove(oldPurchase);
     await purchaseRepository.save(replacementPurchase);
-
-    const oldPaidCents = toCents(oldPurchase.pricePaid ?? '0.00');
-    const newPaidCents = toCents(replacementFields.pricePaid ?? '0.00');
-    const swapDelta = calculateCourseSwapBalanceDelta({ oldCoursePrice: oldPaidCents, newCoursePrice: newPaidCents });
-    const refundCents = oldPurchase.source === PurchaseSource.PURCHASED && swapDelta.direction === 'refund' ? swapDelta.deltaCents : 0n;
-    const chargeCents = oldPurchase.source === PurchaseSource.PURCHASED && swapDelta.direction === 'charge' ? swapDelta.deltaCents : 0n;
     const refundedAmount = refundCents > 0n ? centsToMoney(refundCents) : '0.00';
     const chargedAmount = chargeCents > 0n ? centsToMoney(chargeCents) : '0.00';
 
