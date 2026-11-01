@@ -4,7 +4,8 @@
 >
 > **File location:** `<repo-root>/AI_CONTEXT.md` (project root — the single source of truth)
 > **Mobile app root:** `mobile/` (Flutter)
-> **Last verified:** November 2026
+> **Last verified:** 2026-11-01
+> **Maintenance rule:** see §13 — this file MUST be updated in the same session as any code change.
 
 ---
 
@@ -509,3 +510,32 @@ cd mobile && flutter run / flutter build apk   # app (minSdk flutter default, us
 6. Errors returned to the app should stay **short (<120 chars)** and may be Arabic or English; `api_exception.dart` drops longer messages.
 
 **When this file and the code disagree, the code wins — then update this file.**
+
+---
+
+## 13. File Maintenance Rule (mandatory)
+
+**Any AI or human who changes this repo MUST update this file in the same session, before finishing the task.**
+
+After every code change, review the affected sections and update them, then bump the **Last verified** date in the header:
+
+| What changed | Which sections to update |
+|---|---|
+| New / changed / removed API endpoint, request body, or response shape | §7 (Full API Contract) — with a fresh JSON example |
+| New entity, field, enum value, relation, or invariant | §4 (Data Model) |
+| Money handling, rounding, or normalization change | §5 (Money Rules) |
+| Auth, device binding, token version, rate limit, maintenance change | §6 (Auth & Security) |
+| Business logic (purchase, swap, grants, earnings, idempotency, media) | §8 (Core Algorithms) |
+| Flutter architecture, screens, storage, upload/download, providers | §9 (Flutter App) |
+| A known gap got fixed (or a new one appeared) | §10 (Known Gaps) |
+| New env var, command, or script | §11 (Commands & Configuration) |
+| New conventions or "never do this" rules | §12 (Instructions) |
+
+**Rules of the update itself:**
+1. **Be surgical** — edit only the affected lines; do not rewrite unrelated sections.
+2. **Keep it verified** — only document what the code actually does. If unsure, open the file and check; never guess.
+3. **Keep examples real** — JSON examples must match the actual response shape (field names, types, 2-decimal money strings).
+4. **Bump the date** — change `Last verified:` to today (ISO `YYYY-MM-DD`).
+5. If a change is too large to document fully in one pass, add a `⚠️ TODO:` line in the affected section rather than leaving it silently wrong.
+
+**Why this matters:** this file is the onboarding context given to AI models. A stale file is worse than no file — it confidently teaches wrong behavior. Five minutes of updating at the end of each task keeps it trustworthy indefinitely.
