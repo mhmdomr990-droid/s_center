@@ -1,8 +1,8 @@
-# AI_CONTEXT.md — Complete Project Reference
+# AGENTS.md — Complete Project Reference
 
 > **Purpose of this file:** Give any AI model a complete, accurate, code-verified mental model of this project in one read. Everything below was verified directly against the source code (backend + Flutter app). Read this first, then open only the specific files you need.
 >
-> **File location:** `<repo-root>/AI_CONTEXT.md` (project root — the single source of truth)
+> **File location:** `<repo-root>/AGENTS.md` (project root — the single source of truth)
 > **Mobile app root:** `mobile/` (Flutter)
 > **Last verified:** 2026-11-01
 > **Maintenance rule:** see §13 — this file MUST be updated in the same session as any code change.
