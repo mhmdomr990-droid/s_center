@@ -237,6 +237,56 @@ class ProfileController extends GetxController {
     }
   }
 
+  Future<void> editName() async {
+    final nameCtrl = TextEditingController(text: user.value?.fullName ?? '');
+    final confirmed = await Get.dialog<bool>(
+      AlertDialog(
+        title: const Text('تعديل الاسم'),
+        content: TextField(
+          controller: nameCtrl,
+          decoration: const InputDecoration(
+            labelText: 'الاسم الكامل',
+            hintText: 'أدخل اسمك الكامل',
+            border: OutlineInputBorder(),
+          ),
+        ),
+        actions: [
+          TextButton(onPressed: () => Get.back(result: false), child: const Text('إلغاء')),
+          TextButton(onPressed: () => Get.back(result: true), child: const Text('حفظ')),
+        ],
+      ),
+      barrierDismissible: true,
+    );
+    if (confirmed != true) {
+      nameCtrl.dispose();
+      return;
+    }
+
+    final name = nameCtrl.text.trim();
+    if (name.length < 2) {
+      nameCtrl.dispose();
+      Get.snackbar('خطأ', 'الاسم الكامل يجب أن يتجاوز حرفين',
+          backgroundColor: const Color(0xFFE53935), colorText: const Color(0xFFFFFFFF));
+      return;
+    }
+
+    try {
+      await _authProvider.updateProfile(fullName: name);
+      Get.snackbar('نجاح', 'تم تحديث الاسم',
+          backgroundColor: const Color(0xFF43A047), colorText: const Color(0xFFFFFFFF));
+      await loadProfile();
+      // مزامنة الاسم المحدّث مع كاش الجلسة في AuthController
+      if (Get.isRegistered<AuthController>()) {
+        Get.find<AuthController>().user.value = user.value;
+      }
+    } catch (e) {
+      Get.snackbar('خطأ', apiErrorMessage(e, fallback: 'تعذر تحديث الاسم'),
+          backgroundColor: const Color(0xFFE53935), colorText: const Color(0xFFFFFFFF));
+    } finally {
+      nameCtrl.dispose();
+    }
+  }
+
   Future<void> logout({bool fromAllDevices = false}) async {
     if (isLoggingOut.value) return;
 

@@ -73,6 +73,20 @@ class AdminProvider {
     return _api.patch('/admin/users/$id/active', data: {'is_active': isActive});
   }
 
+  // تعديل بيانات طالب — الحقول الفارغة تُمسح (مطابق للوحة /panel)
+  Future<Response> updateStudentProfile(
+    int id, {
+    required String fullName,
+    String? phone,
+    int? specializationId,
+  }) {
+    return _api.patch('/admin/users/$id/profile', data: {
+      'full_name': fullName,
+      'phone': phone ?? '',
+      'specialization_id': specializationId,
+    });
+  }
+
   // ---- طلبات تبديل المواد ----
   Future<Response> courseSwapRequests() => _api.get('/admin/course-swap-requests');
 

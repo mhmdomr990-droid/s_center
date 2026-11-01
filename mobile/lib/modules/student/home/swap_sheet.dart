@@ -7,6 +7,7 @@ import '../../../data/providers/api_client.dart';
 import '../../../data/providers/api_exception.dart';
 import '../../../data/providers/catalog_provider.dart';
 import '../../../data/providers/purchase_provider.dart';
+import '../../auth/auth_controller.dart';
 import '../../../widgets/custom_button.dart';
 import '../../../widgets/custom_text_field.dart';
 
@@ -95,10 +96,49 @@ class _SwapCourseSheetState extends State<SwapCourseSheet> {
     }
   }
 
+  // تحويل مبلغ نصي (مثل "2500.00") إلى سنتات BigInt — لا double (قاعدة النقود)
+  static BigInt _toCents(String value) {
+    final v = value.trim();
+    final dot = v.indexOf('.');
+    final intPart = (dot == -1 ? v : v.substring(0, dot)).trim();
+    final fracPart = dot == -1 ? '00' : (v.substring(dot + 1) + '00').substring(0, 2);
+    return BigInt.parse(intPart.isEmpty ? '0' : intPart) * BigInt.from(100) +
+        BigInt.parse(fracPart.isEmpty ? '00' : fracPart);
+  }
+
+  static String _centsToMoney(BigInt cents) {
+    final negative = cents < BigInt.zero;
+    final abs = negative ? -cents : cents;
+    final s = abs.toString().padLeft(3, '0');
+    return '${negative ? '-' : ''}${s.substring(0, s.length - 2)}.${s.substring(s.length - 2)}';
+  }
+
+  BigInt get _balanceCents =>
+      _toCents(Get.find<AuthController>().user.value?.balance ?? '0.00');
+
+  // الفرق الموجب فقط: سعر المادة البديلة − ما دفعه الطالب فعلياً
+  // (مطابق لحساب الخادم: نفس القيمة يخصمها/approveCourseSwapRequest عند الفارق الأعلى)
+  BigInt get _deltaCents {
+    final selected = _alternatives.cast<Map<String, dynamic>?>().firstWhere(
+        (c) => (c?['id'] as num?)?.toInt() == _selectedId,
+        orElse: () => null);
+    if (selected == null) return BigInt.zero;
+    final delta = _toCents('${selected['price'] ?? '0.00'}') -
+        _toCents(widget.course.pricePaid);
+    return delta > BigInt.zero ? delta : BigInt.zero;
+  }
+
+  bool get _insufficientBalance => _deltaCents > _balanceCents;
+
   Future<void> _submit() async {
     if (_selectedId == null) {
       Get.snackbar('تبديل المادة', 'اختر المادة البديلة أولاً',
           backgroundColor: Colors.orange, colorText: Colors.white);
+      return;
+    }
+    if (_insufficientBalance) {
+      Get.snackbar('تبديل المادة', 'رصيدك لا يكفي لهذا التبديل — فرق السعر ${_centsToMoney(_deltaCents)} SYP ورصيدك ${_centsToMoney(_balanceCents)} SYP',
+          backgroundColor: Colors.red, colorText: Colors.white);
       return;
     }
     final purchaseId = widget.course.purchaseId;
@@ -201,6 +241,23 @@ class _SwapCourseSheetState extends State<SwapCourseSheet> {
                     : (v) => setState(() => _selectedId = v),
               ),
               const SizedBox(height: 12),
+              if (_deltaCents > BigInt.zero) ...[
+                Text(
+                  'فرق السعر: +${_centsToMoney(_deltaCents)} SYP • رصيدك: ${_centsToMoney(_balanceCents)} SYP',
+                  style: AppTextStyles.bodySmall.copyWith(
+                      color: _insufficientBalance
+                          ? AppColors.error
+                          : AppColors.textSecondary),
+                ),
+                if (_insufficientBalance) ...[
+                  const SizedBox(height: 4),
+                  Text(
+                    'رصيدك لا يكفي لهذا التبديل (توفّر الفرق أولاً)',
+                    style: AppTextStyles.bodySmall.copyWith(color: AppColors.error),
+                  ),
+                ],
+                const SizedBox(height: 12),
+              ],
               CustomTextField(
                 labelText: 'سبب الطلب (اختياري)',
                 controller: _reasonCtrl,
@@ -211,7 +268,7 @@ class _SwapCourseSheetState extends State<SwapCourseSheet> {
                 text: 'إرسال طلب التبديل',
                 icon: Icons.send_rounded,
                 isLoading: _submitting,
-                onPressed: _submit,
+                onPressed: _insufficientBalance ? null : _submit,
               ),
             ],
           ],

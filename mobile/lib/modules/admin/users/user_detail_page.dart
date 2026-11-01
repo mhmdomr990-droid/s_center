@@ -315,6 +315,17 @@ class UserDetailPage extends StatelessWidget {
                   ),
                   if (!isTeacher) ...[
                     _actionRow(
+                      icon: Icons.edit_outlined,
+                      iconColor: AppColors.primary,
+                      title: 'تعديل بيانات الطالب',
+                      subtitle: 'الاسم والهاتف والتخصص',
+                      enabled: !busy,
+                      onTap: () {
+                        Navigator.of(sheetContext).pop();
+                        ctrl.editStudentProfile();
+                      },
+                    ),
+                    _actionRow(
                       icon: Icons.card_giftcard_outlined,
                       iconColor: const Color(0xFF8E24AA),
                       title: 'منح كورس مجاني',

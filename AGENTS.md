@@ -165,15 +165,17 @@ A student can open a lecture **iff** they have a `Purchase` for the whole course
 ### Panel (web) auth
 Cookie `panel_token` (httpOnly, sameSite=strict, 7 days), same JWT secret, but **does NOT check `tokenVersion`** (logout-all does not kill panel sessions). CSRF = double-submit `panel_csrf_token` + Origin/Referer same-host check (`timingSafeEqual`). Flash messages via `panel_flash` cookie.
 
-### Rate limits (`src/middlewares/rateLimit.ts`)
+### Rate limits (`src/middlewares/rateLimit.ts`) — all env-overridable (see §11)
 | Limiter | Window | Max | Key |
 |---|---|---|---|
-| `generalRateLimit` (all `/api`) | 15 min | 300 | IP |
-| `authRateLimit` (`/auth/register`, `/auth/login`, `/panel/login`) | 15 min | 50 (10 000 in test) | IP |
-| `lectureStreamUrlRateLimit` | 1 h | **20** | `user:{id}` or IP |
-| `lectureDownloadUrlRateLimit` | 1 h | **30** | `user:{id}` or IP |
+| `generalRateLimit` (all `/api`; skips `/health`, `/media/*`, lecture upload routes) | 15 min | **600** (student) / **3000** (ADMIN/TEACHER, read from Bearer token) | Bearer token user id, else IP |
+| `loginRegisterRateLimit` (`/auth/register`, `/auth/login`) + `panelLoginRateLimit` (`/panel/login`) | 15 min | **10** | IP + lowercased username; **successful requests are not counted** |
+| `sensitiveActionRateLimit` (`POST /lectures/:id/stream-url`, `POST /lectures/:id/download-url`, `POST /auth/change-password`, `POST /admin/users/:id/reset-password`) | 15 min | **60** | user id, else IP — ⚠️ **single shared limiter instance: the 60 count is shared across all four routes** |
+| `uploadRateLimit` (teacher/admin lecture create/update multipart) | 60 min | **60** | user id, else IP |
 
-> UX implication: the app's "download once, forever" policy exists partly because of this 30/h cap.
+- 429 response: `{ "success": false, "message": "محاولات كثيرة، حاول بعد X دقيقة", "retry_after_seconds": N }` + `Retry-After` header.
+- Client IP honors `TRUST_PROXY` env (default: `1` in production, `false` otherwise).
+- ⚠️ The old dedicated limiters (stream 20/h, download 30/h) were **removed** — media URL issuance now shares the 60/15min sensitive bucket.
 
 ### Global logout
 `POST /api/auth/logout-all` → `tokenVersion += 1` → every existing API token becomes invalid (401). The Flutter app must wipe the session on any 401.
@@ -222,6 +224,7 @@ Cookie `panel_token` (httpOnly, sameSite=strict, 7 days), same JWT secret, but *
 ```
 > ⚠️ `balance` is **only present for STUDENT** (`undefined` for TEACHER/ADMIN → make the Dart field nullable).
 > Validation: `username` `^[a-z0-9_]+$` (3–30, auto-lowercased), `password` 8–128, `phone` `^\+?[0-9\s\-()]{7,30}$`, `full_name` 2–120.
+> `PATCH /profile` accepts partial updates — the app uses it for **name edit** (`{"full_name": "..."}`), phone edit (`{"phone": "..."}`), or both.
 > Errors: 401 wrong credentials · 403 inactive account · 403 "This account is linked to another device" · 409 username exists · 400 `device_id is required` (student first login).
 
 ### 7.3 Catalog — `/api`
@@ -318,7 +321,7 @@ Cookie `panel_token` (httpOnly, sameSite=strict, 7 days), same JWT secret, but *
 - Price delta is charged/refunded **only if the original source was PURCHASED**:
   - charge → `Transaction(type=PURCHASE, reference_type=COURSE_SWAP_CHARGE)`
   - refund → `Transaction(type=TOPUP, reference_type=COURSE_SWAP_REFUND)`
-- ⚠️ The charge path has **no sufficiency check** — it can push a balance negative (known gap).
+- ✅ **Balance sufficiency check (fixed)**: approval now rejects with `400 'رصيد الطالب غير كافٍ لتبديل المادة إلى مادة أعلى سعراً'` **before** any deduction when `charge > student.balance` (never drives balance negative).
 
 ### 7.6 Media — `/api` + `/media`
 | Method + Path | Who | Rate limit | Result |
@@ -385,7 +388,7 @@ Type↔file rules: **VIDEO** ⇒ file required, `url` forbidden, `.pdf` file rej
 | Top-ups | `GET /topup-requests?status&page&limit`, `GET /topup-requests/:id`, `POST /topup-requests/:id/approve`, `POST /topup-requests/:id/reject` `{reason(1–1000)!}` |
 | Swaps | `GET /course-swap-requests` (**pending only**), `POST .../approve` `{admin_note?}`, `POST .../reject` `{reason?}` |
 | Users | `GET /users?search&role&is_active&is_test&page&limit`, `GET /users/:id` (+`purchases_count`, `last_topups`), `GET /users/:id/transactions`, `GET /users/:id/purchases` |
-| User actions | `PATCH /users/:id/active`, `POST /users/:id/reset-device`, `POST /users/:id/adjust-balance` (+Idempotency-Key), `POST /users/:id/reset-password` |
+| User actions | `PATCH /users/:id/active`, `PATCH /users/:id/profile` (student name/phone/spec, below), `POST /users/:id/reset-device`, `POST /users/:id/adjust-balance` (+Idempotency-Key), `POST /users/:id/reset-password` |
 | Grants | `POST /users/:id/grant-course` `{course_id}`, `DELETE /users/:id/grant-course`, `POST /users/:userId/grant-lecture/:lectureId`, `POST /users/:userId/grant-lectures` `{lecture_ids}`, `POST /users/:userId/revoke-lecture-grant/:lectureId`, `GET /users/:userId/lecture-grants` |
 | Teachers | `POST /teachers`, `GET /teachers`, `GET/PATCH /teachers/:id`, `POST/GET /teachers/:id/payouts` (+Idempotency-Key on POST) |
 | Misc | `POST /admins`, `POST /notifications` `{all:true,...}` or `{user_id,...}`, `GET/PATCH /settings/maintenance`, `GET /purchases` (global history) |
@@ -414,6 +417,19 @@ Type↔file rules: **VIDEO** ⇒ file required, `url` forbidden, `.pdf` file rej
 } }
 ```
 > Admin error highlights: 400 grant specialization mismatch ("Course specialization does not match student specialization") · 409 already has access · 400 "Balance cannot go below zero" · 400 "Payout amount exceeds remaining balance" · 400 top-up not pending · 400/409 swap no longer pending.
+
+```jsonc
+// PATCH /api/admin/users/12/profile  (STUDENT only — 404 'Student not found' otherwise)
+// Body: full_name required (2–120); phone / specialization_id optional —
+// empty string or null CLEARS the field (matches the /panel form semantics)
+{ "full_name": "أحمد الجديد", "phone": "0999123456", "specialization_id": 3 }
+// → 200 — same shape as mapUser (GET /users/:id item)
+{ "success": true, "data": {
+    "id": 12, "username": "ahmad", "full_name": "أحمد الجديد", "phone": "0999123456",
+    "role": "STUDENT", "specialization_id": 3, "specialization_name": "الهندسة المدنية",
+    "is_active": true, "balance": "1500.00", "created_at": "...", "updated_at": "..."
+} }
+```
 
 ### 7.10 Idempotency (`Idempotency-Key` header)
 Only these 4 routes use it: **course purchase**, **topup request creation**, **admin adjust-balance**, **admin teacher payout**.
@@ -464,6 +480,10 @@ Pessimistic row locks (`pessimistic_write`) inside `AppDataSource.transaction` o
 - **Uploads (teacher/admin):** `VideoCompress` (960×540, 15 fps, linear ETA) inside a `flutter_foreground_task` service; rejected if output is not < 0.9× the source.
 - **Security:** `screen_security` blocks screenshots/recording, native emulator detection blocks the app, `ALLOW_CAPTURE_BY_NONE` on API ≥ 29.
 - **Notifications:** 30s polling for `unread_count`.
+- **Profile name edit (student):** edit icon next to the name in `ProfilePage` → `PATCH /auth/profile {"full_name"}` (2–120 validated client-side), then refreshes `/auth/me` and syncs the cached `AuthController.user`.
+- **Admin student profile edit:** actions sheet in `UserDetailPage` (STUDENT only) → "تعديل بيانات الطالب" dialog (name + phone + specialization, "بدون تخصص" option) → `PATCH /admin/users/:id/profile`; empty phone/spec clears them (mirrors the /panel form).
+- **Swap balance pre-check (student):** `swap_sheet.dart` computes `newPrice − pricePaid` in **BigInt cents** and compares with the logged-in student's balance; shows the delta + balance and disables the send button when insufficient — prevents swap requests the backend would reject at approval (`400 رصيد الطالب غير كافٍ...`).
+- **Admin swap approve dialog:** shows the student's current balance (fetched via `GET /admin/users/:id`) before confirmation; list reloads after both success and failure.
 - ⚠️ **Known workaround in the app:** `AdminProvider.createStudent()` posts to `${origin}/panel/admin/students` with **forged panel cookies** (`panel_token` + a fake 48-hex `panel_csrf_token` + `x-csrf-token`), expects 302, and parses the `panel_flash` Set-Cookie — because there is **no admin "create student" endpoint under `/api`**. Preserve this or add a proper endpoint before changing it.
 
 ---
@@ -472,7 +492,7 @@ Pessimistic row locks (`pessimistic_write`) inside `AppDataSource.transaction` o
 
 1. **No refund endpoint** — `/api/admin/purchases/:id/refund` does not exist (flagged HIGH by the e2e suite).
 2. **No `/api/admin/students` (create student)** — hence the panel-cookie workaround above.
-3. **Course-swap charge path can drive a balance negative** (no sufficiency check in `approveCourseSwapRequest`).
+3. ~~Course-swap charge path can drive a balance negative~~ ✅ **FIXED** (merge `e170385`): `approveCourseSwapRequest` now checks `charge > student.balance` → `400` Arabic error before any deduction.
 4. **Specialization match is enforced only for free grants**, not for paid purchases.
 5. **`admin_note` / `reason` on swap decisions reach the service unvalidated** (`courseSwapDecisionSchema` exists in `purchase/schemas.ts` but is not wired to the routes).
 6. **helmet/CSP is disabled** in `src/app.ts`.
@@ -496,6 +516,8 @@ cd mobile && flutter run / flutter build apk   # app (minSdk flutter default, us
 ```
 
 **Env (`.env`, validated by `src/config/env.ts`):** `NODE_ENV`, `PORT` (3000), `DB_HOST/PORT/USER/PASSWORD/NAME`, `DB_NAME_TEST`, `DB_SYNC` (TypeORM synchronize), `JWT_SECRET`, `JWT_EXPIRES_IN` (7d), `STAFF_JWT_EXPIRES_IN` (14d), `CORS_ORIGINS`, `VIDEO_STORAGE_PATH` (`storage/videos`), `VIDEO_MAX_SIZE_MB` (2048), `VIDEO_SIGNING_SECRET` (defaults to `JWT_SECRET`), `DOWNLOAD_URL_EXPIRY_MINUTES` (120), `DOWNLOAD_TTL_DAYS` (100), `ADMIN_USERNAME`/`ADMIN_PASSWORD` (defaults `asmaa`/`asmaa2026` ⚠️), `DEBUG_PANEL`.
+
+**Rate-limit / proxy env (new in merge `dba3ce5`, all optional):** `TRUST_PROXY` (string; `true`/`false`/hop-count — default `1` in production else `false`), `RATE_LIMIT_GENERAL_WINDOW_MINUTES` (15), `RATE_LIMIT_GENERAL_MAX` (600), `RATE_LIMIT_GENERAL_STAFF_MAX` (3000), `RATE_LIMIT_LOGIN_WINDOW_MINUTES` (15), `RATE_LIMIT_LOGIN_MAX` (10), `RATE_LIMIT_SENSITIVE_WINDOW_MINUTES` (15), `RATE_LIMIT_SENSITIVE_MAX` (60), `RATE_LIMIT_UPLOAD_WINDOW_MINUTES` (60), `RATE_LIMIT_UPLOAD_MAX` (60).
 
 ---
 

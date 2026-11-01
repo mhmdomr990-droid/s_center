@@ -44,8 +44,11 @@ class AuthProvider {
     });
   }
 
-  Future<Response> updateProfile({String? phone}) {
-    return _api.patch('/auth/profile', data: {'phone': phone});
+  Future<Response> updateProfile({String? fullName, String? phone}) {
+    return _api.patch('/auth/profile', data: {
+      if (fullName != null) 'full_name': fullName,
+      if (phone != null) 'phone': phone,
+    });
   }
 
   Future<Response> logoutAll() {

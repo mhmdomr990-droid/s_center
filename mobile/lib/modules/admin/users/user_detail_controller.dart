@@ -6,6 +6,7 @@ import '../../../app/theme/app_text_styles.dart';
 import '../../../data/providers/admin_provider.dart';
 import '../../../data/providers/api_client.dart';
 import '../../../data/providers/api_exception.dart';
+import '../../../data/providers/catalog_provider.dart';
 import '../../../widgets/custom_text_field.dart';
 import '../../../utils/format.dart';
 
@@ -42,6 +43,12 @@ class UserDetailController extends GetxController {
   final adjustDescCtrl = TextEditingController();
   final newPasswordCtrl = TextEditingController();
 
+  // تعديل بيانات الطالب (اسم/هاتف/تخصص)
+  final editNameCtrl = TextEditingController();
+  final editPhoneCtrl = TextEditingController();
+  final editSpecItems = <Map<String, dynamic>>[].obs;
+  final editSelectedSpecId = Rxn<int>();
+
   UserDetailController()
       : _provider = AdminProvider(Get.find<ApiClient>()),
         grantSearchCtrl = TextEditingController();
@@ -59,6 +66,8 @@ class UserDetailController extends GetxController {
     adjustDescCtrl.dispose();
     newPasswordCtrl.dispose();
     grantSearchCtrl.dispose();
+    editNameCtrl.dispose();
+    editPhoneCtrl.dispose();
     super.onClose();
   }
 
@@ -192,6 +201,115 @@ class UserDetailController extends GetxController {
     if (confirmed != true) return;
 
     await _run(() => _provider.resetUserDevice(userId), success: 'تمت إعادة تعيين الجهاز');
+  }
+
+  // ─── تعديل بيانات الطالب (الاسم/الهاتف/التخصص) ───
+
+  Future<void> _loadEditSpecs() async {
+    try {
+      final res = await CatalogProvider(Get.find<ApiClient>()).getSpecializations();
+      final data = res.data['data'];
+      if (data is List) {
+        editSpecItems.assignAll(
+            data.map((e) => Map<String, dynamic>.from(e as Map)));
+      }
+    } catch (_) {
+      // اختياري — يبقى الاختيار الحالي فقط إن فشل التحميل
+    }
+  }
+
+  Future<void> editStudentProfile() async {
+    final u = user.value;
+    if (u == null) return;
+
+    editNameCtrl.text = '${u['full_name'] ?? ''}';
+    editPhoneCtrl.text = '${u['phone'] ?? ''}';
+    editSelectedSpecId.value = (u['specialization_id'] as num?)?.toInt();
+    await _loadEditSpecs();
+
+    final confirmed = await Get.dialog<bool>(
+      AlertDialog(
+        title: const Text('تعديل بيانات الطالب'),
+        content: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              TextField(
+                controller: editNameCtrl,
+                decoration: const InputDecoration(
+                  labelText: 'الاسم الكامل *',
+                  border: OutlineInputBorder(),
+                ),
+              ),
+              const SizedBox(height: 12),
+              TextField(
+                controller: editPhoneCtrl,
+                keyboardType: TextInputType.phone,
+                decoration: const InputDecoration(
+                  labelText: 'الهاتف (اختياري)',
+                  border: OutlineInputBorder(),
+                ),
+              ),
+              const SizedBox(height: 12),
+              Obx(() => DropdownButtonFormField<int>(
+                    initialValue: editSelectedSpecId.value,
+                    isExpanded: true,
+                    decoration: const InputDecoration(
+                      labelText: 'التخصص (اختياري)',
+                      border: OutlineInputBorder(),
+                    ),
+                    items: [
+                      const DropdownMenuItem<int>(
+                        value: null,
+                        child: Text('بدون تخصص', style: TextStyle(fontSize: 13)),
+                      ),
+                      ...editSpecItems.map((s) => DropdownMenuItem<int>(
+                            value: (s['id'] as num).toInt(),
+                            child: Text(
+                              '${s['name'] ?? ''}',
+                              overflow: TextOverflow.ellipsis,
+                              style: const TextStyle(fontSize: 13),
+                            ),
+                          )),
+                    ],
+                    onChanged: (v) => editSelectedSpecId.value = v,
+                  )),
+            ],
+          ),
+        ),
+        actions: [
+          TextButton(onPressed: () => Get.back(result: false), child: const Text('إلغاء')),
+          TextButton(onPressed: () => Get.back(result: true), child: const Text('حفظ')),
+        ],
+      ),
+      barrierDismissible: true,
+    );
+    if (confirmed != true) return;
+
+    final name = editNameCtrl.text.trim();
+    if (name.length < 2) {
+      Get.snackbar('خطأ', 'الاسم الكامل يجب أن يتجاوز حرفين',
+          backgroundColor: Colors.red, colorText: Colors.white);
+      return;
+    }
+
+    busy.value = true;
+    try {
+      await _provider.updateStudentProfile(
+        userId,
+        fullName: name,
+        phone: editPhoneCtrl.text.trim(),
+        specializationId: editSelectedSpecId.value,
+      );
+      Get.snackbar('تم', 'تم تحديث بيانات الطالب',
+          backgroundColor: Colors.green, colorText: Colors.white);
+      await load();
+    } catch (e) {
+      Get.snackbar('خطأ', apiErrorMessage(e, fallback: 'تعذر تحديث بيانات الطالب'),
+          backgroundColor: Colors.red, colorText: Colors.white);
+    } finally {
+      busy.value = false;
+    }
   }
 
   Future<void> adjustBalance() async {

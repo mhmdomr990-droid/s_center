@@ -5,6 +5,7 @@ import '../../../app/theme/app_colors.dart';
 import '../../../data/providers/admin_provider.dart';
 import '../../../data/providers/api_client.dart';
 import '../../../data/providers/api_exception.dart';
+import '../../../utils/format.dart';
 
 class SwapRequestsAdminController extends GetxController {
   final AdminProvider _provider;
@@ -51,11 +52,26 @@ class SwapRequestsAdminController extends GetxController {
   }
 
   Future<void> approve(Map<String, dynamic> item) async {
+    // جلب رصيد الطالب لعرضه في التأكيد (مهم عند التبديل لمادة أعلى سعراً —
+    // الخادم يرفض الموافقة إذا لم يكفِ الرصيد)
+    String? balanceLine;
+    final studentId = (item['student_id'] as num?)?.toInt();
+    if (studentId != null) {
+      try {
+        final userRes = await _provider.userById(studentId);
+        final u = userRes.data['data'];
+        balanceLine = 'رصيد الطالب الحالي: ${formatAmount(u?['balance'])} SYP';
+      } catch (_) {
+        // اختياري — يُخفى إن تعذر الجلب
+      }
+    }
+
     final confirmed = await Get.dialog<bool>(
       AlertDialog(
         title: const Text('الموافقة على التبديل'),
         content: Text(
-            'تبديل «${item['old_course_name']}» بـ«${item['new_course_name']}» للطالب ${item['student_name']}؟'),
+            'تبديل «${item['old_course_name']}» بـ«${item['new_course_name']}» للطالب ${item['student_name']}؟'
+            '${balanceLine != null ? '\n$balanceLine' : ''}'),
         actions: [
           TextButton(onPressed: () => Get.back(result: false), child: const Text('إلغاء')),
           TextButton(onPressed: () => Get.back(result: true), child: const Text('موافقة')),
@@ -74,6 +90,7 @@ class SwapRequestsAdminController extends GetxController {
     } catch (e) {
       Get.snackbar('خطأ', _decisionError(e),
           backgroundColor: AppColors.error, colorText: Colors.white);
+      await load();
     } finally {
       busy.value = false;
     }

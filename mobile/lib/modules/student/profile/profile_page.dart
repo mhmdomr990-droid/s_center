@@ -63,28 +63,37 @@ class ProfilePage extends StatelessWidget {
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              Row(
-                                children: [
-                                  Flexible(
-                                    child: Text(
-                                      user?.fullName.isNotEmpty == true
-                                          ? user!.fullName
-                                          : (user?.username ?? ''),
-                                      style: AppTextStyles.titleMedium.copyWith(
-                                          color: Colors.white,
-                                          fontWeight: FontWeight.bold),
-                                      maxLines: 1,
-                                      overflow: TextOverflow.ellipsis,
+                              GestureDetector(
+                                onTap: user?.isTeacher == true
+                                    ? null
+                                    : ctrl.editName,
+                                behavior: HitTestBehavior.opaque,
+                                child: Row(
+                                  children: [
+                                    Flexible(
+                                      child: Text(
+                                        user?.fullName.isNotEmpty == true
+                                            ? user!.fullName
+                                            : (user?.username ?? ''),
+                                        style: AppTextStyles.titleMedium.copyWith(
+                                            color: Colors.white,
+                                            fontWeight: FontWeight.bold),
+                                        maxLines: 1,
+                                        overflow: TextOverflow.ellipsis,
+                                      ),
                                     ),
-                                  ),
-                                  if (user?.isTeacher == true) ...[
-                                    const SizedBox(width: 8),
-                                    const StatusPill(label: 'معلم', color: AppColors.primary, filled: true),
-                                  ] else ...[
-                                    const SizedBox(width: 8),
-                                    const StatusPill(label: 'طالب', color: AppColors.primary, filled: true),
+                                    if (user?.isTeacher == true) ...[
+                                      const SizedBox(width: 8),
+                                      const StatusPill(label: 'معلم', color: AppColors.primary, filled: true),
+                                    ] else ...[
+                                      const SizedBox(width: 8),
+                                      const StatusPill(label: 'طالب', color: AppColors.primary, filled: true),
+                                      const SizedBox(width: 6),
+                                      const Icon(Icons.edit_outlined,
+                                          color: Colors.white70, size: 14),
+                                    ],
                                   ],
-                                ],
+                                ),
                               ),
                               if (user?.isTeacher == true) ...[
                                 const SizedBox(height: 8),
